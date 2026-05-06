@@ -30,6 +30,6 @@ jobs:
 
       - name: Upload Scorecard SARIF
         # github/codeql-action v4.35.2
-        uses: github/codeql-action/upload-sarif@7fc6561ed893d15cec696e062df840b21db27eb0
+        uses: github/codeql-action/upload-sarif@95e58e9a2cdfd71adc6e0353d5c52f41a045d225
         with:
           sarif_file: scorecard.sarif
