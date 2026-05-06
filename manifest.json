@@ -1,0 +1,11 @@
+{
+	"id": "ytkn",
+	"name": "YouTube Knowledge Notes",
+	"minAppVersion": "1.6.6",
+	"version": "1.5.8",
+	"description": "Create knowledge notes from YouTube videos and playlists using AI.",
+	"author": "aawhb",
+	"authorUrl": "https://github.com/aawhb",
+	"isDesktopOnly": false,
+	"main": "main.js"
+}

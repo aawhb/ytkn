@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Generated plugin artifacts. Upload these from GitHub Actions releases.
+main.js
+*.map
+dist/
+build/
+coverage/
+
+# Local Obsidian/vault state
+data.json
+.obsidian/
+
+# Environment and local overrides
+.env
+.env.local
+*.local
+
+# Editors and OS files
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
