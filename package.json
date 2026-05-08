@@ -38,12 +38,12 @@
 	"devDependencies": {
 		"@eslint/js": "^9.39.4",
 		"@eslint/json": "^0.14.0",
-		"@types/node": "^25.6.0",
+		"@types/node": "^25.6.2",
 		"@vitest/coverage-v8": "^4.1.5",
 		"esbuild": "^0.28.0",
 		"eslint": "^9.39.4",
 		"eslint-plugin-obsidianmd": "^0.2.9",
-		"jsdom": "^29.0.2",
+		"jsdom": "^29.1.1",
 		"obsidian": "^1.12.3",
 		"tslib": "^2.8.1",
 		"typescript": "^6.0.3",
@@ -51,8 +51,8 @@
 		"vitest": "^4.1.5"
 	},
 	"dependencies": {
-		"@anthropic-ai/sdk": "^0.94.0",
+		"@anthropic-ai/sdk": "^0.95.1",
 		"@google/generative-ai": "^0.24.1",
-		"openai": "^6.34.0"
+		"openai": "^6.37.0"
 	}
 }
