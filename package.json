@@ -1,6 +1,6 @@
 {
 	"name": "ytkn",
-	"version": "1.6.0",
+	"version": "1.6.2",
 	"description": "Create structured knowledge notes from YouTube videos inside Obsidian.",
 	"main": "main.js",
 	"scripts": {
