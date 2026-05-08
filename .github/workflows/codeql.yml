@@ -1,0 +1,38 @@
+name: CodeQL Analysis
+
+on:
+    workflow_dispatch:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+permissions: read-all
+
+jobs:
+    analyze:
+        name: Run CodeQL analysis
+        runs-on: ubuntu-latest
+        permissions:
+            security-events: write
+
+        steps:
+            - name: Check out repository
+              # actions/checkout v6.0.2
+              uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+            - name: Initialize CodeQL
+              # github/codeql-action v4.35.4
+              uses: github/codeql-action/init@68bde559dea0fdcac2102bfdf6230c5f70eb485e
+              with:
+                  languages: javascript-typescript
+                  build-mode: none
+                  queries: +security-extended,security-and-quality
+
+            - name: Perform CodeQL analysis
+              # github/codeql-action v4.35.4
+              uses: github/codeql-action/analyze@68bde559dea0fdcac2102bfdf6230c5f70eb485e
+              with:
+                  category: "/language:javascript-typescript"
