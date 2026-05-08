@@ -1,0 +1,1357 @@
+.ytkn,
+.ytkn-settings,
+.ytkn-modal,
+.ytkn-queue-modal {
+	--ytkn-control-min-height: 38px;
+	--ytkn-control-radius: 8px;
+	--ytkn-control-shadow: 0 8px 18px rgba(0, 0, 0, 0.04);
+	--ytkn-surface-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+	--ytkn-radius-pill: 999px;
+	--ytkn-settings-max-width: 980px;
+	--ytkn-model-list-max-height: 300px;
+	--ytkn-summary-prompt-min-height: 15em;
+	--ytkn-url-input-min-height: 40px;
+	--ytkn-number-input-width: 6em;
+	--ytkn-textarea-min-height: 96px;
+	--ytkn-quick-card-radius: 12px;
+	--ytkn-brand-mark-size: 48px;
+	--ytkn-brand-mark-radius: 16px;
+	--ytkn-brand-icon-size: 28px;
+	--ytkn-brand-icon-stroke-width: 1.8;
+	--ytkn-brand-shadow: 0 4px 12px color-mix(in srgb,
+			var(--interactive-accent) 20%,
+			transparent);
+}
+
+.ytkn {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-4);
+}
+
+.ytkn__input {
+	width: 100%;
+	margin-bottom: var(--size-4-4);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.ytkn__actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--size-4-2);
+}
+
+.ytkn__button {
+	padding: var(--size-4-2) var(--size-4-4);
+	border-radius: var(--radius-s);
+	font-weight: var(--font-medium);
+	cursor: pointer;
+}
+
+.ytkn__button--primary {
+	background-color: var(--interactive-accent) !important;
+}
+
+.ytkn__button--danger {
+	background-color: var(--text-error) !important;
+}
+
+.ytkn-settings__group {
+	margin-bottom: var(--size-4-6);
+}
+
+.ytkn-settings__group-title {
+	margin: 0 0 var(--size-4-3) 0;
+	padding-bottom: var(--size-4-2);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	border-bottom: 1px solid color-mix(in srgb, var(--interactive-accent) 30%, transparent);
+}
+
+.ytkn-settings__subsection-title {
+	margin-top: var(--size-4-5);
+	border-bottom: none;
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: var(--size-4-4);
+	padding-bottom: 0;
+}
+
+.ytkn-settings__group-cards {
+	padding: var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	background: var(--background-primary);
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.ytkn-settings__group-cards .setting-item {
+	padding: var(--size-4-3);
+	margin: 0;
+	border: none !important;
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+}
+
+.ytkn-settings__empty-panel {
+	margin-top: var(--size-4-4);
+	padding: var(--size-4-4);
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-primary);
+	color: var(--text-muted);
+}
+
+.ytkn-modal__stretch-input .setting-item-info {
+	flex: 0 0 auto;
+}
+
+.ytkn-modal__stretch-input .setting-item-control {
+	flex: 1 1 0%;
+}
+
+.ytkn-modal__stretch-input .setting-item-control input[type='text'] {
+	width: 100%;
+}
+
+.modal.mod-settings .modal-content.ytkn-modal-scroll-container,
+.modal .modal-content.ytkn-modal-scroll-container {
+	padding: 0 !important;
+}
+
+.ytkn-modal {
+	position: relative;
+	padding: 0 var(--size-4-6) var(--size-4-6);
+}
+
+.ytkn-modal__scroll-sentinel {
+	position: absolute;
+	top: 0;
+	height: 1px;
+	width: 1px;
+	pointer-events: none;
+	visibility: hidden;
+}
+
+.ytkn-modal__header-wrap {
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--size-4-5) 0 var(--size-4-4);
+	margin-bottom: var(--size-4-2);
+	background-color: var(--background-primary);
+	border-bottom: 1px solid transparent;
+	transition: background-color 0.15s ease, border-bottom-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ytkn-modal__header-wrap.is-scrolled {
+	background-color: var(--background-primary-alt);
+	border-bottom-color: var(--background-modifier-border);
+	box-shadow: var(--ytkn-surface-shadow);
+	margin-left: calc(var(--size-4-6) * -1);
+	margin-right: calc(var(--size-4-6) * -1);
+	padding-left: var(--size-4-6);
+	padding-right: var(--size-4-6);
+}
+
+.ytkn-modal__url-input {
+	font-size: var(--font-ui-medium);
+	padding: var(--size-4-3) var(--size-4-3);
+	margin-bottom: 0;
+	border-radius: var(--radius-m);
+}
+
+.ytkn-modal .setting-item.ytkn-modal__url-setting {
+	margin-bottom: 0;
+	padding-bottom: var(--size-4-1);
+}
+
+.ytkn-modal__section:first-of-type {
+	padding-top: 0;
+	margin-top: 0;
+}
+
+.ytkn-modal .setting-item {
+	border: none;
+	padding: var(--size-4-2) 0;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-2);
+}
+
+.ytkn-modal .setting-item.mod-toggle {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.ytkn-modal .setting-item-info {
+	width: 100%;
+	padding-right: 0;
+}
+
+.ytkn-modal .setting-item.mod-toggle .setting-item-info {
+	flex: 1 1 auto;
+	width: auto;
+	padding-right: var(--size-4-4);
+}
+
+.ytkn-modal .setting-item-control {
+	margin-inline-start: 0;
+	width: 100%;
+}
+
+.ytkn-modal .setting-item-control select,
+.ytkn-modal .setting-item-control textarea,
+.ytkn-modal .setting-item-control input[type='text'],
+.ytkn-modal .setting-item-control input[type='number'] {
+	width: 100%;
+}
+
+.ytkn-modal .setting-item.mod-toggle .setting-item-control {
+	width: auto;
+	flex: 0 0 auto;
+}
+
+.ytkn-modal__section-description,
+.ytkn-modal__helper-text {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ytkn-modal__intro {
+	margin-bottom: var(--size-4-4);
+}
+
+.ytkn-modal .setting-item.ytkn-modal__input-only {
+	gap: 0;
+}
+
+.ytkn-modal .setting-item.ytkn-modal__input-only .setting-item-info {
+	display: none;
+}
+
+.ytkn-modal .setting-item.ytkn-modal__input-only .setting-item-control {
+	width: 100%;
+}
+
+.ytkn-modal__helper-text+.ytkn-modal__helper-text {
+	margin-top: var(--size-4-2);
+}
+
+/* Re-stamp pill chrome inside modal cards so `.ytkn-modal .setting-item`
+   doesn't zero out horizontal padding for toggles. */
+.ytkn-modal .ytkn-settings__group-cards {
+	gap: var(--size-4-1);
+}
+
+.ytkn-modal .ytkn-settings__group-cards .setting-item {
+	padding: var(--size-4-1) var(--size-4-2);
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+	border: none;
+}
+
+
+.ytkn-settings__provider-accordions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+	margin-top: var(--size-4-4);
+}
+
+.ytkn-settings__provider-accordion {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background-color: var(--background-secondary-alt);
+	overflow: hidden;
+}
+
+.is-phone .ytkn-settings__models-list .setting-item.setting-model {
+	flex-direction: row;
+}
+
+.is-phone .ytkn-settings__models-list .setting-item.setting-model .setting-item-control {
+	margin-top: 0 !important;
+	width: auto;
+}
+
+.is-phone .setting-item.setting-model .setting-item-control button {
+	padding: 0;
+}
+
+.ytkn-settings__provider-accordion .clickable-icon {
+	padding: 0;
+	width: var(--size-4-6);
+	height: var(--size-4-6);
+	cursor: pointer;
+}
+
+.ytkn-settings__provider-header {
+	padding: var(--size-4-2) var(--size-4-3);
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background-color: transparent;
+	border-radius: var(--radius-s);
+}
+
+.ytkn-settings__provider-header h3 {
+	margin: 0;
+	font-size: var(--font-ui-medium);
+}
+
+.ytkn-settings__provider-header .clickable-icon {
+	opacity: 0;
+}
+
+.ytkn-settings__provider-accordion.is-expanded .clickable-icon,
+.ytkn-settings__provider-header:hover .clickable-icon {
+	opacity: 1;
+}
+
+.ytkn-settings__provider-info {
+	display: flex;
+	align-items: flex-start;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.ytkn-settings__provider-meta {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	flex-wrap: wrap;
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.ytkn-settings__provider-badge {
+	padding: var(--size-4-1) var(--size-4-2);
+	border-radius: var(--ytkn-radius-pill);
+	background: var(--background-modifier-hover);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	text-transform: capitalize;
+}
+
+.ytkn-settings__provider-count {
+	padding: var(--size-4-1) var(--size-4-2);
+	border-radius: var(--ytkn-radius-pill);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-medium);
+}
+
+.ytkn-settings__provider-count.is-warning {
+	border: 1px solid var(--text-error);
+	color: var(--text-error);
+	background: transparent;
+}
+
+.ytkn-settings__provider-count.is-active {
+	border: 1px solid var(--text-success);
+	color: var(--text-success);
+	background: transparent;
+}
+
+.ytkn-settings__provider-controls {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	flex-direction: row;
+}
+
+.ytkn-settings__provider-fetch {
+	color: var(--interactive-accent);
+}
+
+.ytkn-settings__collapse-icon {
+	transition: transform 0.2s ease;
+	width: var(--size-4-6);
+	height: var(--size-4-6);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.is-expanded .ytkn-settings__collapse-icon {
+	transform: rotate(180deg);
+}
+
+.ytkn-settings__provider-content {
+	padding: 0 var(--size-4-4) var(--size-4-4);
+	display: none;
+}
+
+.ytkn-settings__provider-accordion.is-expanded .ytkn-settings__provider-content {
+	display: block;
+}
+
+.ytkn-settings__models-list {
+	max-height: var(--ytkn-model-list-max-height);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-1);
+}
+
+.ytkn-settings__models-section .setting-item.setting-model {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-3) !important;
+	margin: 0;
+	border: none !important;
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+}
+
+.ytkn-settings__models-list .setting-item.setting-model .setting-item-info {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: auto;
+	padding-right: var(--size-4-2);
+}
+
+.ytkn-settings__models-list .setting-item.setting-model .setting-item-name {
+	line-height: var(--line-height-tight);
+	word-break: break-word;
+}
+
+.ytkn-settings__models-list .setting-item.setting-model .setting-item-control {
+	flex: 0 0 auto;
+	width: auto;
+	margin-inline-start: 0;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--size-4-2);
+}
+
+.ytkn-settings__model-actions {
+	display: flex;
+	gap: var(--size-4-2);
+	flex-wrap: wrap;
+	margin-top: var(--size-4-3);
+}
+
+.ytkn-settings__model-actions .setting-item {
+	border: none;
+	padding: 0;
+	margin: 0;
+}
+
+.ytkn-settings__empty-state {
+	padding: var(--size-4-2) 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ytkn-settings__modal input[disabled] {
+	color: var(--text-faint);
+}
+
+.ytkn-settings__modal-message {
+	margin-bottom: var(--size-4-4);
+}
+
+.ytkn-settings__summary-prompt {
+	width: 100%;
+	min-height: var(--ytkn-summary-prompt-min-height);
+	font-family: var(--font-monospace);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
+	border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	resize: vertical;
+}
+
+.ytkn-settings__add-button {
+	margin-top: 0;
+	border: none;
+	padding: 0;
+}
+
+.ytkn-settings__providers-header {
+	margin-top: var(--size-4-4);
+}
+
+.ytkn-settings__models-header {
+	margin-top: var(--size-4-4);
+	margin-bottom: var(--size-4-2);
+}
+
+.ytkn__status-bar--clickable {
+	cursor: var(--cursor);
+}
+
+/* ── Queue modal ─────────────────────────────────────────────────────────── */
+
+.ytkn-queue-modal__row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ytkn-queue-modal__row:last-child {
+	border-bottom: none;
+}
+
+.ytkn-queue-modal__row-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+	overflow: hidden;
+}
+
+.ytkn-queue-modal__run-title {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ytkn-queue-modal__run-status {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ytkn-queue__badge {
+	padding: var(--size-2-1) var(--size-4-1);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	white-space: nowrap;
+}
+
+.ytkn-queue__badge--running {
+	color: var(--interactive-accent);
+}
+
+.ytkn-queue__badge--queued {
+	color: var(--text-muted);
+}
+
+.ytkn-queue__badge--completed {
+	color: var(--text-success);
+}
+
+.ytkn-queue__badge--failed {
+	color: var(--text-error);
+}
+
+.ytkn-queue__badge--canceled {
+	color: var(--text-muted);
+}
+
+.ytkn-queue__badge--skipped {
+	color: var(--text-muted);
+}
+
+.ytkn-queue-modal__cancel-btn {
+	background: transparent;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-2-1) var(--size-4-2);
+	cursor: pointer;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ytkn-queue-modal__cancel-btn:hover {
+	color: var(--text-error);
+	border-color: var(--text-error);
+}
+
+.ytkn-queue-modal__empty {
+	color: var(--text-muted);
+	text-align: center;
+	padding: var(--size-4-4);
+}
+
+.ytkn-queue-modal__footer {
+	margin-top: var(--size-4-3);
+	padding-top: var(--size-4-3);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.ytkn-queue-modal__reason {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ytkn-settings__group-cards .setting-item {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-1);
+}
+
+.ytkn-settings__group-cards .setting-item-info,
+.ytkn-settings__group-cards .setting-item-control {
+	width: 100%;
+	padding-right: 0;
+}
+
+.ytkn-settings__group-cards .setting-item-control select,
+.ytkn-settings__group-cards .setting-item-control input[type='text'],
+.ytkn-settings__group-cards .setting-item-control input[type='password'],
+.ytkn-settings__group-cards .setting-item-control input[type='number'],
+.ytkn-settings__group-cards .setting-item-control textarea {
+	width: 100%;
+}
+
+.ytkn-settings__group-cards .setting-item.mod-toggle {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+}
+
+.ytkn-settings__group-cards .setting-item.mod-toggle .setting-item-info {
+	flex: 1 1 auto;
+	width: auto;
+	padding-right: var(--size-4-2);
+}
+
+.ytkn-settings__group-cards .setting-item.mod-toggle .setting-item-control {
+	width: auto;
+	flex: 0 0 auto;
+}
+
+.ytkn-settings__group-cards .setting-item.ytkn-settings__provider-field {
+	flex-direction: row;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.ytkn-settings__group-cards .setting-item.ytkn-settings__provider-field .setting-item-info {
+	flex: 1 1 auto;
+	width: auto;
+	min-width: 0;
+	padding-right: var(--size-4-2);
+}
+
+.ytkn-settings__group-cards .setting-item.ytkn-settings__provider-field .setting-item-control {
+	flex: 0 1 auto;
+	width: min(320px, 45%);
+	margin-inline-start: 0;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--size-4-2);
+}
+
+/* Dropdown rows: fit control to content, let info wrap — mirrors the mod-toggle row treatment */
+.ytkn-modal .setting-item:has(.setting-item-control > select),
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > select) {
+	flex-direction: row;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.ytkn-modal .setting-item:has(.setting-item-control > select) .setting-item-info,
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > select) .setting-item-info {
+	flex: 1 1 auto;
+	width: auto;
+	min-width: 0;
+	padding-right: var(--size-4-2);
+}
+
+.ytkn-modal .setting-item:has(.setting-item-control > select) .setting-item-control,
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > select) .setting-item-control {
+	flex: 0 0 auto;
+	width: auto;
+}
+
+.ytkn-modal .setting-item:has(.setting-item-control > select) .setting-item-control select,
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > select) .setting-item-control select {
+	width: auto;
+	max-width: 100%;
+}
+
+/* Number input and button rows: same fit-to-content treatment */
+.ytkn-modal .setting-item:has(.setting-item-control > input[type='number']),
+.ytkn-modal .setting-item:has(.setting-item-control > button:not(.clickable-icon)),
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > input[type='number']),
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > button:not(.clickable-icon)) {
+	flex-direction: row;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.ytkn-modal .setting-item:has(.setting-item-control > input[type='number']) .setting-item-info,
+.ytkn-modal .setting-item:has(.setting-item-control > button:not(.clickable-icon)) .setting-item-info,
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > input[type='number']) .setting-item-info,
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > button:not(.clickable-icon)) .setting-item-info {
+	flex: 1 1 auto;
+	width: auto;
+	min-width: 0;
+	padding-right: var(--size-4-2);
+}
+
+.ytkn-modal .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control,
+.ytkn-modal .setting-item:has(.setting-item-control > button:not(.clickable-icon)) .setting-item-control,
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control,
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > button:not(.clickable-icon)) .setting-item-control {
+	flex: 0 0 auto;
+	width: auto;
+}
+
+.ytkn-modal .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control input[type='number'],
+.ytkn-settings__group-cards .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control input[type='number'] {
+	width: var(--ytkn-number-input-width);
+	max-width: 100%;
+}
+
+/* Quick setup grid cells are narrow (2-col 1fr each) — keep them column-stacked */
+.ytkn-modal__quick-grid .setting-item:has(.setting-item-control > select),
+.ytkn-modal__quick-grid .setting-item:has(.setting-item-control > input[type='number']) {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.ytkn-modal__quick-grid .setting-item:has(.setting-item-control > select) .setting-item-info,
+.ytkn-modal__quick-grid .setting-item:has(.setting-item-control > select) .setting-item-control,
+.ytkn-modal__quick-grid .setting-item:has(.setting-item-control > input[type='number']) .setting-item-info,
+.ytkn-modal__quick-grid .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control {
+	width: 100%;
+	padding-right: 0;
+}
+
+.ytkn-modal__quick-grid .setting-item:has(.setting-item-control > select) .setting-item-control select,
+.ytkn-modal__quick-grid .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control input[type='number'] {
+	width: 100%;
+	max-width: none;
+}
+
+/* Model names can be much longer than other dropdown labels; keep this row
+   stacked so the setting title never gets squeezed out of view. */
+.ytkn-modal .setting-item.ytkn-modal__model-setting:has(.setting-item-control > select) {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.ytkn-modal .setting-item.ytkn-modal__model-setting:has(.setting-item-control > select) .setting-item-info,
+.ytkn-modal .setting-item.ytkn-modal__model-setting:has(.setting-item-control > select) .setting-item-control {
+	width: 100%;
+	padding-right: 0;
+}
+
+.ytkn-modal .setting-item.ytkn-modal__model-setting:has(.setting-item-control > select) .setting-item-control select {
+	width: 100%;
+	max-width: none;
+}
+
+.ytkn-settings__template-description {
+	margin: 0;
+	padding-top: var(--size-4-1);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-style: italic;
+}
+
+.ytkn-settings__template-card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3);
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+	margin-bottom: var(--size-4-3);
+}
+
+.ytkn-settings__group-cards .ytkn-settings__template-card .setting-item {
+	padding: 0;
+	background: transparent !important;
+	border: none !important;
+}
+
+.ytkn-settings__template-preview {
+	margin-top: var(--size-4-2);
+	background: var(--background-secondary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-4-3);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.ytkn-settings__template-preview-h2 {
+	font-weight: var(--font-bold);
+	color: var(--text-normal);
+	margin-top: var(--size-4-2);
+	margin-bottom: var(--size-4-1);
+}
+
+.ytkn-settings__template-preview-h2:first-child {
+	margin-top: 0;
+}
+
+.ytkn-settings__template-preview-li {
+	padding-left: var(--size-4-2);
+	color: var(--text-muted);
+}
+
+.ytkn-settings__collapsible>details>summary {
+	cursor: pointer;
+	font-weight: var(--font-medium);
+	color: var(--text-normal);
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	user-select: none;
+}
+
+.ytkn-settings__collapsible>details>summary::-webkit-details-marker {
+	display: none;
+}
+
+.ytkn-settings__collapsible>details>summary::before {
+	content: '▶';
+	font-size: var(--font-ui-smaller);
+	transition: transform 0.15s ease;
+	color: var(--text-muted);
+}
+
+.ytkn-settings__collapsible>details[open]>summary::before {
+	transform: rotate(90deg);
+}
+
+.ytkn-modal__actions .setting-item {
+	border: none;
+	padding: 0;
+	flex-direction: row;
+	justify-content: flex-end;
+	align-items: center;
+}
+
+.ytkn-modal__actions .setting-item-info {
+	display: none;
+}
+
+.ytkn-modal__actions .setting-item-control {
+	gap: var(--size-4-2);
+	margin-inline-start: 0;
+}
+
+.is-phone .ytkn-settings__provider-header .clickable-icon,
+.is-phone .ytkn-settings__provider-accordion .clickable-icon {
+	opacity: 1;
+}
+
+.ytkn-tabs {
+	display: flex;
+	border-bottom: 1px solid var(--background-modifier-border);
+	margin-bottom: 0;
+	gap: var(--size-4-2);
+	align-items: flex-end;
+}
+
+.ytkn-tab {
+	min-width: auto;
+	justify-content: center;
+	padding: var(--size-4-2) var(--size-4-3);
+	border: none;
+	border-bottom: 2px solid transparent;
+	border-radius: 0;
+	background: transparent;
+	margin: 0;
+	color: var(--text-muted);
+	font-weight: var(--font-medium);
+	transition: color 0.15s ease, border-color 0.15s ease;
+	cursor: pointer;
+}
+
+.ytkn-tab:hover:not(.is-active) {
+	color: var(--text-normal);
+	border-bottom-color: var(--background-modifier-border);
+	background: transparent;
+}
+
+.ytkn-tab.is-active {
+	color: var(--text-normal);
+	background: transparent;
+	border-bottom-color: var(--interactive-accent);
+	font-weight: var(--font-semibold);
+}
+
+.ytkn-tab:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+	border-radius: var(--radius-s);
+}
+
+.ytkn-tab-icon {
+	color: currentColor;
+}
+
+.ytkn-tab-panel {
+	display: none;
+}
+
+.ytkn-tab-panel.is-active {
+	display: block;
+	padding-top: var(--size-4-4);
+}
+
+.ytkn-brand-mark {
+	width: var(--ytkn-brand-mark-size);
+	height: var(--ytkn-brand-mark-size);
+	border-radius: var(--ytkn-brand-mark-radius);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	color: white;
+	background: radial-gradient(circle at 30% 20%, #c7a8ff 0, #8b5cf6 42%, #5b21b6 100%);
+	box-shadow: var(--ytkn-brand-shadow);
+}
+
+.ytkn-brand-mark svg {
+	width: var(--ytkn-brand-icon-size);
+	height: var(--ytkn-brand-icon-size);
+	stroke-width: var(--ytkn-brand-icon-stroke-width);
+	fill: currentColor;
+}
+
+.ytkn-settings {
+	max-width: var(--ytkn-settings-max-width);
+	margin: 0 auto;
+	padding: var(--size-4-8) var(--size-4-6);
+}
+
+.ytkn-settings__intro {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-8);
+}
+
+.ytkn-settings__intro-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-4);
+}
+
+.ytkn-settings__intro-copy {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--size-4-1);
+	min-width: 0;
+}
+
+.ytkn-settings__intro h2 {
+	margin: 0;
+	padding: 0;
+	font-size: var(--h1-size, 1.8em);
+	font-weight: var(--font-semibold);
+	letter-spacing: -0.02em;
+	text-align: left;
+}
+
+.ytkn-settings__intro-copy p {
+	max-width: 680px;
+	line-height: var(--line-height-tight);
+	margin: 0;
+	color: var(--text-muted);
+}
+
+.ytkn-settings__group-cards .setting-item-name,
+.ytkn-modal .setting-item-name {
+	font-weight: var(--font-medium);
+}
+
+.ytkn-settings__group-cards .setting-item-description,
+.ytkn-modal .setting-item-description {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.35;
+}
+
+.ytkn-settings__group-cards .setting-item-control select,
+.ytkn-settings__group-cards .setting-item-control input[type='text'],
+.ytkn-settings__group-cards .setting-item-control input[type='password'],
+.ytkn-modal .setting-item-control select,
+.ytkn-modal .setting-item-control input[type='text'],
+.ytkn-modal .setting-item-control input[type='number'] {
+	min-height: var(--ytkn-control-min-height);
+	border-radius: var(--ytkn-control-radius);
+	box-shadow: var(--ytkn-control-shadow);
+}
+
+.ytkn-modal__header-wrap {
+	padding: var(--size-4-4) 0 var(--size-4-2);
+	margin-bottom: 0;
+}
+
+.ytkn-modal__brand {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-4);
+	min-width: 0;
+}
+
+.ytkn-modal__brand-copy {
+	min-width: 0;
+}
+
+.ytkn-modal__title {
+	margin: 0;
+	font-size: var(--h3-size, 1.35em);
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+	letter-spacing: -0.015em;
+}
+
+.ytkn-modal__quick-area {
+	margin-bottom: var(--size-4-6);
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+/* Match `.ytkn-modal__section:first-of-type` specificity so its
+   `padding-top: 0` doesn't crush the card's intended top padding. */
+.ytkn-modal .ytkn-modal__quick-card {
+	padding: var(--size-4-4) var(--size-4-6);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--ytkn-quick-card-radius);
+	background: var(--background-primary);
+	box-shadow: var(--ytkn-surface-shadow);
+}
+
+.ytkn-modal__section-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-3);
+}
+
+.ytkn-modal__section-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--interactive-accent);
+}
+
+.ytkn-modal__section-icon svg {
+	width: 22px;
+	height: 22px;
+}
+
+.ytkn-modal__section-title {
+	margin: 0;
+	font-size: var(--h4-size, 1.08em);
+	font-weight: var(--font-semibold);
+}
+
+.ytkn-modal .setting-item.ytkn-modal__url-setting {
+	padding: 0;
+	margin-bottom: var(--size-4-2);
+}
+
+.ytkn-modal__url-input {
+	min-height: var(--ytkn-url-input-min-height);
+	box-shadow: none;
+	resize: none;
+	overflow-y: hidden;
+	line-height: 1.5;
+	font-family: var(--font-text);
+}
+
+.ytkn-modal__url-hint {
+	margin-top: calc(var(--size-4-2) * -1);
+	margin-bottom: var(--size-4-3);
+}
+
+.ytkn-modal__quick-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--size-4-4) var(--size-4-6);
+	align-items: start;
+}
+
+/* `!important` overrides Obsidian's default `.setting-item` padding and
+   top divider; the grid's own `gap` provides row spacing. */
+.ytkn-modal .ytkn-modal__quick-grid .setting-item {
+	padding: 0 !important;
+	border: none !important;
+	margin: 0 !important;
+	min-width: 0;
+}
+
+.ytkn-modal__quick-grid .ytkn__input {
+	margin-bottom: 0;
+}
+
+.ytkn-modal__quick-grid .setting-item.ytkn-modal__input-only .setting-item-control,
+.ytkn-modal__quick-grid .setting-item.ytkn-modal__input-only .setting-item-control input {
+	width: 100%;
+}
+
+.ytkn-modal__quick-top {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+	padding-bottom: var(--size-4-3);
+	margin-bottom: var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ytkn-modal__quick-top-url {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.ytkn-modal__quick-top-url .setting-item.ytkn-modal__url-setting {
+	margin-bottom: 0;
+}
+
+.ytkn-modal__quick-top-toggle {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	padding-left: var(--size-4-3);
+	border-left: 1px solid var(--background-modifier-border);
+	align-self: stretch;
+}
+
+.ytkn-modal__quick-top-toggle .setting-item.ytkn-modal__quick-toggle {
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: 0;
+	border: none;
+}
+
+.ytkn-modal__quick-top-toggle .setting-item.ytkn-modal__quick-toggle .setting-item-info {
+	width: auto;
+	padding-right: 0;
+	text-align: center;
+}
+
+.ytkn-modal__quick-top-toggle .setting-item.ytkn-modal__quick-toggle .setting-item-control {
+	width: auto;
+	margin-inline-start: 0;
+}
+
+.ytkn-modal__quick-full {
+	grid-column: 1 / -1;
+}
+
+.ytkn-modal__quick-divider {
+	grid-column: 1 / -1;
+	height: 1px;
+	background: var(--background-modifier-border);
+	margin: var(--size-4-2) 0;
+}
+
+.ytkn-modal__controls-area {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.ytkn-modal__controls-area .setting-item {
+	padding: 0 !important;
+	border: none !important;
+	margin: 0 !important;
+	min-width: 0;
+}
+
+
+.ytkn-modal__manual-prompt {
+	min-height: var(--ytkn-textarea-min-height);
+	resize: vertical;
+}
+
+.ytkn-modal__advanced-title {
+	margin: 0 0 var(--size-4-3) 0;
+	font-size: var(--h4-size, 1.08em);
+	font-weight: var(--font-semibold);
+	letter-spacing: -0.01em;
+}
+
+/* Textarea control rows: stack label above, textarea full-width below */
+.ytkn-control-row--textarea.setting-item,
+.ytkn-modal .setting-item.ytkn-control-row--textarea {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-1);
+	justify-content: flex-start;
+}
+
+.ytkn-control-row--textarea .setting-item-info,
+.ytkn-control-row--textarea .setting-item-control,
+.ytkn-modal .setting-item.ytkn-control-row--textarea .setting-item-info,
+.ytkn-modal .setting-item.ytkn-control-row--textarea .setting-item-control {
+	width: 100%;
+	padding-right: 0;
+	flex: unset;
+}
+
+.ytkn-control-row--textarea .setting-item-description,
+.ytkn-modal .setting-item.ytkn-control-row--textarea .setting-item-description {
+	margin: 0;
+}
+
+.ytkn-control-row__textarea {
+	width: 100%;
+	min-height: var(--ytkn-textarea-min-height);
+	resize: vertical;
+	font-family: var(--font-text);
+}
+
+/* Enum control rows in template card: grid so description gets
+   full 1fr width and dropdown stays top-right without moving to next line */
+.ytkn-settings__template-card .setting-item.ytkn-control-row:not(.ytkn-control-row--textarea) {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	column-gap: var(--size-4-3);
+	align-items: start;
+}
+
+.ytkn-settings__template-card .setting-item.ytkn-control-row:not(.ytkn-control-row--textarea) .setting-item-info {
+	grid-column: 1;
+	padding-right: 0;
+}
+
+.ytkn-settings__template-card .setting-item.ytkn-control-row:not(.ytkn-control-row--textarea) .setting-item-control {
+	grid-column: 2;
+	margin-inline-start: 0;
+}
+
+/* Textarea control rows in template card: stack label above, textarea full width */
+.ytkn-settings__template-card .setting-item.ytkn-control-row--textarea {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-1);
+}
+
+.ytkn-settings__template-card .setting-item.ytkn-control-row--textarea .setting-item-info,
+.ytkn-settings__template-card .setting-item.ytkn-control-row--textarea .setting-item-control {
+	width: 100%;
+	padding-right: 0;
+}
+
+.ytkn-settings__template-card .setting-item.ytkn-control-row--textarea .setting-item-control textarea {
+	width: 100%;
+}
+
+@media (min-width: 721px) {
+
+	/* Obsidian restores roomy desktop `.setting-item` spacing inside settings
+	   dialogs; keep our card rows compact on desktop while leaving mobile alone. */
+	.ytkn-settings__group-cards {
+		gap: var(--size-4-1);
+	}
+
+	.ytkn-settings__group-cards>.setting-item {
+		padding: var(--size-4-2) !important;
+		margin: 0 !important;
+	}
+
+	.ytkn-modal .ytkn-settings__group-cards>.setting-item {
+		padding: var(--size-4-1) var(--size-4-2) !important;
+	}
+}
+
+@media (max-width: 720px) {
+	.ytkn-modal__quick-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.ytkn-settings__provider-field.setting-item {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.ytkn-settings__provider-field .setting-item-info,
+	.ytkn-settings__provider-field .setting-item-control {
+		width: 100%;
+		padding-right: 0;
+	}
+
+	.ytkn-modal__header-wrap,
+	.ytkn-settings__intro {
+		align-items: flex-start;
+	}
+
+	.ytkn-brand-mark {
+		--ytkn-brand-mark-size: 40px;
+		--ytkn-brand-mark-radius: 12px;
+	}
+
+	/* Revert dropdown rows to stacked column on small screens */
+	.ytkn-modal .setting-item:has(.setting-item-control > select),
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > select) {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.ytkn-modal .setting-item:has(.setting-item-control > select) .setting-item-info,
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > select) .setting-item-info {
+		width: 100%;
+		padding-right: 0;
+	}
+
+	.ytkn-modal .setting-item:has(.setting-item-control > select) .setting-item-control,
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > select) .setting-item-control {
+		width: 100%;
+	}
+
+	.ytkn-modal .setting-item:has(.setting-item-control > select) .setting-item-control select,
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > select) .setting-item-control select {
+		width: 100%;
+		max-width: none;
+	}
+
+	/* Revert number input and button rows on small screens */
+	.ytkn-modal .setting-item:has(.setting-item-control > input[type='number']),
+	.ytkn-modal .setting-item:has(.setting-item-control > button:not(.clickable-icon)),
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > input[type='number']),
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > button:not(.clickable-icon)) {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.ytkn-modal .setting-item:has(.setting-item-control > input[type='number']) .setting-item-info,
+	.ytkn-modal .setting-item:has(.setting-item-control > button:not(.clickable-icon)) .setting-item-info,
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > input[type='number']) .setting-item-info,
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > button:not(.clickable-icon)) .setting-item-info {
+		width: 100%;
+		padding-right: 0;
+	}
+
+	.ytkn-modal .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control,
+	.ytkn-modal .setting-item:has(.setting-item-control > button:not(.clickable-icon)) .setting-item-control,
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control,
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > button:not(.clickable-icon)) .setting-item-control {
+		width: 100%;
+	}
+
+	.ytkn-modal .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control input[type='number'],
+	.ytkn-settings__group-cards .setting-item:has(.setting-item-control > input[type='number']) .setting-item-control input[type='number'] {
+		width: 100%;
+		max-width: none;
+	}
+}

@@ -1,0 +1,48 @@
+name: Quality Checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Run quality checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        # actions/checkout v6.0.2
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Set up Node.js
+        # actions/setup-node v6.3.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full ESLint scan
+        run: npm run lint:full
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm run test:run
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+
+      - name: Build production plugin
+        run: npm run build
