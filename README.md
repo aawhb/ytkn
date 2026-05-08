@@ -181,6 +181,18 @@ npm run build
 
 `npm run verify` runs the same local gate in one command.
 
+### Versioning
+
+Use native npm versioning to prepare a release version so `package.json` and `package-lock.json` stay aligned, while the repo-specific version hook keeps `manifest.json` and `versions.json` in sync.
+
+```bash
+npm run release:prep -- 1.6.0
+npm run build
+npm run sync
+```
+
+`npm run release:prep -- 1.6.0` wraps `npm version 1.6.0 --no-git-tag-version`.
+
 ### Optional sync to vault
 
 Set `OBSIDIAN_VAULT_PATH` in `.env` (see `.env.example`) to your Obsidian vault root. `npm run sync` copies `main.js`, `manifest.json`, and `styles.css` into `.obsidian/plugins/ytkn`, then attempts to reload the plugin with Obsidian CLI from that vault using `obsidian plugin:reload id=ytkn`.

@@ -4,7 +4,7 @@ import { resolveTargetVersion, updateVersionFiles } from './scripts/versioning.m
 try {
 	const targetVersion = resolveTargetVersion();
 	if (!targetVersion) {
-		throw new Error('No version specified. Pass a positional version like `npm run version -- 1.2.3`, use --version=x.y.z when invoking the node script directly, or set VERSION.');
+		throw new Error('No version specified. Run `npm version x.y.z --no-git-tag-version`, or provide an explicit version after package metadata has been updated.');
 	}
 
 	const { targetVersion: newVersion, minAppVersion } =

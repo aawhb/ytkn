@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { basename, dirname, join, normalize } from 'path';
 
-process.loadEnvFile?.();
+loadOptionalEnvFile();
 
 const configuredVaultPath = process.env.OBSIDIAN_VAULT_PATH;
 const obsidianCli = 'obsidian';
@@ -10,7 +10,7 @@ const reloadMode = resolveReloadMode();
 const pluginId = readPluginId();
 
 if (!configuredVaultPath) {
-    console.error('Error: OBSIDIAN_VAULT_PATH not found in .env');
+    console.error('Error: OBSIDIAN_VAULT_PATH is not set. Add it to .env (see .env.example) or export it in your shell.');
     process.exit(1);
 }
 
@@ -49,6 +49,16 @@ function reloadObsidian() {
         return;
     }
 
+    if (reloadMode === 'plugin') {
+        const enabledPlugins = readEnabledCommunityPlugins(syncTarget.vaultPath);
+        if (enabledPlugins && !enabledPlugins.includes(pluginId)) {
+            handleReloadFailure(
+                `Plugin "${pluginId}" is copied into the vault but is not enabled in Obsidian. Enable it in Settings → Community plugins, or set OBSIDIAN_SYNC_RELOAD=app/none.`,
+            );
+            return;
+        }
+    }
+
     const args = buildReloadArgs();
     if (!args) {
         return;
@@ -71,6 +81,14 @@ function reloadObsidian() {
     if (result.status !== 0) {
         handleReloadFailure(`Obsidian CLI exited with code ${result.status}.`);
     }
+}
+
+function loadOptionalEnvFile() {
+    if (typeof process.loadEnvFile !== 'function' || !existsSync('.env')) {
+        return;
+    }
+
+    process.loadEnvFile();
 }
 
 function buildReloadArgs() {
@@ -104,6 +122,21 @@ function resolveSyncTarget(vaultPath, pluginId) {
         pluginPath: join(normalizedVaultPath, '.obsidian', 'plugins', pluginId),
         vaultPath: normalizedVaultPath,
     };
+}
+
+function readEnabledCommunityPlugins(vaultPath) {
+    const communityPluginsPath = join(vaultPath, '.obsidian', 'community-plugins.json');
+    if (!existsSync(communityPluginsPath)) {
+        return null;
+    }
+
+    try {
+        const plugins = JSON.parse(readFileSync(communityPluginsPath, 'utf8'));
+        return Array.isArray(plugins) ? plugins.filter((plugin) => typeof plugin === 'string') : null;
+    } catch (err) {
+        console.warn(`Warning: Could not read ${communityPluginsPath}: ${err.message}`);
+        return null;
+    }
 }
 
 function inferVaultPathFromPluginPath(pluginPath, pluginId) {
