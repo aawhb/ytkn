@@ -1,0 +1,10 @@
+# Normalize text files in the repository to LF for cross-platform tooling and CI.
+* text=auto eol=lf
+
+# Binary assets should never be line-ending normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
