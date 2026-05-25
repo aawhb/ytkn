@@ -1,5 +1,9 @@
 # YT Knowledge Notes
 
+[![Quality](https://github.com/aawhb/ytkn/actions/workflows/quality.yml/badge.svg)](https://github.com/aawhb/ytkn/actions/workflows/quality.yml)
+[![CodeQL](https://github.com/aawhb/ytkn/actions/workflows/codeql.yml/badge.svg)](https://github.com/aawhb/ytkn/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/aawhb/ytkn/badge)](https://scorecard.dev/viewer/?uri=github.com/aawhb/ytkn)
+
 YT Knowledge Notes (ytkn) turns YouTube videos and playlists into structured knowledge notes in Obsidian.
 
 Paste a YouTube URL, and generate a bookmark/transcript-only note or an AI-assisted knowledge note directly in your vault.
