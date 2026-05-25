@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Check out repository
@@ -41,6 +43,15 @@ jobs:
 
       - name: Verify release metadata
         run: npm run release:check
+
+      - name: Generate artifact attestations
+        # actions/attest v4.1.0
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
 
       - name: Publish GitHub release
         env:
