@@ -2,7 +2,7 @@
 	"id": "ytkn",
 	"name": "YT Knowledge Notes",
 	"minAppVersion": "1.11.4",
-	"version": "1.6.6",
+	"version": "1.6.7",
 	"description": "Turn YouTube videos and playlists into structured knowledge notes in Obsidian.",
 	"author": "aawhb",
 	"authorUrl": "https://github.com/aawhb",
