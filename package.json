@@ -1,7 +1,7 @@
 {
 	"name": "ytkn",
-	"version": "1.6.7",
-	"description": "Turn YouTube videos and playlists into structured knowledge notes in Obsidian.",
+	"version": "1.6.8",
+	"description": "Turn YouTube videos and playlists into structured knowledge notes in your vault.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
