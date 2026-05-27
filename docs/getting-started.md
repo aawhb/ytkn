@@ -44,7 +44,7 @@ Use this when you want synthesis, template-driven notes, or structured takeaways
 3. Choose or discover a model.
 4. Keep **AI summary** enabled in the generation modal.
 
-Provider help lives in [Providers and local models](providers.md).
+Provider help lives in [Providers and local models](https://github.com/aawhb/ytkn/blob/main/docs/providers.md).
 
 ## Create your first note
 
@@ -66,7 +66,7 @@ The plugin writes Markdown directly into your vault. Depending on your settings,
 
 ## What to learn next
 
-- [Workflows](usage.md) for multiple URLs, playlists, queue behavior, and cancellation
-- [Configuration](configuration.md) for defaults and note structure
-- [Templates](templates.md) for picking the right note shape
-- [Troubleshooting](troubleshooting.md) if the first run does not behave as expected
+- [Workflows](https://github.com/aawhb/ytkn/blob/main/docs/usage.md) for multiple URLs, playlists, queue behavior, and cancellation
+- [Configuration](https://github.com/aawhb/ytkn/blob/main/docs/configuration.md) for defaults and note structure
+- [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md) for picking the right note shape
+- [Troubleshooting](https://github.com/aawhb/ytkn/blob/main/docs/troubleshooting.md) if the first run does not behave as expected

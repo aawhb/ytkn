@@ -116,9 +116,9 @@ AI-related settings cover:
 - optional Mermaid mindmap appendix
 - optional memorable quotes appendix
 
-Template-specific runtime controls show up only when they apply to the selected template. For the decision guide, see [Templates](templates.md).
+Template-specific runtime controls show up only when they apply to the selected template. For the decision guide, see [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md).
 
-For provider setup and local model help, see [Providers and local models](providers.md).
+For provider setup and local model help, see [Providers and local models](https://github.com/aawhb/ytkn/blob/main/docs/providers.md).
 
 ## Queue and run reports
 

@@ -72,6 +72,6 @@ Examples:
 
 ## Related docs
 
-- [Getting started](getting-started.md) for your first run
-- [Workflows](usage.md) for batching and playlists
-- [Configuration](configuration.md) for default template, manual instructions, and AI settings
+- [Getting started](https://github.com/aawhb/ytkn/blob/main/docs/getting-started.md) for your first run
+- [Workflows](https://github.com/aawhb/ytkn/blob/main/docs/usage.md) for batching and playlists
+- [Configuration](https://github.com/aawhb/ytkn/blob/main/docs/configuration.md) for default template, manual instructions, and AI settings

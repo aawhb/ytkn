@@ -98,4 +98,4 @@ Cancellation is best-effort. In practice that means:
 
 Use a built-in template when you want a reliable note shape with predictable sections. Switch to manual instructions when you need a one-off output format that does not match the built-in templates.
 
-Template-specific runtime controls appear only when they apply to the selected template. For help choosing one, see [Templates](templates.md).
+Template-specific runtime controls appear only when they apply to the selected template. For help choosing one, see [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md).

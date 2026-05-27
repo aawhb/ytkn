@@ -90,10 +90,10 @@ That means:
 - the plugin stores only secret IDs in its own data file
 - the plugin does not collect telemetry
 
-For security reporting and privacy notes, see [SECURITY.md](../SECURITY.md).
+For security reporting and privacy notes, see [SECURITY.md](https://github.com/aawhb/ytkn/blob/main/SECURITY.md).
 
 ## Next steps
 
-- [Getting started](getting-started.md) if you have not generated a note yet
-- [Workflows](usage.md) for batching, playlists, and queue behavior
-- [Troubleshooting](troubleshooting.md) if a provider or local model will not connect
+- [Getting started](https://github.com/aawhb/ytkn/blob/main/docs/getting-started.md) if you have not generated a note yet
+- [Workflows](https://github.com/aawhb/ytkn/blob/main/docs/usage.md) for batching, playlists, and queue behavior
+- [Troubleshooting](https://github.com/aawhb/ytkn/blob/main/docs/troubleshooting.md) if a provider or local model will not connect
