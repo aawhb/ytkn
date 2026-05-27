@@ -2,12 +2,14 @@
 
 [![Quality](https://github.com/aawhb/ytkn/actions/workflows/quality.yml/badge.svg)](https://github.com/aawhb/ytkn/actions/workflows/quality.yml)
 [![CodeQL](https://github.com/aawhb/ytkn/actions/workflows/codeql.yml/badge.svg)](https://github.com/aawhb/ytkn/actions/workflows/codeql.yml)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/aawhb/ytkn/badge)](https://scorecard.dev/viewer/?uri=github.com/aawhb/ytkn)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 YT Knowledge Notes (ytkn) turns YouTube videos and playlists into structured knowledge notes in Obsidian.
 
 Paste a YouTube URL, and generate a bookmark/transcript-only note or an AI-assisted knowledge note directly in your vault.
+
+![YT Knowledge Notes Guide](https://raw.githubusercontent.com/aawhb/ytkn/main/docs/ytkn-guide01.png)
 
 ## Why use it
 
@@ -27,7 +29,7 @@ YT Knowledge Notes includes built-in templates for:
 - **Full extract** - detailed capture of claims, examples, numbers, and quotes
 - **Research dossier** - evidence-aware notes for investigation
 
-See [Templates](docs/templates.md) for the full guide and runtime controls.
+See [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md) for the full guide and runtime controls.
 
 ## Installation
 
@@ -36,7 +38,7 @@ See [Templates](docs/templates.md) for the full guide and runtime controls.
 - **Community Plugins:** install it there like any other plugin.
 - **BRAT or Manual** add `aawhb/ytkn` to BRAT or install the latest GitHub release manually.
 
-Full setup steps: [Getting started](docs/getting-started.md)
+Full setup steps: [Getting started](https://github.com/aawhb/ytkn/blob/main/docs/getting-started.md)
 
 ## Create your first note
 
@@ -47,17 +49,17 @@ Full setup steps: [Getting started](docs/getting-started.md)
 5. Choose a template, transcript mode, and destination
 6. Click **Generate**.
 
-If you want batching, playlists, local models, or run reports, jump to [Workflows](docs/usage.md) and [Providers](docs/providers.md).
+If you want batching, playlists, local models, or run reports, jump to [Workflows](https://github.com/aawhb/ytkn/blob/main/docs/usage.md) and [Providers](https://github.com/aawhb/ytkn/blob/main/docs/providers.md).
 
 ## Documentation
 
-- [Documentation hub](docs/README.md)
-- [Getting started](docs/getting-started.md)
-- [Workflows](docs/usage.md)
-- [Configuration](docs/configuration.md)
-- [Templates](docs/templates.md)
-- [Providers and local models](docs/providers.md)
-- [Troubleshooting](docs/troubleshooting.md)
+- [Documentation hub](https://github.com/aawhb/ytkn/blob/main/docs/README.md)
+- [Getting started](https://github.com/aawhb/ytkn/blob/main/docs/getting-started.md)
+- [Workflows](https://github.com/aawhb/ytkn/blob/main/docs/usage.md)
+- [Configuration](https://github.com/aawhb/ytkn/blob/main/docs/configuration.md)
+- [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md)
+- [Providers and local models](https://github.com/aawhb/ytkn/blob/main/docs/providers.md)
+- [Troubleshooting](https://github.com/aawhb/ytkn/blob/main/docs/troubleshooting.md)
 
 ## Privacy and external services
 
@@ -67,12 +69,12 @@ If you want batching, playlists, local models, or run reports, jump to [Workflow
 - API keys are stored in Obsidian SecretStorage. The plugin data file stores only secret IDs.
 - AI-generated content is written into your notes as returned. Review it if accuracy matters.
 
-See [SECURITY.md](SECURITY.md) for the security policy and reporting guidance.
+See [SECURITY.md](https://github.com/aawhb/ytkn/blob/main/SECURITY.md) for the security policy and reporting guidance.
 
 ## Contributing
 
-If you want to help improve the plugin, start with [CONTRIBUTING.md](CONTRIBUTING.md).
+If you want to help improve the plugin, start with [CONTRIBUTING.md](https://github.com/aawhb/ytkn/blob/main/CONTRIBUTING.md).
 
 ## License
 
-GNU GPL v3 or later - see [LICENSE](LICENSE).
+GNU GPL v3 or later - see [LICENSE](https://github.com/aawhb/ytkn/blob/main/LICENSE).

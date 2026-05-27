@@ -96,7 +96,7 @@ YT Knowledge Notes also:
 - does not proxy requests through a separate service
 - does not collect telemetry
 
-See [SECURITY.md](../SECURITY.md) for the full policy.
+See [SECURITY.md](https://github.com/aawhb/ytkn/blob/main/SECURITY.md) for the full policy.
 
 ## Still stuck
 
@@ -110,4 +110,4 @@ If you open an issue, include:
 
 Do **not** include API keys, vault contents, or private transcripts in public issues.
 
-For security issues, use the private reporting flow described in [SECURITY.md](../SECURITY.md).
+For security issues, use the private reporting flow described in [SECURITY.md](https://github.com/aawhb/ytkn/blob/main/SECURITY.md).

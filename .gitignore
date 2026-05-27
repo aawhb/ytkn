@@ -23,3 +23,4 @@ data.json
 *.iml
 .DS_Store
 Thumbs.db
+.local
