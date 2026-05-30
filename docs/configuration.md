@@ -123,7 +123,9 @@ AI-related settings cover:
 - optional Mermaid mindmap appendix
 - optional memorable quotes appendix
 
-When **Use AI** is off, the plugin generates transcript-only notes with renderer-owned metadata and does not apply template tags or AI frontmatter. When **Use AI** is on but **AI summary** is off, AI can still generate enabled add-ons such as mindmaps or memorable quotes without applying the selected content template.
+When **Use AI** is off, the plugin generates renderer-owned metadata and does not apply template tags or AI frontmatter. If transcript inclusion is also off, the result is a metadata/source-only note and captions are not required. When **Use AI** is on but **AI summary** is off, AI can still generate enabled add-ons such as mindmaps or memorable quotes without applying the selected content template.
+
+Combined playlist notes require AI summary unless both **Use AI** and transcript inclusion are off. In that metadata-only case, the combined playlist note is a playlist/source index without per-video transcript fetching.
 
 Template-specific runtime controls show up only when they apply to the selected template. For the decision guide, see [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md).
 

@@ -298,7 +298,7 @@ export class GenerationOptionsModal extends Modal {
 		} else {
 			const isPlaylist = YouTubeService.isPlaylistUrl(trimmed);
 			if (isPlaylist) {
-				hintEl.setText('Playlist detected. Combined mode requires AI summary.');
+				hintEl.setText('Playlist detected. Combined mode requires AI summary unless AI and transcript are both off.');
 				hintEl.show();
 			} else if (YouTubeService.isYouTubeUrl(trimmed)) {
 				hintEl.setText('Single video detected.');
@@ -909,6 +909,7 @@ export class GenerationOptionsModal extends Modal {
 		const hasAiOutputs = this.state.generateAiSummary || this.state.includeMindmap || this.state.includeMemorableQuotes;
 		const effectiveUseAi = this.state.useAi && hasAiOutputs;
 		const effectiveGenerateAiSummary = effectiveUseAi && this.state.generateAiSummary;
+		const isMetadataOnly = !effectiveUseAi && this.state.transcriptMode === 'none';
 
 		if (!trimmedUrl) {
 			new Notice('Paste a YouTube video or playlist URL to continue.');
@@ -944,19 +945,12 @@ export class GenerationOptionsModal extends Modal {
 		}
 
 		if (
-			!effectiveUseAi &&
-			this.state.transcriptMode === 'none'
-		) {
-			new Notice('Enable transcript inclusion or at least one AI output.');
-			return;
-		}
-
-		if (
 			!effectiveGenerateAiSummary &&
+			!isMetadataOnly &&
 			this.state.playlistMode === 'combined' &&
 			urls.some((u) => YouTubeService.isPlaylistUrl(u))
 		) {
-			new Notice('Combined playlist notes require AI summary. Switch to per-video for transcript-only runs.');
+			new Notice('Combined playlist notes require AI summary unless AI and transcript are both off. Switch to per-video for transcript-only or AI add-on-only runs.');
 			return;
 		}
 

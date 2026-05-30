@@ -3,6 +3,7 @@ import { VIDEO_ID_REGEX } from '../defaults';
 import {
 	PlaylistEntry,
 	PlaylistResponse,
+	TranscriptResponse,
 	TranscriptFetchResult,
 	TranscriptLanguageMode,
 	TranscriptLine,
@@ -420,6 +421,33 @@ function bestThumbnailUrl(videoId: string, thumbnails: Thumbnail[] | undefined):
 	return best?.url ?? `https://img.youtube.com/vi/${videoId}/${THUMBNAIL_SLUGS.high}.jpg`;
 }
 
+function buildTranscriptResponseFromPlayer(
+	url: string,
+	videoId: string,
+	player: PlayerEnvelope,
+	lines: TranscriptLine[],
+): TranscriptResponse {
+	const details = player.videoDetails;
+	const thumbnailUrl = bestThumbnailUrl(videoId, details?.thumbnail?.thumbnails);
+	const description = details?.shortDescription ? normalizeHtmlText(details.shortDescription) : undefined;
+	const durationSeconds = parsePositiveInteger(details?.lengthSeconds);
+	const keywords = normalizeStringList(details?.keywords);
+
+	return {
+		url,
+		videoId,
+		title: normalizeHtmlText(details?.title ?? UNKNOWN_VALUE),
+		author: normalizeHtmlText(details?.author ?? UNKNOWN_VALUE),
+		...(details?.channelId ? { channelId: details.channelId } : {}),
+		channelUrl: details?.channelId ? `https://www.youtube.com/channel/${details.channelId}` : '',
+		...(description ? { description } : {}),
+		thumbnailUrl,
+		...(durationSeconds !== undefined ? { durationSeconds } : {}),
+		...(keywords ? { keywords } : {}),
+		lines,
+	};
+}
+
 function parseCaptionXml(xml: string): TranscriptLine[] {
 	const paragraphLines = parseCaptionElements(xml, /<p\s+([^>]+)>([\s\S]*?)<\/p>/g, (attributes) => {
 		const match = attributes.match(/\bt="(\d+)"/);
@@ -678,6 +706,20 @@ export class YouTubeService {
 		return playlistTitleFromPayload(payload) ?? htmlDocumentTitle(html) ?? `Playlist ${playlistId}`;
 	}
 
+	async fetchVideoMetadata(url: string): Promise<TranscriptResponse> {
+		try {
+			const videoId = YouTubeService.extractVideoId(url);
+			if (!videoId) {
+				throw new Error('Invalid YouTube URL');
+			}
+
+			const player = await requestPlayer(videoId);
+			return buildTranscriptResponseFromPlayer(url, videoId, player, []);
+		} catch (error) {
+			throw new Error(`Failed to fetch video metadata: ${getErrorMessage(error)}`);
+		}
+	}
+
 	async fetchTranscript(
 		url: string,
 		options: { languageMode?: TranscriptLanguageMode; preferredLanguageCode?: string } = {},
@@ -704,27 +746,10 @@ export class YouTubeService {
 			}
 
 			const lines = await requestCaptionLines(selectedTrack.baseUrl);
-			const details = player.videoDetails;
-			const thumbnailUrl = bestThumbnailUrl(videoId, details?.thumbnail?.thumbnails);
-			const description = details?.shortDescription ? normalizeHtmlText(details.shortDescription) : undefined;
-			const durationSeconds = parsePositiveInteger(details?.lengthSeconds);
-			const keywords = normalizeStringList(details?.keywords);
 
 			return {
 				languageCode: selectedTrack.languageCode,
-				transcript: {
-					url,
-					videoId,
-					title: normalizeHtmlText(details?.title ?? UNKNOWN_VALUE),
-					author: normalizeHtmlText(details?.author ?? UNKNOWN_VALUE),
-					...(details?.channelId ? { channelId: details.channelId } : {}),
-					channelUrl: details?.channelId ? `https://www.youtube.com/channel/${details.channelId}` : '',
-					...(description ? { description } : {}),
-					thumbnailUrl,
-					...(durationSeconds !== undefined ? { durationSeconds } : {}),
-					...(keywords ? { keywords } : {}),
-					lines,
-				},
+				transcript: buildTranscriptResponseFromPlayer(url, videoId, player, lines),
 			};
 		} catch (error) {
 			throw new Error(`Failed to fetch transcript: ${getErrorMessage(error)}`);

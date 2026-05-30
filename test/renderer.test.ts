@@ -228,6 +228,31 @@ describe('renderVideoNote', () => {
 		expect(content).not.toContain('Ignore me');
 	});
 
+	it('renders metadata-only playlist notes from playlist entries', () => {
+		const metadataOnlyPlaylist = {
+			...playlist,
+			entries: [
+				{ videoId: '123', url: 'https://youtube.com/watch?v=123', position: 1, title: 'Video A' },
+				{ videoId: '456', url: 'https://youtube.com/watch?v=456', position: 2, title: 'Video B' },
+			],
+			transcripts: [],
+		};
+
+		const { content } = renderPlaylistNote(
+			metadataOnlyPlaylist as any,
+			null,
+			null,
+			{ transcriptMode: 'none' },
+			null,
+		);
+
+		expect(content).toContain('videoCount: 2');
+		expect(content).toContain('- Video count: 2');
+		expect(content).toContain('1. [Video A](https://youtube.com/watch?v=123)');
+		expect(content).toContain('2. [Video B](https://youtube.com/watch?v=456)');
+		expect(content).not.toContain('Playlist transcripts');
+	});
+
 	it('uses the playlist URL for default media embed when no thumbnail URL is provided', () => {
 		const { content } = renderPlaylistNote(
 			playlist as any,

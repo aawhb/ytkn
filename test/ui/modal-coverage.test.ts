@@ -339,6 +339,52 @@ describe('GenerationOptionsModal submit — multi-URL', () => {
 		expect(options.tldrCalloutAtTop).toBe(false);
 	});
 
+	it('allows metadata-only video output when AI and transcript are off', () => {
+		const modal = openWithUrl(VIDEO_URL, {
+			useAi: false,
+			generateAiSummary: false,
+			includeMindmap: false,
+			includeMemorableQuotes: false,
+			transcriptMode: 'none',
+		});
+		clickSubmit(modal);
+		expect(onSubmit).toHaveBeenCalledOnce();
+		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
+		expect(options.useAi).toBe(false);
+		expect(options.generateAiSummary).toBe(false);
+		expect(options.transcriptMode).toBe('none');
+	});
+
+	it('allows combined playlist output when AI and transcript are both off', () => {
+		const modal = openWithUrl(PLAYLIST_URL, {
+			useAi: false,
+			generateAiSummary: false,
+			includeMindmap: false,
+			includeMemorableQuotes: false,
+			transcriptMode: 'none',
+			playlistMode: 'combined',
+		});
+		clickSubmit(modal);
+		expect(onSubmit).toHaveBeenCalledOnce();
+		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
+		expect(options.playlistMode).toBe('combined');
+		expect(options.useAi).toBe(false);
+		expect(options.transcriptMode).toBe('none');
+	});
+
+	it('blocks combined playlist transcript-only output', () => {
+		const modal = openWithUrl(PLAYLIST_URL, {
+			useAi: false,
+			generateAiSummary: false,
+			includeMindmap: false,
+			includeMemorableQuotes: false,
+			transcriptMode: 'readable',
+			playlistMode: 'combined',
+		});
+		clickSubmit(modal);
+		expect(onSubmit).not.toHaveBeenCalled();
+	});
+
 	it('multi-URL valid paste passes all URLs to onSubmit', () => {
 		const modal = openWithUrl(`${VIDEO_URL}, ${PLAYLIST_URL}`);
 		clickSubmit(modal);

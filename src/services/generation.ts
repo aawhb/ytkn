@@ -61,6 +61,11 @@ interface AiExecutionContext {
 	promptService: PromptService;
 }
 
+interface VideoDataFetchResult {
+	transcript: TranscriptResponse;
+	languageCode?: string;
+}
+
 export class GenerationService {
 	constructor(
 		private app: App,
@@ -78,8 +83,8 @@ export class GenerationService {
 
 		try {
 			let effectiveOptions = run.options;
-			const aiContext = this.buildAiExecutionContext(effectiveOptions);
 			this.validateGenerationOptions(run.url, effectiveOptions);
+			const aiContext = this.buildAiExecutionContext(effectiveOptions);
 
 			const initialTarget = await this.resolveInitialTarget(run);
 
@@ -223,12 +228,13 @@ export class GenerationService {
 	}
 
 	private validateGenerationOptions(url: string, effectiveOptions: GenerationOptions): void {
-		if (!this.shouldUseAi(effectiveOptions) && effectiveOptions.transcriptMode === 'none') {
-			throw new Error('Enable transcript inclusion or at least one AI output.');
-		}
-
-		if (YouTubeService.isPlaylistUrl(url) && effectiveOptions.playlistMode === 'combined' && !this.shouldGenerateAiSummary(effectiveOptions)) {
-			throw new Error('Combined playlist notes require AI summary generation. Use per-video mode for transcript-only runs.');
+		if (
+			YouTubeService.isPlaylistUrl(url) &&
+			effectiveOptions.playlistMode === 'combined' &&
+			!this.shouldGenerateAiSummary(effectiveOptions) &&
+			!this.isMetadataOnlyRun(effectiveOptions)
+		) {
+			throw new Error('Combined playlist notes require AI summary generation unless AI and transcript are both off. Use per-video mode for transcript-only or AI add-on-only runs.');
 		}
 	}
 
@@ -260,6 +266,10 @@ export class GenerationService {
 
 	private shouldGenerateAiSummary(effectiveOptions: GenerationOptions): boolean {
 		return this.shouldUseAi(effectiveOptions) && this.wantsAiSummary(effectiveOptions);
+	}
+
+	private isMetadataOnlyRun(effectiveOptions: GenerationOptions): boolean {
+		return !this.shouldUseAi(effectiveOptions) && effectiveOptions.transcriptMode === 'none';
 	}
 
 	private resolveSelectedModel(modelId?: string): ModelConfig | null {
@@ -559,6 +569,17 @@ export class GenerationService {
 		return result;
 	}
 
+	private async fetchVideoDataForUrl(url: string, effectiveOptions: GenerationOptions, signal: AbortSignal): Promise<VideoDataFetchResult> {
+		if (!this.isMetadataOnlyRun(effectiveOptions)) {
+			return this.fetchTranscriptForUrl(url, effectiveOptions, signal);
+		}
+
+		if (signal.aborted) throw signal.reason;
+		const transcript = await this.youtubeService.fetchVideoMetadata(url);
+		if (signal.aborted) throw signal.reason;
+		return { transcript };
+	}
+
 	private getTranscriptFetchOptions(effectiveOptions: GenerationOptions): {
 		languageMode?: GenerationOptions['transcriptLanguageMode'];
 		preferredLanguageCode?: string;
@@ -641,7 +662,7 @@ export class GenerationService {
 			progressState.hasProgressContent = true;
 		}
 
-		const thumbnailUrl = YouTubeService.getThumbnailUrl(transcript.videoId);
+		const thumbnailUrl = transcript.thumbnailUrl ?? YouTubeService.getThumbnailUrl(transcript.videoId);
 		const generateSummary = this.shouldGenerateAiSummary(effectiveOptions);
 		const summary = aiContext
 			? await this.generateAiText(aiContext, transcript, url, target, progressState, signal, generateSummary)
@@ -676,12 +697,14 @@ export class GenerationService {
 	): Promise<{ notePath: string | null; transcriptLanguageCode: string | undefined; warnings: string[] }> {
 		let target: NoteInsertionTarget | null = initialTarget;
 		let titleToRenameTo: string | null = null;
+		const metadataOnly = this.isMetadataOnlyRun(effectiveOptions);
+		const fetchStatus = metadataOnly ? 'Fetching video metadata...' : 'Fetching transcript...';
 
 		if (effectiveOptions.noteDestinationMode === 'current-note') {
 			if (!target) {
 				throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
 			}
-			await this.showProgress(target, url, 'Fetching transcript...', progressState);
+			await this.showProgress(target, url, fetchStatus, progressState);
 		} else if (effectiveOptions.noteDestinationMode === 'append-to-active-note') {
 			if (!target) {
 				throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
@@ -689,10 +712,10 @@ export class GenerationService {
 			// Skip showProgress — do not write progress markers into the user's existing note
 		}
 
-		this.onStatusBar('Fetching transcript…');
-		new Notice('Fetching video transcript…');
-		const transcriptResult = await this.fetchTranscriptForUrl(url, effectiveOptions, signal);
-		const transcript = transcriptResult.transcript;
+		this.onStatusBar(metadataOnly ? 'Fetching video metadata…' : 'Fetching transcript…');
+		new Notice(metadataOnly ? 'Fetching video metadata…' : 'Fetching video transcript…');
+		const videoData = await this.fetchVideoDataForUrl(url, effectiveOptions, signal);
+		const transcript = videoData.transcript;
 
 		if (effectiveOptions.noteDestinationMode === 'folder') {
 			target = await this.createFolderTarget(
@@ -721,8 +744,55 @@ export class GenerationService {
 			throw error;
 		}
 
-		new Notice(aiContext ? 'Knowledge note generated.' : 'Transcript note generated.');
-		return { notePath: target.file.path, transcriptLanguageCode: transcriptResult.languageCode, warnings };
+		new Notice(aiContext ? 'Knowledge note generated.' : metadataOnly ? 'Metadata note generated.' : 'Transcript note generated.');
+		return { notePath: target.file.path, transcriptLanguageCode: videoData.languageCode, warnings };
+	}
+
+	private async generateCombinedMetadataPlaylistNote(
+		playlist: PlaylistResponse,
+		initialTarget: NoteInsertionTarget | null,
+		effectiveOptions: GenerationOptions,
+		progressState: ProgressState,
+		signal: AbortSignal,
+	): Promise<{ notePath: string | null; entries: PlaylistRunReportEntry[] }> {
+		if ((effectiveOptions.noteDestinationMode === 'current-note' || effectiveOptions.noteDestinationMode === 'append-to-active-note') && !initialTarget) {
+			throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
+		}
+
+		if (signal.aborted) {
+			throw signal.reason;
+		}
+
+		const isAppendMode = effectiveOptions.noteDestinationMode === 'append-to-active-note';
+		const target: NoteInsertionTarget = effectiveOptions.noteDestinationMode === 'folder'
+			? await this.createFolderTarget(
+				effectiveOptions.noteDestinationFolder ?? '',
+				this.getCombinedPlaylistBaseName(playlist, effectiveOptions),
+			)
+			: initialTarget!;
+
+		const titleToRenameTo = effectiveOptions.noteDestinationMode === 'current-note' && effectiveOptions.useVideoTitleAsNoteName
+			? playlist.title
+			: null;
+
+		if (!isAppendMode) {
+			await this.showProgress(target, playlist.url, 'Rendering playlist metadata...', progressState);
+		}
+		this.onStatusBar('Rendering playlist metadata...');
+
+		const playlistForRender: PlaylistTranscriptResponse = { ...playlist, transcripts: [] };
+		const { content } = renderPlaylistNote(playlistForRender, null, null, effectiveOptions, null, isAppendMode ? 'fragment' : 'standalone');
+		if (isAppendMode) {
+			await this.appendContentToTarget(target, content);
+			target.finalized = true;
+		} else {
+			await this.finalizeTargetNote(target, content, titleToRenameTo, progressState);
+		}
+
+		const notePath = target.file.path;
+		const entries = playlist.entries.map((entry) => this.buildPlaylistReportEntry(entry, 'completed', { notePath }));
+		new Notice(`Playlist metadata note generated (${entries.length} completed).`);
+		return { notePath, entries };
 	}
 
 	private async generateCombinedPlaylistNote(
@@ -733,8 +803,12 @@ export class GenerationService {
 		progressState: ProgressState,
 		signal: AbortSignal,
 	): Promise<{ notePath: string | null; entries: PlaylistRunReportEntry[] }> {
+		if (this.isMetadataOnlyRun(effectiveOptions)) {
+			return this.generateCombinedMetadataPlaylistNote(playlist, initialTarget, effectiveOptions, progressState, signal);
+		}
+
 		if (!aiContext) {
-			throw new Error('Combined playlist notes require AI summary generation.');
+			throw new Error('Combined playlist notes require AI summary generation unless AI and transcript are both off.');
 		}
 
 		if ((effectiveOptions.noteDestinationMode === 'current-note' || effectiveOptions.noteDestinationMode === 'append-to-active-note') && !initialTarget) {
@@ -871,6 +945,7 @@ export class GenerationService {
 		}
 
 		const reportEntries: PlaylistRunReportEntry[] = [];
+		const metadataOnly = this.isMetadataOnlyRun(effectiveOptions);
 
 		for (const [index, entry] of playlist.entries.entries()) {
 			if (signal.aborted) {
@@ -887,12 +962,14 @@ export class GenerationService {
 						throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
 					}
 					target = initialTarget;
-					await this.showProgress(target, entry.url, 'Fetching transcript...', progressState);
+					await this.showProgress(target, entry.url, metadataOnly ? 'Fetching video metadata...' : 'Fetching transcript...', progressState);
 				}
 
-				this.onStatusBar(`Fetching playlist transcript ${index + 1}/${playlist.entries.length}...`);
-				const transcriptResult = await this.fetchTranscriptForUrl(entry.url, effectiveOptions, signal);
-				const transcript = transcriptResult.transcript;
+				this.onStatusBar(metadataOnly
+					? `Fetching playlist video metadata ${index + 1}/${playlist.entries.length}...`
+					: `Fetching playlist transcript ${index + 1}/${playlist.entries.length}...`);
+				const videoData = await this.fetchVideoDataForUrl(entry.url, effectiveOptions, signal);
+				const transcript = videoData.transcript;
 
 				if (!target) {
 					const baseName = this.getPerVideoBaseName(playlist, transcript, index + 1, effectiveOptions);
@@ -914,7 +991,7 @@ export class GenerationService {
 
 				reportEntries.push(this.buildPlaylistReportEntry(entry, 'completed', {
 					title: transcript.title,
-					transcriptLanguageCode: transcriptResult.languageCode,
+					transcriptLanguageCode: videoData.languageCode,
 					notePath: target.file.path,
 					warnings: videoWarnings.length > 0 ? videoWarnings : undefined,
 				}));

@@ -268,7 +268,8 @@ function buildPlaylistFrontmatter(
 	}
 
 	if (allowlist.has('videoCount')) {
-		lines.push(`videoCount: ${playlist.transcripts.length}`);
+		const videoCount = playlist.transcripts.length > 0 ? playlist.transcripts.length : playlist.entries.length;
+		lines.push(`videoCount: ${videoCount}`);
 	}
 
 	if (allowlist.has('playlistUrl')) {
@@ -479,13 +480,28 @@ function buildTranscriptDetails(
 }
 
 function buildPlaylistSourceSection(playlist: PlaylistTranscriptResponse): string {
-	const videoLines = playlist.transcripts
-		.map((transcript, index) => `${index + 1}. [${transcript.title}](${transcript.url}) - ${transcript.author}`)
+	const videoItems = playlist.transcripts.length > 0
+		? playlist.transcripts.map((transcript) => ({
+			title: transcript.title,
+			url: transcript.url,
+			author: transcript.author,
+		}))
+		: playlist.entries.map((entry) => ({
+			title: entry.title,
+			url: entry.url,
+			author: null,
+		}));
+	const videoLines = videoItems
+		.map((item, index) => {
+			const authorSuffix = item.author ? ` - ${item.author}` : '';
+			return `${index + 1}. [${item.title}](${item.url})${authorSuffix}`;
+		})
 		.join('\n');
+	const videoCount = videoItems.length;
 
 	return `## Source
 - Playlist: [${playlist.title}](${playlist.url})
-- Video count: ${playlist.transcripts.length}
+- Video count: ${videoCount}
 
 ### Videos
 ${videoLines}`;

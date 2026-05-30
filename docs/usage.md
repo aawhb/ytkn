@@ -46,7 +46,7 @@ Playlist URLs support two modes:
 - **Per video** - create one note per video in the playlist
 - **Combined** - create one note that synthesizes the whole playlist
 
-Combined playlist notes require AI summary generation. Per-video playlist notes work with AI-assisted output or transcript-only output.
+Combined playlist notes require AI summary generation unless both AI and transcript inclusion are off. In that metadata-only case, the combined note is a playlist/source index. Per-video playlist notes work with AI-assisted, transcript-only, or metadata-only output.
 
 Important playlist rules:
 

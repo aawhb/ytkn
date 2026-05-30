@@ -606,6 +606,81 @@ describe('YouTubeService.fetchTranscript', () => {
 	});
 });
 
+describe('YouTubeService.fetchVideoMetadata', () => {
+	it('fetches player metadata without requiring caption tracks', async () => {
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			if (request.url.includes('/youtubei/v1/player')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						videoDetails: {
+							title: 'Metadata &amp; Only',
+							author: 'Author &amp; Channel',
+							channelId: 'UC123',
+							shortDescription: 'A metadata &amp; description.',
+							lengthSeconds: '456',
+							keywords: ['Topic', 'Topic', 'Manual &amp; notes'],
+							thumbnail: {
+								thumbnails: [
+									{ url: 'https://img.example/small.jpg', width: 120, height: 90 },
+									{ url: 'https://img.example/large.jpg', width: 640, height: 360 },
+								],
+							},
+						},
+					}),
+				};
+			}
+
+			throw new Error(`Unexpected request: ${request.url}`);
+		});
+
+		const svc = new YouTubeService();
+		const result = await svc.fetchVideoMetadata('https://www.youtube.com/watch?v=abcdefghijk');
+
+		expect(result).toEqual({
+			url: 'https://www.youtube.com/watch?v=abcdefghijk',
+			videoId: 'abcdefghijk',
+			title: 'Metadata & Only',
+			author: 'Author & Channel',
+			channelId: 'UC123',
+			channelUrl: 'https://www.youtube.com/channel/UC123',
+			description: 'A metadata & description.',
+			thumbnailUrl: 'https://img.example/large.jpg',
+			durationSeconds: 456,
+			keywords: ['Topic', 'Manual & notes'],
+			lines: [],
+		});
+		expect(spy).toHaveBeenCalledTimes(1);
+		spy.mockRestore();
+	});
+
+	it('keeps unavailable video failures explicit', async () => {
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockResolvedValue({
+			json: {},
+			text: JSON.stringify({
+				playabilityStatus: {
+					status: 'LOGIN_REQUIRED',
+					reason: 'Sign in to confirm your age',
+				},
+			}),
+		});
+
+		const svc = new YouTubeService();
+		await expect(svc.fetchVideoMetadata('https://www.youtube.com/watch?v=abcdefghijk')).rejects.toThrow(
+			/^Failed to fetch video metadata: This video requires login to view/,
+		);
+		spy.mockRestore();
+	});
+
+	it('preserves the metadata failure prefix callers can classify', async () => {
+		const svc = new YouTubeService();
+
+		await expect(svc.fetchVideoMetadata('not a YouTube URL')).rejects.toThrow(
+			/^Failed to fetch video metadata: Invalid YouTube URL/,
+		);
+	});
+});
+
 describe('YouTubeService.fetchPlaylist', () => {
 	function htmlWithInitialData(payload: unknown): string {
 		return `<!doctype html><script>var ytInitialData = ${JSON.stringify(payload)};</script>`;
