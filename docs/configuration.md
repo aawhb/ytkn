@@ -13,7 +13,7 @@ The settings page stores your defaults. The generation modal can override most o
 
 Out of the box, the plugin starts from a practical default setup:
 
-- AI summary enabled
+- AI and AI summary enabled
 - **General knowledge note** as the default template
 - timestamped transcripts
 - **Insert at caret** as the destination
@@ -113,6 +113,8 @@ Playlist transcript failures can either:
 
 AI-related settings cover:
 
+- whether a run uses AI at all
+- whether AI generates the main summary/template body
 - built-in templates vs manual instructions
 - default model selection
 - temperature, when supported by the chosen provider
@@ -120,6 +122,8 @@ AI-related settings cover:
 - optional TL;DR summary callout at the top of the note
 - optional Mermaid mindmap appendix
 - optional memorable quotes appendix
+
+When **Use AI** is off, the plugin generates transcript-only notes with renderer-owned metadata and does not apply template tags or AI frontmatter. When **Use AI** is on but **AI summary** is off, AI can still generate enabled add-ons such as mindmaps or memorable quotes without applying the selected content template.
 
 Template-specific runtime controls show up only when they apply to the selected template. For the decision guide, see [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md).
 

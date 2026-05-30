@@ -523,8 +523,26 @@ export class SettingsTab extends PluginSettingTab {
 	private displayGenAiDefaultsSection(containerEl: HTMLElement): void {
 		const outputDefaults = this.settings.getOutputDefaults();
 		new Setting(containerEl)
-			.setName('Generate AI summary by default')
+			.setName('Use AI by default')
 			.setDesc('Off = transcript-only notes when transcript inclusion is enabled.')
+			.addToggle((toggle) =>
+				toggle
+					.setValue(outputDefaults.useAi)
+					.onChange(async (value) => {
+						await this.updateOutputDefaults({
+							useAi: value,
+						});
+						this.reload();
+					}),
+			);
+
+		if (!outputDefaults.useAi) {
+			return;
+		}
+
+		new Setting(containerEl)
+			.setName('Generate AI summary by default')
+			.setDesc('Create the template/manual AI note body. Mindmap and memorable quotes can be enabled separately.')
 			.addToggle((toggle) =>
 				toggle
 					.setValue(outputDefaults.generateAiSummary)
@@ -532,12 +550,14 @@ export class SettingsTab extends PluginSettingTab {
 						await this.updateOutputDefaults({
 							generateAiSummary: value,
 						});
+						this.reload();
 					}),
 			);
 
 		this.displayInstructionConfigSection(
 			containerEl,
 			this.settings.getInstructionConfig(),
+			outputDefaults.generateAiSummary,
 		);
 	}
 
@@ -599,109 +619,112 @@ export class SettingsTab extends PluginSettingTab {
 	private displayInstructionConfigSection(
 		containerEl: HTMLElement,
 		instructionConfig: InstructionConfig,
+		showSummaryConfig = true,
 	): void {
-		new Setting(containerEl)
-			.setName('Instruction style')
-			.setDesc(
-				'Pick a built-in template or write your own instructions for the AI.',
-			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOptions({
-						template: 'Built-in template',
-						manual: 'Fully manual',
-					})
-					.setValue(instructionConfig.mode)
-					.onChange(async (value) => {
-						await this.updateInstructionConfig({
-							...instructionConfig,
-							mode: value as InstructionMode,
-						});
-						this.reload();
-					}),
-			);
-
-		if (instructionConfig.mode === 'template') {
-			const choice = findTemplateChoice(instructionConfig.template);
-			const templateCard = containerEl.createDiv({ cls: 'ytkn-settings__template-card' });
-
-			new Setting(templateCard)
-				.setName('Default content template')
-				.addDropdown((dropdown) => {
-					populateTemplateDropdown(dropdown.selectEl);
+		if (showSummaryConfig) {
+			new Setting(containerEl)
+				.setName('Instruction style')
+				.setDesc(
+					'Pick a built-in template or write your own instructions for the AI.',
+				)
+				.addDropdown((dropdown) =>
 					dropdown
-						.setValue(instructionConfig.template)
+						.addOptions({
+							template: 'Built-in template',
+							manual: 'Fully manual',
+						})
+						.setValue(instructionConfig.mode)
 						.onChange(async (value) => {
 							await this.updateInstructionConfig({
 								...instructionConfig,
-								template: value as InstructionTemplate,
+								mode: value as InstructionMode,
 							});
 							this.reload();
-						});
-				});
-			if (choice) {
-				templateCard.createEl('p', {
-					cls: 'ytkn-settings__template-description',
-					text: choice.subtitle,
-				});
-			}
+						}),
+				);
 
-			if (choice && (choice.controls?.length ?? 0) > 0) {
-				renderTemplateControls(templateCard, choice.controls!, instructionConfig.controlValues ?? {}, (id, val) => {
-					void this.updateInstructionConfig({
-						...instructionConfig,
-						controlValues: { ...instructionConfig.controlValues, [id]: val },
-					}).then(() => this.reload());
-				});
-			}
+			if (instructionConfig.mode === 'template') {
+				const choice = findTemplateChoice(instructionConfig.template);
+				const templateCard = containerEl.createDiv({ cls: 'ytkn-settings__template-card' });
 
-			if (choice) {
-				const previewWrap = templateCard.createDiv({ cls: 'ytkn-settings__collapsible' });
-				const previewDetails = previewWrap.createEl('details');
-				previewDetails.createEl('summary', { text: 'Show preview' });
-				const previewBox = previewDetails.createDiv({ cls: 'ytkn-settings__template-preview' });
-				renderTemplatePreview(previewBox, choice.body);
-			}
-		} else {
-			new Setting(containerEl)
-				.setName('Manual instructions')
-				.setDesc(
-					'Custom prompt. The video metadata block is still added automatically.',
-				)
-				.addTextArea((text) =>
-					text
-						.setPlaceholder('You are an assistant that extracts ...')
-						.setValue(instructionConfig.manualInstructions)
-						.onChange(async (value) => {
-							await this.updateInstructionConfig({
-								...instructionConfig,
-								manualInstructions: value,
+				new Setting(templateCard)
+					.setName('Default content template')
+					.addDropdown((dropdown) => {
+						populateTemplateDropdown(dropdown.selectEl);
+						dropdown
+							.setValue(instructionConfig.template)
+							.onChange(async (value) => {
+								await this.updateInstructionConfig({
+									...instructionConfig,
+									template: value as InstructionTemplate,
+								});
+								this.reload();
 							});
-						})
-						.then((textArea) => {
-							textArea.inputEl.addClass(
-								'ytkn-settings__summary-prompt',
-							);
+					});
+				if (choice) {
+					templateCard.createEl('p', {
+						cls: 'ytkn-settings__template-description',
+						text: choice.subtitle,
+					});
+				}
+
+				if (choice && (choice.controls?.length ?? 0) > 0) {
+					renderTemplateControls(templateCard, choice.controls!, instructionConfig.controlValues ?? {}, (id, val) => {
+						void this.updateInstructionConfig({
+							...instructionConfig,
+							controlValues: { ...instructionConfig.controlValues, [id]: val },
+						}).then(() => this.reload());
+					});
+				}
+
+				if (choice) {
+					const previewWrap = templateCard.createDiv({ cls: 'ytkn-settings__collapsible' });
+					const previewDetails = previewWrap.createEl('details');
+					previewDetails.createEl('summary', { text: 'Show preview' });
+					const previewBox = previewDetails.createDiv({ cls: 'ytkn-settings__template-preview' });
+					renderTemplatePreview(previewBox, choice.body);
+				}
+			} else {
+				new Setting(containerEl)
+					.setName('Manual instructions')
+					.setDesc(
+						'Custom prompt. The video metadata block is still added automatically.',
+					)
+					.addTextArea((text) =>
+						text
+							.setPlaceholder('You are an assistant that extracts ...')
+							.setValue(instructionConfig.manualInstructions)
+							.onChange(async (value) => {
+								await this.updateInstructionConfig({
+									...instructionConfig,
+									manualInstructions: value,
+								});
+							})
+							.then((textArea) => {
+								textArea.inputEl.addClass(
+									'ytkn-settings__summary-prompt',
+								);
+							}),
+					);
+			}
+
+			const outputDefaults = this.settings.getOutputDefaults();
+
+			new Setting(containerEl)
+				.setName('Add summary callout')
+				.setDesc(
+					'Tl;dr section in a summary callout',
+				)
+				.addToggle((toggle) =>
+					toggle
+						.setValue(outputDefaults.tldrCalloutAtTop)
+						.onChange(async (value) => {
+							await this.updateOutputDefaults({
+								tldrCalloutAtTop: value,
+							});
 						}),
 				);
 		}
-
-		const outputDefaults = this.settings.getOutputDefaults();
-
-		new Setting(containerEl)
-			.setName('Add summary callout')
-			.setDesc(
-				'Tl;dr section in a summary callout',
-			)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(outputDefaults.tldrCalloutAtTop)
-					.onChange(async (value) => {
-						await this.updateOutputDefaults({
-							tldrCalloutAtTop: value,
-						});
-					}),
-			);
 
 		new Setting(containerEl)
 			.setName('Add mermaid mindmap')

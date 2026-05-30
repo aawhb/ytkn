@@ -39,6 +39,7 @@ export interface InstructionConfig {
 }
 
 export interface OutputDefaults {
+	useAi: boolean;
 	generateAiSummary: boolean;
 	transcriptMode: TranscriptMode;
 	playlistMode: PlaylistMode;
@@ -60,6 +61,7 @@ export interface OutputDefaults {
 }
 
 export interface GenerationOptions {
+	useAi?: boolean;
 	generateAiSummary?: boolean;
 	instructionMode?: InstructionMode;
 	instructionTemplate?: InstructionTemplate;

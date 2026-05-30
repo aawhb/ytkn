@@ -45,6 +45,7 @@ import {
 	DEFAULT_TLDR_CALLOUT_AT_TOP,
 	DEFAULT_TRANSCRIPT_FAILURE_MODE,
 	DEFAULT_TRANSCRIPT_LANGUAGE_MODE,
+	DEFAULT_USE_AI,
 	DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,
 } from '../defaults';
 import { isInstructionTemplate } from './templates';
@@ -226,6 +227,7 @@ function normalizeContextWindow(contextWindow?: number): number | undefined {
 
 function normalizeOutputDefaults(outputDefaults?: RawOutputDefaults): OutputDefaults {
 	return {
+		useAi: outputDefaults?.useAi ?? outputDefaults?.generateAiSummary ?? DEFAULT_USE_AI,
 		generateAiSummary: outputDefaults?.generateAiSummary ?? DEFAULT_GENERATE_AI_SUMMARY,
 		transcriptMode: normalizeTranscriptMode(outputDefaults?.transcriptMode),
 		playlistMode: normalizePlaylistMode(outputDefaults?.playlistMode),

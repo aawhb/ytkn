@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderPlaylistNote, renderQueueBatchReport, renderVideoNote } from '../src/services/renderer';
+import { getTemplate } from '../src/services/templates';
 
 const transcript = {
 	url: 'https://youtube.com/watch?v=123',
@@ -408,6 +409,34 @@ describe('frontmatter and linkback options', () => {
 		expect(block).toContain('durationSeconds: 42');
 		expect(block).toContain('keywords:\n  - "alpha"\n  - "beta"');
 		expect(block).toContain('generated: ');
+	});
+
+	it('does not apply template tags or section warnings when no template is provided', () => {
+		const { content, warnings } = renderVideoNote(
+			transcript as any,
+			'thumb.png',
+			'https://youtube.com/watch?v=123',
+			null,
+			{ transcriptMode: 'readable' },
+			null,
+		);
+
+		expect(content).not.toContain('ytkn/general');
+		expect(warnings.some((warning) => warning.includes('TL;DR'))).toBe(false);
+	});
+
+	it('still warns when a declared template is used without required sections', () => {
+		const { content, warnings } = renderVideoNote(
+			transcript as any,
+			'thumb.png',
+			'https://youtube.com/watch?v=123',
+			null,
+			{ transcriptMode: 'readable' },
+			getTemplate('general'),
+		);
+
+		expect(content).toContain('ytkn/general');
+		expect(warnings.some((warning) => warning.includes('TL;DR'))).toBe(true);
 	});
 
 	it('omits frontmatter when includeFrontmatter is false', () => {

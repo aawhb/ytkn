@@ -20,6 +20,7 @@ export const DEFAULT_TRANSCRIPT_FAILURE_MODE = 'skip';
 export const DEFAULT_INCLUDE_RUN_REPORT = true;
 export const DEFAULT_RUN_REPORT_LOCATION = 'generated-note';
 
+export const DEFAULT_USE_AI = true;
 export const DEFAULT_GENERATE_AI_SUMMARY = true;
 export const DEFAULT_INSTRUCTION_MODE = 'template';
 export const DEFAULT_INSTRUCTION_TEMPLATE = 'general';

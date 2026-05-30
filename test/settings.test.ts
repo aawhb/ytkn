@@ -25,6 +25,7 @@ import {
 	DEFAULT_TLDR_CALLOUT_AT_TOP,
 	DEFAULT_TRANSCRIPT_FAILURE_MODE,
 	DEFAULT_TRANSCRIPT_LANGUAGE_MODE,
+	DEFAULT_USE_AI,
 	DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,
 } from '../src/defaults';
 
@@ -163,6 +164,7 @@ describe('SettingsService', () => {
 		expect(manager.getProviders()).toEqual([]);
 		expect(manager.getSelectedModel()).toBeNull();
 		expect(manager.getOutputDefaults()).toEqual({
+			useAi: DEFAULT_USE_AI,
 			generateAiSummary: DEFAULT_GENERATE_AI_SUMMARY,
 			transcriptMode: DEFAULT_OUTPUT_TRANSCRIPT_MODE,
 			playlistMode: DEFAULT_PLAYLIST_MODE,
@@ -290,6 +292,7 @@ describe('SettingsService', () => {
 		expect(manager.getProviders()).toEqual([]);
 		expect(manager.getSelectedModel()).toBeNull();
 		expect(manager.getOutputDefaults()).toEqual({
+			useAi: DEFAULT_USE_AI,
 			generateAiSummary: DEFAULT_GENERATE_AI_SUMMARY,
 			transcriptMode: DEFAULT_OUTPUT_TRANSCRIPT_MODE,
 			playlistMode: DEFAULT_PLAYLIST_MODE,
@@ -764,6 +767,43 @@ describe('SettingsService', () => {
 			await manager.loadSettings();
 
 			expect(manager.getOutputDefaults().frontmatterPropertyAllowlist).toBe('title channel videoUrl');
+		});
+	});
+
+	describe('migration: useAi defaults', () => {
+		it('uses the previous AI summary default when useAi is absent', async () => {
+			const plugin = new FakePlugin();
+			plugin.data = {
+				settings: {
+					outputDefaults: {
+						generateAiSummary: false,
+					},
+				},
+			};
+
+			const manager = new SettingsService(plugin as any);
+			await manager.loadSettings();
+
+			expect(manager.getOutputDefaults().useAi).toBe(false);
+			expect(manager.getOutputDefaults().generateAiSummary).toBe(false);
+		});
+
+		it('keeps useAi independent from AI summary when saved explicitly', async () => {
+			const plugin = new FakePlugin();
+			plugin.data = {
+				settings: {
+					outputDefaults: {
+						useAi: true,
+						generateAiSummary: false,
+					},
+				},
+			};
+
+			const manager = new SettingsService(plugin as any);
+			await manager.loadSettings();
+
+			expect(manager.getOutputDefaults().useAi).toBe(true);
+			expect(manager.getOutputDefaults().generateAiSummary).toBe(false);
 		});
 	});
 

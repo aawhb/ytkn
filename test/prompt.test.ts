@@ -167,6 +167,29 @@ describe('PromptService', () => {
 		expect(noQuotesPrompt).not.toContain('## Memorable quotes');
 	});
 
+	it('builds add-ons-only prompts without template section contracts', () => {
+		const service = new PromptService({
+			mode: 'template',
+			template: 'general',
+			manualInstructions: '',
+			includeMindmap: true,
+			includeMemorableQuotes: true,
+		});
+
+		const prompt = service.buildAddonsPrompt(transcript, transcript.url);
+		const chunkPrompt = service.buildAddonsChunkPrompt(transcript, transcript.url, 'Chunk text', 1, 2);
+		const synthesisPrompt = service.buildAddonsSynthesisPrompt(transcript, transcript.url, ['Chunk notes']);
+
+		expect(prompt).toContain('only the requested add-on sections');
+		expect(prompt).toContain('## Mindmap');
+		expect(prompt).toContain('## Memorable quotes');
+		expect(prompt).not.toContain('Always start with');
+		expect(prompt).not.toContain('## Key takeaways');
+		expect(prompt).not.toContain('Use exactly these H2 headings');
+		expect(chunkPrompt).toContain('## Add-on source material');
+		expect(synthesisPrompt).toContain('Use the chunk notes below instead of the raw transcript');
+	});
+
 	it('splits long transcripts into chunks without dropping text', () => {
 		const service = new PromptService({ mode: 'template', template: 'implementation', manualInstructions: '', includeMindmap: false, includeMemorableQuotes: false });
 		const chunks = service.splitTranscript(

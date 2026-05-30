@@ -79,7 +79,7 @@ describe('GenerationOptionsModal.onOpen', () => {
 		expect(modal.contentEl.querySelector('.ytkn-modal__header-wrap')).not.toBeNull();
 	});
 
-	it('AI summary toggle element has class ytkn-modal__quick-toggle', () => {
+	it('Use AI toggle element has class ytkn-modal__quick-toggle', () => {
 		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
 		modal.open();
 
@@ -107,7 +107,7 @@ describe('GenerationOptionsModal.onOpen', () => {
 			app,
 			'',
 			[sampleModel],
-			{ generateAiSummary: true },
+			{ useAi: true, generateAiSummary: true },
 			onSubmit,
 		);
 		enabledModal.open();
@@ -120,7 +120,7 @@ describe('GenerationOptionsModal.onOpen', () => {
 			app,
 			'',
 			[sampleModel],
-			{ generateAiSummary: false },
+			{ useAi: true, generateAiSummary: false },
 			onSubmit,
 		);
 		disabledModal.open();
@@ -128,6 +128,55 @@ describe('GenerationOptionsModal.onOpen', () => {
 		const disabledSetting = disabledModal.contentEl.querySelector('.ytkn-modal__tldr-callout-setting') as HTMLElement | null;
 		expect(disabledSetting).not.toBeNull();
 		expect(disabledSetting?.style.display).toBe('none');
+	});
+
+	it('keeps AI add-ons visible when AI is enabled and summary is disabled', () => {
+		const modal = new GenerationOptionsModal(
+			app,
+			'',
+			[sampleModel],
+			{ useAi: true, generateAiSummary: false, includeMindmap: true, includeMemorableQuotes: true },
+			onSubmit,
+		);
+		modal.open();
+
+		const settings = Array.from(modal.contentEl.querySelectorAll('.setting-item'));
+		const mindmapSetting = settings.find((setting) => setting.textContent?.includes('Add mermaid mindmap')) as HTMLElement | undefined;
+		const quotesSetting = settings.find((setting) => setting.textContent?.includes('Add memorable quotes')) as HTMLElement | undefined;
+		const instructionSetting = settings.find((setting) => setting.textContent?.includes('Instruction style')) as HTMLElement | undefined;
+
+		expect(mindmapSetting?.style.display).toBe('');
+		expect(quotesSetting?.style.display).toBe('');
+		expect(instructionSetting?.style.display).toBe('none');
+	});
+
+	it('auto-disables AI on submit when no AI outputs are selected', () => {
+		const modal = new GenerationOptionsModal(
+			app,
+			VIDEO_URL,
+			[sampleModel],
+			{
+				useAi: true,
+				generateAiSummary: false,
+				includeMindmap: false,
+				includeMemorableQuotes: false,
+				transcriptMode: 'readable',
+				noteDestinationMode: 'folder',
+				noteDestinationFolder: 'Notes',
+			},
+			onSubmit,
+		);
+		modal.open();
+
+		const buttons = Array.from(modal.contentEl.querySelectorAll('button'));
+		buttons.find((button) => button.textContent === 'Generate')?.click();
+
+		expect(onSubmit).toHaveBeenCalledOnce();
+		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
+		expect(options.useAi).toBe(false);
+		expect(options.generateAiSummary).toBe(false);
+		expect(options.includeMindmap).toBe(false);
+		expect(options.includeMemorableQuotes).toBe(false);
 	});
 
 	it('AI model dropdown row has a stable layout class', () => {

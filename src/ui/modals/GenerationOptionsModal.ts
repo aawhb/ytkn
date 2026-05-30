@@ -36,6 +36,7 @@ import {
 	DEFAULT_TLDR_CALLOUT_AT_TOP,
 	DEFAULT_TRANSCRIPT_FAILURE_MODE,
 	DEFAULT_TRANSCRIPT_LANGUAGE_MODE,
+	DEFAULT_USE_AI,
 	DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,
 } from '../../defaults';
 import { buildModelId } from '../../utils';
@@ -49,6 +50,7 @@ import { stampSettingRowClasses } from '../settingRows';
 
 interface FormState {
 	url: string;
+	useAi: boolean;
 	generateAiSummary: boolean;
 	transcriptMode: TranscriptMode;
 	playlistMode: PlaylistMode;
@@ -95,9 +97,13 @@ export class GenerationOptionsModal extends Modal {
 	private state!: FormState;
 	private activeTabId: string = 'general';
 	private instructionSettingEl?: HTMLElement;
+	private aiSummarySettingEl?: HTMLElement;
 	private templateSettingEl?: HTMLElement;
 	private templateSubtitleEl?: HTMLElement;
 	private manualSettingEl?: HTMLElement;
+	private aiModelSettingEl?: HTMLElement;
+	private temperatureSettingEl?: HTMLElement;
+	private requestTimeoutSettingEl?: HTMLElement;
 	private folderSettingEl?: HTMLElement;
 	private playlistQuickSettingEl?: HTMLElement;
 	private perVideoReportSettingEl?: HTMLElement;
@@ -198,6 +204,7 @@ export class GenerationOptionsModal extends Modal {
 
 		return {
 			url: this.initialUrl,
+			useAi: init.useAi ?? init.generateAiSummary ?? DEFAULT_USE_AI,
 			generateAiSummary: init.generateAiSummary ?? DEFAULT_GENERATE_AI_SUMMARY,
 			transcriptMode: init.transcriptMode ?? DEFAULT_OUTPUT_TRANSCRIPT_MODE,
 			playlistMode: init.playlistMode ?? DEFAULT_PLAYLIST_MODE,
@@ -318,12 +325,12 @@ export class GenerationOptionsModal extends Modal {
 		const urlZone = quickTop.createDiv({ cls: 'ytkn-modal__quick-top-url' });
 		const toggleZone = quickTop.createDiv({ cls: 'ytkn-modal__quick-top-toggle' });
 		new Setting(toggleZone)
-			.setName('AI summary')
+			.setName('Use AI')
 			.addToggle((toggle) => {
 				toggle
-					.setValue(this.state.generateAiSummary)
+					.setValue(this.state.useAi)
 					.onChange((value) => {
-						this.state.generateAiSummary = value;
+						this.state.useAi = value;
 						this.refreshAiVisibility();
 					});
 			})
@@ -332,6 +339,20 @@ export class GenerationOptionsModal extends Modal {
 		this.renderSourceField(urlZone, section);
 
 		const quickGrid = section.createDiv({ cls: 'ytkn-modal__quick-grid' });
+
+		const aiSummarySetting = new Setting(quickGrid)
+			.setName('AI summary')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.state.generateAiSummary)
+					.onChange((value) => {
+						this.state.generateAiSummary = value;
+						this.refreshAiVisibility();
+					});
+			});
+		this.aiSummarySettingEl = aiSummarySetting.settingEl;
+		aiSummarySetting.settingEl.addClass('ytkn-modal__quick-full');
+		aiSummarySetting.settingEl.addClass('ytkn-modal__ai-summary-setting');
 
 		const instructionSetting = new Setting(quickGrid)
 			.setName('Instruction style')
@@ -724,8 +745,9 @@ export class GenerationOptionsModal extends Modal {
 					});
 			});
 		modelSetting.settingEl.addClass('ytkn-modal__model-setting');
+		this.aiModelSettingEl = modelSetting.settingEl;
 
-		new Setting(containerEl)
+		this.temperatureSettingEl = new Setting(containerEl)
 			.setName('Temperature')
 			.setDesc('If supported by the provider; 0 = deterministic. 0.3 (default) = focused. 1 = more varied.')
 			.addText((text) => {
@@ -736,9 +758,9 @@ export class GenerationOptionsModal extends Modal {
 				text.inputEl.min = '0';
 				text.inputEl.max = '2';
 				text.inputEl.step = '0.1';
-			});
+			}).settingEl;
 
-		new Setting(containerEl)
+		this.requestTimeoutSettingEl = new Setting(containerEl)
 			.setName('Request timeout (seconds)')
 			.setDesc('Increase for slow local models or long runs. 300 = 5 minutes.')
 			.addText((text) => {
@@ -748,7 +770,7 @@ export class GenerationOptionsModal extends Modal {
 				text.inputEl.type = 'number';
 				text.inputEl.min = '5';
 				text.inputEl.step = '30';
-			});
+			}).settingEl;
 	}
 
 	private updateTemplateSubtitle(): void {
@@ -777,6 +799,7 @@ export class GenerationOptionsModal extends Modal {
 		}
 
 		const shouldShow =
+			this.state.useAi &&
 			this.state.generateAiSummary &&
 			this.state.instructionMode === 'template';
 
@@ -820,26 +843,32 @@ export class GenerationOptionsModal extends Modal {
 	}
 
 	private refreshAiVisibility(): void {
-		this.instructionSettingEl?.toggle(this.state.generateAiSummary);
-		this.tldrCalloutSettingEl?.toggle(this.state.generateAiSummary);
-		this.mindmapSettingEl?.toggle(this.state.generateAiSummary);
-		this.memorableQuotesSettingEl?.toggle(this.state.generateAiSummary);
+		const showSummaryControls = this.state.useAi && this.state.generateAiSummary;
+
+		this.aiSummarySettingEl?.toggle(this.state.useAi);
+		this.instructionSettingEl?.toggle(showSummaryControls);
+		this.tldrCalloutSettingEl?.toggle(showSummaryControls);
+		this.mindmapSettingEl?.toggle(this.state.useAi);
+		this.memorableQuotesSettingEl?.toggle(this.state.useAi);
+		this.aiModelSettingEl?.toggle(this.state.useAi);
+		this.temperatureSettingEl?.toggle(this.state.useAi);
+		this.requestTimeoutSettingEl?.toggle(this.state.useAi);
 
 		if (this.templateSettingEl) {
 			this.templateSettingEl.toggle(
-				this.state.generateAiSummary &&
+				showSummaryControls &&
 				this.state.instructionMode === 'template',
 			);
 		}
 		if (this.templateSubtitleEl) {
 			this.templateSubtitleEl.toggle(
-				this.state.generateAiSummary &&
+				showSummaryControls &&
 				this.state.instructionMode === 'template',
 			);
 		}
 		if (this.manualSettingEl) {
 			this.manualSettingEl.toggle(
-				this.state.generateAiSummary &&
+				showSummaryControls &&
 				this.state.instructionMode === 'manual',
 			);
 		}
@@ -877,6 +906,9 @@ export class GenerationOptionsModal extends Modal {
 		const parsedTimeoutSecs = this.state.requestTimeoutSeconds.trim() ? Number(this.state.requestTimeoutSeconds.trim()) : undefined;
 		const trimmedManualInstructions = this.state.manualInstructions.trim();
 		const trimmedFolder = this.state.noteDestinationFolder.trim();
+		const hasAiOutputs = this.state.generateAiSummary || this.state.includeMindmap || this.state.includeMemorableQuotes;
+		const effectiveUseAi = this.state.useAi && hasAiOutputs;
+		const effectiveGenerateAiSummary = effectiveUseAi && this.state.generateAiSummary;
 
 		if (!trimmedUrl) {
 			new Notice('Paste a YouTube video or playlist URL to continue.');
@@ -912,15 +944,15 @@ export class GenerationOptionsModal extends Modal {
 		}
 
 		if (
-			!this.state.generateAiSummary &&
+			!effectiveUseAi &&
 			this.state.transcriptMode === 'none'
 		) {
-			new Notice('Enable transcript inclusion or AI summary — both cannot be off.');
+			new Notice('Enable transcript inclusion or at least one AI output.');
 			return;
 		}
 
 		if (
-			!this.state.generateAiSummary &&
+			!effectiveGenerateAiSummary &&
 			this.state.playlistMode === 'combined' &&
 			urls.some((u) => YouTubeService.isPlaylistUrl(u))
 		) {
@@ -928,13 +960,13 @@ export class GenerationOptionsModal extends Modal {
 			return;
 		}
 
-		if (this.state.generateAiSummary && !this.state.modelId) {
-			new Notice('Select an AI model, or turn off AI summary for transcript-only output.');
+		if (effectiveUseAi && !this.state.modelId) {
+			new Notice('Select an AI model, or turn off AI for transcript-only output.');
 			return;
 		}
 
 		if (
-			this.state.generateAiSummary &&
+			effectiveGenerateAiSummary &&
 			this.state.instructionMode === 'manual' &&
 			!trimmedManualInstructions
 		) {
@@ -943,7 +975,7 @@ export class GenerationOptionsModal extends Modal {
 		}
 
 		if (
-			this.state.generateAiSummary &&
+			effectiveGenerateAiSummary &&
 			this.state.instructionMode === 'template'
 		) {
 			for (const control of getTemplate(this.state.instructionTemplate).controls ?? []) {
@@ -958,7 +990,8 @@ export class GenerationOptionsModal extends Modal {
 		}
 
 		this.onSubmit(urls, {
-			generateAiSummary: this.state.generateAiSummary,
+			useAi: effectiveUseAi,
+			generateAiSummary: effectiveGenerateAiSummary,
 			transcriptMode: this.state.transcriptMode,
 			playlistMode: this.state.playlistMode,
 			transcriptLanguageMode: this.state.transcriptLanguageMode,
@@ -980,9 +1013,9 @@ export class GenerationOptionsModal extends Modal {
 			instructionMode: this.state.instructionMode,
 			instructionTemplate: this.state.instructionTemplate,
 			manualInstructions: trimmedManualInstructions,
-			includeMindmap: this.state.includeMindmap,
-			includeMemorableQuotes: this.state.includeMemorableQuotes,
-			controlValues: Object.keys(this.state.controlValues).length > 0
+			includeMindmap: effectiveUseAi && this.state.includeMindmap,
+			includeMemorableQuotes: effectiveUseAi && this.state.includeMemorableQuotes,
+			controlValues: effectiveGenerateAiSummary && Object.keys(this.state.controlValues).length > 0
 				? Object.fromEntries(
 					Object.entries(this.state.controlValues).filter(([, v]) => v.trim() !== ''),
 				)

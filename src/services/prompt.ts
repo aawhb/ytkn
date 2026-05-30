@@ -28,7 +28,17 @@ Hard rules — never break these:
 - Separate core content from sponsor reads, promotional content, and filler when relevant.
 - Treat each transcript as an independent source unless explicitly told otherwise.`;
 
-const MINDMAP_APPENDIX_INSTRUCTIONS = `After completing your main note content, append one final section: a Mermaid mindmap of the key concepts. Use exactly this format — the backtick fences are required; do not replace the diagram with prose:
+const ADDON_BASE_INSTRUCTIONS = `You transform a YouTube video's transcript into requested add-on Markdown sections for an Obsidian note. The renderer adds frontmatter, the H1 title, source metadata, and any transcript appendix — your output is only the requested add-on sections.
+
+Hard rules — never break these:
+- Use only information clearly supported by the transcript. If a detail is uncertain, omit it.
+- Do not invent facts, tools, libraries, metrics, thresholds, or performance claims.
+- Do not output a \`# H1\` heading.
+- Do not output a \`## TL;DR\`, \`## Source\`, \`## Transcript\`, or long verbatim transcript excerpts.
+- Output only the requested add-on sections, using H2 headings.
+- Omit a requested section if the transcript does not contain enough grounded material for it.`;
+
+const MINDMAP_APPENDIX_INSTRUCTIONS = `Add a Mermaid mindmap section for the key concepts. Use exactly this format — the backtick fences are required; do not replace the diagram with prose:
 
 ## Mindmap
 \`\`\`mermaid
@@ -49,7 +59,7 @@ Mindmap rules:
 - Roughly 2–4 levels deep and 8–18 nodes total.
 - Do not invent nodes that are not grounded in the transcript.`;
 
-const MEMORABLE_QUOTES_APPENDIX_INSTRUCTIONS = `Append this extra section at the very end of the note (after Mindmap if present):
+const MEMORABLE_QUOTES_APPENDIX_INSTRUCTIONS = `Add a memorable quotes section at the end of the AI output (after Mindmap if present):
 
 ## Memorable quotes
 - 3–7 verbatim quotes worth preserving from this source.
@@ -105,6 +115,12 @@ export class PromptService {
 		return `${this.buildTranscriptPromptPrefix(transcript, videoUrl)}${transcriptText}`;
 	}
 
+	buildAddonsPrompt(transcript: TranscriptResponse, videoUrl: string): string {
+		const transcriptText = this.getTranscriptText(transcript);
+
+		return `${this.buildAddonsPromptPrefix(transcript, videoUrl)}${transcriptText}`;
+	}
+
 	splitTranscript(transcript: TranscriptResponse, videoUrl: string, options: ChunkingOptions = {}): string[] {
 		const transcriptText = this.getTranscriptText(transcript);
 		if (!transcriptText) {
@@ -122,6 +138,29 @@ export class PromptService {
 
 		const chunkPromptBudget = this.getTranscriptBudgetTokens(
 			this.buildChunkPrompt(transcript, videoUrl, '', 1, 2),
+			options.model,
+		);
+
+		return this.chunkTranscriptLines(transcript, Math.max(MIN_TRANSCRIPT_BUDGET_TOKENS, chunkPromptBudget));
+	}
+
+	splitTranscriptForAddons(transcript: TranscriptResponse, videoUrl: string, options: ChunkingOptions = {}): string[] {
+		const transcriptText = this.getTranscriptText(transcript);
+		if (!transcriptText) {
+			return [];
+		}
+
+		const fullPromptBudget = this.getTranscriptBudgetTokens(
+			this.buildAddonsPromptPrefix(transcript, videoUrl),
+			options.model,
+		);
+
+		if (this.estimateTokens(transcriptText) <= fullPromptBudget) {
+			return [transcriptText];
+		}
+
+		const chunkPromptBudget = this.getTranscriptBudgetTokens(
+			this.buildAddonsChunkPrompt(transcript, videoUrl, '', 1, 2),
 			options.model,
 		);
 
@@ -151,6 +190,21 @@ Transcript chunk:
 ${chunkText}`;
 	}
 
+	buildAddonsChunkPrompt(transcript: TranscriptResponse, videoUrl: string, chunkText: string, chunkIndex: number, totalChunks: number): string {
+		return `${this.buildAddonCommonInstructions(transcript, videoUrl)}
+
+You are processing chunk ${chunkIndex} of ${totalChunks} from a longer transcript.
+Do not write the final add-on sections yet. Extract only concise, grounded source material that would help create the requested add-ons later.
+
+Output structure (use Markdown):
+
+## Add-on source material
+- [Grounded detail, concept, relationship, or quote candidate]
+
+Transcript chunk:
+${chunkText}`;
+	}
+
 	buildSynthesisPrompt(transcript: TranscriptResponse, videoUrl: string, chunkSummaries: string[]): string {
 		const chunkSummaryText = chunkSummaries
 			.map((summary, index) => `### Chunk ${index + 1}\n${summary.trim()}`)
@@ -161,6 +215,19 @@ ${chunkText}`;
 Use the chunk summaries below instead of the raw transcript to produce the final video knowledge note. Do not mention chunks in the final answer.
 
 Chunk summaries:
+${chunkSummaryText}`;
+	}
+
+	buildAddonsSynthesisPrompt(transcript: TranscriptResponse, videoUrl: string, chunkSummaries: string[]): string {
+		const chunkSummaryText = chunkSummaries
+			.map((summary, index) => `### Chunk ${index + 1}\n${summary.trim()}`)
+			.join('\n\n');
+
+		return `${this.buildAddonCommonInstructions(transcript, videoUrl)}
+
+Use the chunk notes below instead of the raw transcript to produce the requested add-on sections. Do not mention chunks in the final answer.
+
+Chunk notes:
 ${chunkSummaryText}`;
 	}
 
@@ -297,6 +364,18 @@ ${lines}`;
 		return blocks.join('\n\n');
 	}
 
+	private buildAddonCommonInstructions(transcript: TranscriptResponse, videoUrl: string): string {
+		return `${ADDON_BASE_INSTRUCTIONS}
+
+${this.buildInstructionAddons()}
+
+Video metadata (renderer adds this automatically — do not repeat it inside the body):
+- Title: ${transcript.title}
+- Channel: ${transcript.author}
+- Channel URL: ${transcript.channelUrl}
+- Video URL: ${videoUrl}`;
+	}
+
 	private chunkTranscriptLines(transcript: TranscriptResponse, targetTranscriptTokens: number): string[] {
 		const chunks: string[] = [];
 		let currentChunk = '';
@@ -376,6 +455,13 @@ ${lines}`;
 
 	private buildTranscriptPromptPrefix(transcript: TranscriptResponse, videoUrl: string): string {
 		return `${this.buildCommonInstructions(transcript, videoUrl)}
+
+Transcript:
+`;
+	}
+
+	private buildAddonsPromptPrefix(transcript: TranscriptResponse, videoUrl: string): string {
+		return `${this.buildAddonCommonInstructions(transcript, videoUrl)}
 
 Transcript:
 `;

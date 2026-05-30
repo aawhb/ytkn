@@ -79,7 +79,7 @@ export class GenerationService {
 		try {
 			let effectiveOptions = run.options;
 			const aiContext = this.buildAiExecutionContext(effectiveOptions);
-			this.validateGenerationOptions(run.url, effectiveOptions, aiContext);
+			this.validateGenerationOptions(run.url, effectiveOptions);
 
 			const initialTarget = await this.resolveInitialTarget(run);
 
@@ -197,7 +197,7 @@ export class GenerationService {
 	}
 
 	private buildAiExecutionContext(effectiveOptions: GenerationOptions): AiExecutionContext | null {
-		if (!effectiveOptions.generateAiSummary) {
+		if (!this.shouldUseAi(effectiveOptions)) {
 			return null;
 		}
 
@@ -222,14 +222,44 @@ export class GenerationService {
 		};
 	}
 
-	private validateGenerationOptions(url: string, effectiveOptions: GenerationOptions, aiContext: AiExecutionContext | null): void {
-		if (!effectiveOptions.generateAiSummary && effectiveOptions.transcriptMode === 'none') {
-			throw new Error('Enable transcript inclusion or AI summary. Both cannot be off.');
+	private validateGenerationOptions(url: string, effectiveOptions: GenerationOptions): void {
+		if (!this.shouldUseAi(effectiveOptions) && effectiveOptions.transcriptMode === 'none') {
+			throw new Error('Enable transcript inclusion or at least one AI output.');
 		}
 
-		if (YouTubeService.isPlaylistUrl(url) && effectiveOptions.playlistMode === 'combined' && !aiContext) {
+		if (YouTubeService.isPlaylistUrl(url) && effectiveOptions.playlistMode === 'combined' && !this.shouldGenerateAiSummary(effectiveOptions)) {
 			throw new Error('Combined playlist notes require AI summary generation. Use per-video mode for transcript-only runs.');
 		}
+	}
+
+	private wantsUseAi(effectiveOptions: GenerationOptions): boolean {
+		return effectiveOptions.useAi ?? effectiveOptions.generateAiSummary ?? this.settings.getOutputDefaults().useAi;
+	}
+
+	private wantsAiSummary(effectiveOptions: GenerationOptions): boolean {
+		return effectiveOptions.generateAiSummary ?? this.settings.getOutputDefaults().generateAiSummary;
+	}
+
+	private wantsMindmap(effectiveOptions: GenerationOptions): boolean {
+		return effectiveOptions.includeMindmap ?? this.settings.getInstructionConfig().includeMindmap;
+	}
+
+	private wantsMemorableQuotes(effectiveOptions: GenerationOptions): boolean {
+		return effectiveOptions.includeMemorableQuotes ?? this.settings.getInstructionConfig().includeMemorableQuotes;
+	}
+
+	private hasAiOutputs(effectiveOptions: GenerationOptions): boolean {
+		return this.wantsAiSummary(effectiveOptions)
+			|| this.wantsMindmap(effectiveOptions)
+			|| this.wantsMemorableQuotes(effectiveOptions);
+	}
+
+	private shouldUseAi(effectiveOptions: GenerationOptions): boolean {
+		return this.wantsUseAi(effectiveOptions) && this.hasAiOutputs(effectiveOptions);
+	}
+
+	private shouldGenerateAiSummary(effectiveOptions: GenerationOptions): boolean {
+		return this.shouldUseAi(effectiveOptions) && this.wantsAiSummary(effectiveOptions);
 	}
 
 	private resolveSelectedModel(modelId?: string): ModelConfig | null {
@@ -277,29 +307,56 @@ export class GenerationService {
 		progressState: ProgressState,
 		signal: AbortSignal,
 	): Promise<string> {
-		const chunks = aiContext.promptService.splitTranscript(transcript, url, {
-			model: aiContext.selectedModel,
-		});
+		return this.generateAiText(aiContext, transcript, url, target, progressState, signal, true);
+	}
+
+	private async generateAiText(
+		aiContext: AiExecutionContext,
+		transcript: TranscriptResponse,
+		url: string,
+		target: NoteInsertionTarget,
+		progressState: ProgressState,
+		signal: AbortSignal,
+		generateSummary: boolean,
+	): Promise<string> {
+		const chunks = generateSummary
+			? aiContext.promptService.splitTranscript(transcript, url, {
+				model: aiContext.selectedModel,
+			})
+			: aiContext.promptService.splitTranscriptForAddons(transcript, url, {
+				model: aiContext.selectedModel,
+			});
 
 		if (chunks.length <= 1) {
 			if (signal.aborted) throw signal.reason;
 			if (progressState.hasProgressContent) {
-				await this.upsertProgressContent(target, url, 'Generating summary...');
+				await this.upsertProgressContent(target, url, generateSummary ? 'Generating summary...' : 'Generating AI add-ons...');
 			}
-			this.onStatusBar('Generating summary...');
-			return aiContext.provider.summarizeVideo(aiContext.promptService.buildPrompt(transcript, url), signal);
+			this.onStatusBar(generateSummary ? 'Generating summary...' : 'Generating AI add-ons...');
+			return aiContext.provider.summarizeVideo(
+				generateSummary
+					? aiContext.promptService.buildPrompt(transcript, url)
+					: aiContext.promptService.buildAddonsPrompt(transcript, url),
+				signal,
+			);
 		}
 
 		const chunkSummaries: string[] = [];
 		for (const [index, chunk] of chunks.entries()) {
 			if (signal.aborted) throw signal.reason;
 			if (progressState.hasProgressContent) {
-				await this.upsertProgressContent(target, url, `Summarizing transcript chunk ${index + 1}/${chunks.length}...`);
+				await this.upsertProgressContent(target, url, generateSummary
+					? `Summarizing transcript chunk ${index + 1}/${chunks.length}...`
+					: `Extracting add-on material ${index + 1}/${chunks.length}...`);
 			}
-			this.onStatusBar(`Summarizing chunk ${index + 1}/${chunks.length}...`);
+			this.onStatusBar(generateSummary
+				? `Summarizing chunk ${index + 1}/${chunks.length}...`
+				: `Extracting add-on material ${index + 1}/${chunks.length}...`);
 			chunkSummaries.push(
 				await aiContext.provider.summarizeVideo(
-					aiContext.promptService.buildChunkPrompt(transcript, url, chunk, index + 1, chunks.length),
+					generateSummary
+						? aiContext.promptService.buildChunkPrompt(transcript, url, chunk, index + 1, chunks.length)
+						: aiContext.promptService.buildAddonsChunkPrompt(transcript, url, chunk, index + 1, chunks.length),
 					signal,
 				),
 			);
@@ -307,11 +364,13 @@ export class GenerationService {
 
 		if (signal.aborted) throw signal.reason;
 		if (progressState.hasProgressContent) {
-			await this.upsertProgressContent(target, url, 'Combining chunk summaries...');
+			await this.upsertProgressContent(target, url, generateSummary ? 'Combining chunk summaries...' : 'Creating AI add-ons...');
 		}
-		this.onStatusBar('Combining chunk summaries...');
+		this.onStatusBar(generateSummary ? 'Combining chunk summaries...' : 'Creating AI add-ons...');
 		return aiContext.provider.summarizeVideo(
-			aiContext.promptService.buildSynthesisPrompt(transcript, url, chunkSummaries),
+			generateSummary
+				? aiContext.promptService.buildSynthesisPrompt(transcript, url, chunkSummaries)
+				: aiContext.promptService.buildAddonsSynthesisPrompt(transcript, url, chunkSummaries),
 			signal,
 		);
 	}
@@ -583,13 +642,14 @@ export class GenerationService {
 		}
 
 		const thumbnailUrl = YouTubeService.getThumbnailUrl(transcript.videoId);
+		const generateSummary = this.shouldGenerateAiSummary(effectiveOptions);
 		const summary = aiContext
-			? await this.summarizeTranscript(aiContext, transcript, url, target, progressState, signal)
+			? await this.generateAiText(aiContext, transcript, url, target, progressState, signal, generateSummary)
 			: null;
 
-		const template = effectiveOptions.instructionMode === 'manual'
-			? null
-			: getTemplate(effectiveOptions.instructionTemplate ?? this.settings.getInstructionConfig().template);
+		const template = generateSummary && effectiveOptions.instructionMode !== 'manual'
+			? getTemplate(effectiveOptions.instructionTemplate ?? this.settings.getInstructionConfig().template)
+			: null;
 		const { content, warnings } = renderVideoNote(transcript, thumbnailUrl, url, summary, effectiveOptions, template, isAppendMode ? 'fragment' : 'standalone');
 		for (const warning of warnings) {
 			if (warning.toLowerCase().includes('required section')) {
@@ -644,7 +704,7 @@ export class GenerationService {
 		}
 
 		if (aiContext) {
-			new Notice('Generating summary…');
+			new Notice(this.shouldGenerateAiSummary(effectiveOptions) ? 'Generating summary…' : 'Generating AI add-ons…');
 		}
 
 		if (!target) {

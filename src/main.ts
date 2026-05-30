@@ -116,6 +116,7 @@ export class YTKN extends Plugin {
 		const selectedModel = this.settings.getSelectedModel();
 
 		return {
+			useAi: outputDefaults.useAi,
 			generateAiSummary: outputDefaults.generateAiSummary,
 			transcriptMode: outputDefaults.transcriptMode,
 			playlistMode: outputDefaults.playlistMode,
