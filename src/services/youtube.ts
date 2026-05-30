@@ -332,6 +332,19 @@ function continuationToken(node: JsonObject): string | null {
 				return token;
 			}
 		}
+
+		if (isObject(endpoint) && isObject(endpoint.commandExecutorCommand) && Array.isArray(endpoint.commandExecutorCommand.commands)) {
+			for (const command of endpoint.commandExecutorCommand.commands) {
+				if (!isObject(command) || !isObject(command.continuationCommand)) {
+					continue;
+				}
+
+				const token = command.continuationCommand.token;
+				if (typeof token === 'string' && token) {
+					return token;
+				}
+			}
+		}
 	}
 
 	if (Array.isArray(node.continuations)) {

@@ -664,4 +664,75 @@ describe('YouTubeService.fetchPlaylist', () => {
 		expect(spy).toHaveBeenCalledTimes(2);
 		spy.mockRestore();
 	});
+
+	it('follows nested playlist command-executor continuation tokens past the first 100 entries', async () => {
+		const firstEntries = Array.from({ length: 100 }, (_value, index) =>
+			renderer(`video${String(index + 1).padStart(6, '0')}`, `Video ${index + 1}`, `${index + 1}`));
+		const firstPage = {
+			metadata: { playlistMetadataRenderer: { title: 'Long Playlist' } },
+			contents: [
+				{
+					playlistVideoListRenderer: {
+						contents: [
+							...firstEntries,
+							{
+								continuationItemRenderer: {
+									continuationEndpoint: {
+										commandExecutorCommand: {
+											commands: [
+												{ signalAction: { signal: 'NOOP' } },
+												{ continuationCommand: { token: 'PLAYLIST_NEXT_TOKEN' } },
+											],
+										},
+									},
+								},
+							},
+						],
+					},
+				},
+				{
+					continuationItemRenderer: {
+						continuationEndpoint: {
+							continuationCommand: { token: 'UNRELATED_SECTION_TOKEN' },
+						},
+					},
+				},
+			],
+		};
+		const secondPage = {
+			contents: [
+				renderer('video000101', 'Video 101', '101'),
+				renderer('video000102', 'Video 102', '102'),
+			],
+		};
+		const continuationBodies: string[] = [];
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			if (request.url.includes('/playlist?list=PLLONG')) {
+				return { json: {}, text: htmlWithInitialData(firstPage) };
+			}
+
+			if (request.url.includes('/youtubei/v1/browse')) {
+				continuationBodies.push(request.body ?? '');
+				return { json: {}, text: JSON.stringify(secondPage) };
+			}
+
+			throw new Error(`Unexpected request: ${request.url}`);
+		});
+
+		const svc = new YouTubeService();
+		const playlist = await svc.fetchPlaylist('https://www.youtube.com/playlist?list=PLLONG');
+
+		expect(playlist.entries).toHaveLength(102);
+		expect(playlist.entries[0].title).toBe('Video 1');
+		expect(playlist.entries[101]).toEqual({
+			videoId: 'video000102',
+			url: 'https://www.youtube.com/watch?v=video000102&list=PLLONG',
+			position: 102,
+			title: 'Video 102',
+		});
+		expect(continuationBodies).toHaveLength(1);
+		expect(continuationBodies[0]).toContain('PLAYLIST_NEXT_TOKEN');
+		expect(continuationBodies[0]).not.toContain('UNRELATED_SECTION_TOKEN');
+		spy.mockRestore();
+	});
 });
