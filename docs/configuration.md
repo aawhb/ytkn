@@ -127,8 +127,9 @@ Run reports summarize what happened in a batch.
 They can include:
 
 - completed, skipped, failed, and canceled totals
-- one entry per video or playlist
-- nested playlist outcomes
+- totals based on standalone videos and nested playlist videos
+- one grouped entry per submitted video or playlist
+- per-playlist counts and nested playlist outcomes
 - note paths, transcript language, warnings, and failure reasons when available
 
 Report location options:

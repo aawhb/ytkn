@@ -285,6 +285,8 @@ export type QueueRunReportEntry =
 		playlistUrl: string;
 		outcome: QueueRunOutcome;
 		notePath?: string;
+		reason?: string;
+		warnings?: string[];
 		entries: PlaylistRunReportEntry[];
 	};
 

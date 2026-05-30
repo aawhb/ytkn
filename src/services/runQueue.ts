@@ -146,6 +146,7 @@ function buildErrorEntry(run: QueuedRun, error: unknown, signal: AbortSignal): Q
 			playlistTitle: run.displayTitle,
 			playlistUrl: run.url,
 			outcome,
+			reason,
 			entries: [],
 		};
 	}

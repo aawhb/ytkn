@@ -548,12 +548,88 @@ describe('renderQueueBatchReport', () => {
 			],
 		};
 		const result = renderQueueBatchReport(report);
+		expect(result).toContain('> - Total: 2');
+		expect(result).toContain('> - Completed: 1');
+		expect(result).toContain('> - Skipped: 1');
 		expect(result).toContain('1. **Completed** · My Playlist');
 		expect(result).toContain('- Note: `Playlists/My Playlist.md`');
+		expect(result).toContain('- Counts: 2 total, 1 completed, 1 skipped, 0 failed, 0 canceled');
 		expect(result).toContain('1. **Completed** · Vid A');
 		expect(result).toContain('- Language: `en`');
 		expect(result).toContain('2. **Skipped** · Vid B');
 		expect(result).toContain('- Reason: No transcript');
+	});
+
+	it('summarizes mixed batches by video-level work while preserving playlist groups', () => {
+		const report = {
+			batchId,
+			entries: [
+				{
+					kind: 'playlist' as const,
+					runId: 'r1', batchId, ordinal: 1,
+					url: 'https://yt/pl-a',
+					displayTitle: 'Playlist A',
+					playlistTitle: 'Playlist A',
+					playlistUrl: 'https://yt/pl-a',
+					outcome: 'completed' as const,
+					entries: [
+						{ title: 'A1', url: 'https://yt/a1', position: 1, outcome: 'completed' as const },
+						{ title: 'A2', url: 'https://yt/a2', position: 2, outcome: 'skipped' as const, reason: 'No transcript' },
+					],
+				},
+				{
+					kind: 'playlist' as const,
+					runId: 'r2', batchId, ordinal: 2,
+					url: 'https://yt/pl-b',
+					displayTitle: 'Playlist B',
+					playlistTitle: 'Playlist B',
+					playlistUrl: 'https://yt/pl-b',
+					outcome: 'completed' as const,
+					entries: [
+						{ title: 'B1', url: 'https://yt/b1', position: 1, outcome: 'failed' as const, reason: 'Provider error' },
+					],
+				},
+				{ kind: 'video' as const, runId: 'r3', batchId, ordinal: 3, url: 'https://yt/v', displayTitle: 'Standalone', outcome: 'completed' as const },
+			],
+		};
+
+		const result = renderQueueBatchReport(report);
+
+		expect(result).toContain('> - Total: 4');
+		expect(result).toContain('> - Completed: 2');
+		expect(result).toContain('> - Skipped: 1');
+		expect(result).toContain('> - Failed: 1');
+		expect(result).toContain('1. **Completed** · Playlist A');
+		expect(result).toContain('- Counts: 2 total, 1 completed, 1 skipped, 0 failed, 0 canceled');
+		expect(result).toContain('2. **Completed** · Playlist B');
+		expect(result).toContain('- Counts: 1 total, 0 completed, 0 skipped, 1 failed, 0 canceled');
+		expect(result).toContain('3. **Completed** · Standalone');
+	});
+
+	it('counts a playlist-level failure as one item when no child entries exist', () => {
+		const report = {
+			batchId,
+			entries: [
+				{
+					kind: 'playlist' as const,
+					runId: 'r1', batchId, ordinal: 1,
+					url: 'https://yt/pl',
+					displayTitle: 'Broken Playlist',
+					playlistTitle: 'Broken Playlist',
+					playlistUrl: 'https://yt/pl',
+					outcome: 'failed' as const,
+					reason: 'Failed to fetch playlist',
+					entries: [],
+				},
+			],
+		};
+
+		const result = renderQueueBatchReport(report);
+
+		expect(result).toContain('> - Total: 1');
+		expect(result).toContain('> - Failed: 1');
+		expect(result).toContain('- Reason: Failed to fetch playlist');
+		expect(result).toContain('- Counts: 1 total, 0 completed, 0 skipped, 1 failed, 0 canceled');
 	});
 
 	it('renders video entry warnings as sub-lines', () => {

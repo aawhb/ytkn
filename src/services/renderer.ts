@@ -514,6 +514,59 @@ function buildRunReportSummary(total: number, completed: number, skipped: number
 	].join('\n');
 }
 
+interface RunReportCounts {
+	total: number;
+	completed: number;
+	skipped: number;
+	failed: number;
+	canceled: number;
+}
+
+function emptyRunReportCounts(): RunReportCounts {
+	return { total: 0, completed: 0, skipped: 0, failed: 0, canceled: 0 };
+}
+
+function addOutcomeToCounts(counts: RunReportCounts, outcome: string): void {
+	counts.total += 1;
+	if (outcome === 'completed') counts.completed += 1;
+	if (outcome === 'skipped') counts.skipped += 1;
+	if (outcome === 'failed') counts.failed += 1;
+	if (outcome === 'canceled') counts.canceled += 1;
+}
+
+function countPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][number], { kind: 'playlist' }>): RunReportCounts {
+	const counts = emptyRunReportCounts();
+	if (entry.entries.length === 0) {
+		addOutcomeToCounts(counts, entry.outcome);
+		return counts;
+	}
+	for (const playlistEntry of entry.entries) {
+		addOutcomeToCounts(counts, playlistEntry.outcome);
+	}
+	return counts;
+}
+
+function countQueueBatchReportEntries(entries: QueueBatchReport['entries']): RunReportCounts {
+	const counts = emptyRunReportCounts();
+	for (const entry of entries) {
+		if (entry.kind === 'video') {
+			addOutcomeToCounts(counts, entry.outcome);
+			continue;
+		}
+		const playlistCounts = countPlaylistRunReportEntry(entry);
+		counts.total += playlistCounts.total;
+		counts.completed += playlistCounts.completed;
+		counts.skipped += playlistCounts.skipped;
+		counts.failed += playlistCounts.failed;
+		counts.canceled += playlistCounts.canceled;
+	}
+	return counts;
+}
+
+function formatRunReportCounts(counts: RunReportCounts): string {
+	return `${counts.total} total, ${counts.completed} completed, ${counts.skipped} skipped, ${counts.failed} failed, ${counts.canceled} canceled`;
+}
+
 function appendRunReportWarnings(lines: string[], warnings: string[] | undefined, indent: string): void {
 	if (!warnings || warnings.length === 0) {
 		return;
@@ -554,6 +607,11 @@ function buildPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][
 	if (entry.notePath) {
 		lines.push(`   - Note: ${formatReportNotePath(entry.notePath)}`);
 	}
+	if (entry.reason) {
+		lines.push(`   - Reason: ${normalizeReportInline(entry.reason)}`);
+	}
+	appendRunReportWarnings(lines, entry.warnings, '   ');
+	lines.push(`   - Counts: ${formatRunReportCounts(countPlaylistRunReportEntry(entry))}`);
 	if (entry.entries.length > 0) {
 		lines.push('   - Videos:');
 		entry.entries.forEach((playlistEntry, playlistIndex) => {
@@ -577,12 +635,8 @@ function buildPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][
 
 export function renderQueueBatchReport(report: QueueBatchReport): string {
 	const entries = report.entries;
-	const total = entries.length;
-	const completed = entries.filter((e) => e.outcome === 'completed').length;
-	const skipped = entries.filter((e) => e.outcome === 'skipped').length;
-	const failed = entries.filter((e) => e.outcome === 'failed').length;
-	const canceled = entries.filter((e) => e.outcome === 'canceled').length;
-	const summary = buildRunReportSummary(total, completed, skipped, failed, canceled);
+	const counts = countQueueBatchReportEntries(entries);
+	const summary = buildRunReportSummary(counts.total, counts.completed, counts.skipped, counts.failed, counts.canceled);
 	const runLines = entries.length
 		? entries.map((entry, index) => entry.kind === 'video'
 			? buildVideoRunReportEntry(entry, index)
