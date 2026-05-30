@@ -161,7 +161,12 @@ export interface TranscriptResponse {
 	videoId: string;
 	title: string;
 	author: string;
+	channelId?: string;
 	channelUrl: string;
+	description?: string;
+	thumbnailUrl?: string;
+	durationSeconds?: number;
+	keywords?: string[];
 	lines: TranscriptLine[];
 }
 

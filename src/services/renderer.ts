@@ -1,6 +1,6 @@
 import { GenerationOptions, MediaEmbedMode, PlaylistTranscriptResponse, QueueBatchReport, TranscriptLine, TranscriptResponse } from '../types';
 import type { Template } from '../types';
-import { DEFAULT_MEDIA_EMBED_MODE } from '../defaults';
+import { DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST, DEFAULT_MEDIA_EMBED_MODE } from '../defaults';
 import {
 	buildTldrCallout,
 	extractTldr,
@@ -48,13 +48,15 @@ function parseTagList(input: string | undefined): string[] {
 }
 
 const KNOWN_ALLOWLIST_KEYS: ReadonlySet<string> = new Set([
-	'title', 'aliases', 'source', 'channel', 'channelUrl',
-	'videoUrl', 'playlistUrl', 'videoId', 'playlistId', 'generated', 'videoCount',
+	'title', 'aliases', 'source', 'channel', 'channelUrl', 'channelId',
+	'videoUrl', 'playlistUrl', 'videoId', 'playlistId', 'thumbnailUrl',
+	'videoDescription', 'durationSeconds', 'keywords', 'generated', 'videoCount',
 ]);
+const DEFAULT_ALLOWLIST_KEYS: ReadonlySet<string> = new Set(DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST.split(/\s+/));
 
 function parseAllowlist(input: string | undefined): Set<string> {
 	if (input === undefined) {
-		return new Set(KNOWN_ALLOWLIST_KEYS);
+		return new Set(DEFAULT_ALLOWLIST_KEYS);
 	}
 	const parts = input.split(/[\s,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
 	if (!parts.length) {
@@ -179,12 +181,32 @@ function buildVideoFrontmatter(
 		lines.push(`channelUrl: ${quoteYamlValue(transcript.channelUrl)}`);
 	}
 
+	if (transcript.channelId && allowlist.has('channelId')) {
+		lines.push(`channelId: ${quoteYamlValue(transcript.channelId)}`);
+	}
+
 	if (allowlist.has('videoUrl')) {
 		lines.push(`videoUrl: ${quoteYamlValue(url)}`);
 	}
 
 	if (allowlist.has('videoId')) {
 		lines.push(`videoId: ${quoteYamlValue(transcript.videoId)}`);
+	}
+
+	if (transcript.thumbnailUrl && allowlist.has('thumbnailUrl')) {
+		lines.push(`thumbnailUrl: ${quoteYamlValue(transcript.thumbnailUrl)}`);
+	}
+
+	if (transcript.description && allowlist.has('videoDescription')) {
+		lines.push(`videoDescription: ${quoteYamlValue(transcript.description)}`);
+	}
+
+	if (typeof transcript.durationSeconds === 'number' && Number.isFinite(transcript.durationSeconds) && allowlist.has('durationSeconds')) {
+		lines.push(`durationSeconds: ${transcript.durationSeconds}`);
+	}
+
+	if (Array.isArray(transcript.keywords) && transcript.keywords.length > 0 && allowlist.has('keywords')) {
+		lines.push(formatYamlEntry('keywords', transcript.keywords));
 	}
 
 	if (allowlist.has('generated')) {

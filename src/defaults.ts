@@ -7,7 +7,7 @@ export const DEFAULT_MEDIA_EMBED_MODE = 'video';
 export const DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME = true;
 export const DEFAULT_INCLUDE_FRONTMATTER = true;
 export const DEFAULT_FRONTMATTER_TAGS = '';
-export const DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST = 'title aliases source channel channelUrl videoUrl playlistUrl videoId playlistId generated videoCount';
+export const DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST = 'title aliases source channel channelUrl channelId videoUrl playlistUrl videoId playlistId thumbnailUrl videoDescription durationSeconds keywords generated videoCount';
 export const DEFAULT_SOURCE_SECTION_POSITION = 'bottom';
 
 export const DEFAULT_OUTPUT_TRANSCRIPT_MODE = 'timestamped';

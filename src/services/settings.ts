@@ -121,8 +121,25 @@ function normalizeIncludeMemorableQuotes(value?: boolean): boolean {
 	return value ?? DEFAULT_INCLUDE_MEMORABLE_QUOTES;
 }
 
+function normalizeAllowlistText(value: string): string {
+	return value
+		.split(/[\s,]+/)
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0)
+		.join(' ');
+}
+
 function normalizeFrontmatterPropertyAllowlist(value?: string): string {
-	return value?.trim() ?? DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST;
+	if (value === undefined) {
+		return DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST;
+	}
+
+	const normalized = normalizeAllowlistText(value);
+	if (!normalized) {
+		return '';
+	}
+
+	return normalized;
 }
 
 function normalizeInstructionConfig(instructionConfig?: Partial<InstructionConfig>): InstructionConfig {

@@ -506,6 +506,15 @@ describe('YouTubeService.fetchTranscript', () => {
 							title: 'Video &amp; Title',
 							author: 'Author &amp; Channel',
 							channelId: 'UC123',
+							shortDescription: 'A video &amp; description.',
+							lengthSeconds: '123',
+							keywords: ['Topic', 'Topic', 'Another &amp; topic'],
+							thumbnail: {
+								thumbnails: [
+									{ url: 'https://img.example/small.jpg', width: 120, height: 90 },
+									{ url: 'https://img.example/large.jpg', width: 640, height: 360 },
+								],
+							},
 						},
 						captions: {
 							playerCaptionsTracklistRenderer: {
@@ -536,7 +545,12 @@ describe('YouTubeService.fetchTranscript', () => {
 				videoId: 'abcdefghijk',
 				title: 'Video & Title',
 				author: 'Author & Channel',
+				channelId: 'UC123',
 				channelUrl: 'https://www.youtube.com/channel/UC123',
+				description: 'A video & description.',
+				thumbnailUrl: 'https://img.example/large.jpg',
+				durationSeconds: 123,
+				keywords: ['Topic', 'Another & topic'],
 				lines: [{ text: 'Hello & transcript', offset: 0 }],
 			},
 		});

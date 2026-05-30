@@ -6,7 +6,12 @@ const transcript = {
 	videoId: 'abc',
 	title: 'Test',
 	author: 'Author',
+	channelId: 'UC123',
 	channelUrl: 'https://youtube.com/channel/x',
+	description: 'Description',
+	thumbnailUrl: 'https://img.youtube.com/vi/abc/hqdefault.jpg',
+	durationSeconds: 60,
+	keywords: ['one', 'two'],
 	lines: [],
 };
 
@@ -28,6 +33,11 @@ describe('sacred-key allowlist', () => {
 
 		expect(content).toContain('videoId:');
 		expect(content).toContain('channel:');
+		expect(content).toContain('channelId:');
+		expect(content).toContain('thumbnailUrl:');
+		expect(content).toContain('videoDescription:');
+		expect(content).toContain('durationSeconds:');
+		expect(content).toContain('keywords:');
 		expect(content).toContain('generated:');
 	});
 
@@ -42,6 +52,8 @@ describe('sacred-key allowlist', () => {
 
 		expect(content).not.toContain('videoId:');
 		expect(content).not.toContain('channel:');
+		expect(content).not.toContain('thumbnailUrl:');
+		expect(content).not.toContain('durationSeconds:');
 		expect(content).not.toContain('generated:');
 	});
 
@@ -56,6 +68,7 @@ describe('sacred-key allowlist', () => {
 
 		expect(content).toContain('channel:');
 		expect(content).not.toContain('videoId:');
+		expect(content).not.toContain('thumbnailUrl:');
 		expect(content).not.toContain('generated:');
 	});
 
@@ -83,6 +96,18 @@ describe('sacred-key allowlist', () => {
 		expect(content).toContain('videoId:');
 		expect(content).toContain('channel:');
 		expect(content).not.toContain('notakey:');
+	});
+
+	it('thumbnailUrl is emitted when explicitly allowlisted', () => {
+		const { content } = renderVideoNote(
+			transcript as any,
+			'',
+			transcript.url,
+			null,
+			{ ...baseOptions, frontmatterPropertyAllowlist: 'thumbnailUrl' },
+		);
+
+		expect(content).toContain('thumbnailUrl: "https://img.youtube.com/vi/abc/hqdefault.jpg"');
 	});
 
 	it('fragment mode ignores allowlist entirely (no frontmatter)', () => {

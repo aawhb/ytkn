@@ -75,10 +75,15 @@ Supported keys are:
 - `source`
 - `channel`
 - `channelUrl`
+- `channelId`
 - `videoUrl`
 - `playlistUrl`
 - `videoId`
 - `playlistId`
+- `thumbnailUrl`
+- `videoDescription`
+- `durationSeconds`
+- `keywords`
 - `generated`
 - `videoCount`
 

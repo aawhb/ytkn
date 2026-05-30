@@ -6,7 +6,12 @@ const transcript = {
 	videoId: '123',
 	title: 'Video',
 	author: 'Author',
+	channelId: 'UCabc',
 	channelUrl: 'https://youtube.com/channel/abc',
+	description: 'Video description.',
+	thumbnailUrl: 'https://img.youtube.com/vi/123/hqdefault.jpg',
+	durationSeconds: 42,
+	keywords: ['alpha', 'beta'],
 	lines: [{ text: 'Hello world', offset: 0 }],
 };
 
@@ -380,7 +385,7 @@ describe('renderVideoNote', () => {
 });
 
 describe('frontmatter and linkback options', () => {
-	it('emits frontmatter with title, alias, channel, videoId, and generated timestamp by default', () => {
+	it('emits frontmatter with source metadata by default', () => {
 		const { content } = renderVideoNote(
 			transcript as any,
 			'thumb.png',
@@ -396,7 +401,12 @@ describe('frontmatter and linkback options', () => {
 		expect(block).toContain('  - "Video"');
 		expect(block).toContain('source: youtube');
 		expect(block).toContain('channel: "Author"');
+		expect(block).toContain('channelId: "UCabc"');
 		expect(block).toContain('videoId: "123"');
+		expect(block).toContain('thumbnailUrl: "https://img.youtube.com/vi/123/hqdefault.jpg"');
+		expect(block).toContain('videoDescription: "Video description."');
+		expect(block).toContain('durationSeconds: 42');
+		expect(block).toContain('keywords:\n  - "alpha"\n  - "beta"');
 		expect(block).toContain('generated: ');
 	});
 

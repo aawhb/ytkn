@@ -295,7 +295,7 @@ export class SettingsTab extends PluginSettingTab {
 			new Setting(containerEl)
 				.setName('Frontmatter properties')
 				.setDesc(
-					'Space- or comma-separated list of property keys the plugin will write. Remove a key to suppress it. Allowed keys: title, aliases, source, channel, channelUrl, videoUrl, playlistUrl, videoId, playlistId, generated, videoCount.',
+					'Space- or comma-separated list of property keys the plugin will write. Remove a key to suppress it. Allowed keys: title, aliases, source, channel, channelUrl, channelId, videoUrl, playlistUrl, videoId, playlistId, thumbnailUrl, videoDescription, durationSeconds, keywords, generated, videoCount.',
 				)
 				.addText((text) =>
 					text

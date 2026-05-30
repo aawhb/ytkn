@@ -114,14 +114,21 @@ describe('mergeFrontmatter', () => {
 		expect(SACRED_FRONTMATTER_KEYS).toContain('videoCount');
 		expect(SACRED_FRONTMATTER_KEYS).toContain('videoId');
 		expect(SACRED_FRONTMATTER_KEYS).toContain('playlistId');
+		expect(SACRED_FRONTMATTER_KEYS).toContain('channelId');
+		expect(SACRED_FRONTMATTER_KEYS).toContain('thumbnailUrl');
+		expect(SACRED_FRONTMATTER_KEYS).toContain('videoDescription');
+		expect(SACRED_FRONTMATTER_KEYS).toContain('durationSeconds');
+		expect(SACRED_FRONTMATTER_KEYS).toContain('keywords');
 		const result = mergeFrontmatter({
 			globalTags: [],
 			templateTags: [],
 			declared,
-			extracted: { videoCount: 99, topics: ['a'] },
+			extracted: { videoCount: 99, videoDescription: 'model value', topics: ['a'] },
 		});
 		expect(result.merged.videoCount).toBeUndefined();
+		expect(result.merged.videoDescription).toBeUndefined();
 		expect(result.merged.topics).toEqual(['a']);
 		expect(result.warnings.some((w) => w.includes('videoCount'))).toBe(true);
+		expect(result.warnings.some((w) => w.includes('videoDescription'))).toBe(true);
 	});
 });

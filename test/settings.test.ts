@@ -732,6 +732,41 @@ describe('SettingsService', () => {
 		});
 	});
 
+	describe('saved frontmatter allowlists', () => {
+		it('preserves a saved previously published default allowlist', async () => {
+			const previouslyPublishedDefaultAllowlist = 'title aliases source channel channelUrl videoUrl playlistUrl videoId playlistId generated videoCount';
+			const plugin = new FakePlugin();
+			plugin.data = {
+				settings: {
+					outputDefaults: {
+						frontmatterPropertyAllowlist: previouslyPublishedDefaultAllowlist,
+					},
+				},
+			};
+
+			const manager = new SettingsService(plugin as any);
+			await manager.loadSettings();
+
+			expect(manager.getOutputDefaults().frontmatterPropertyAllowlist).toBe(previouslyPublishedDefaultAllowlist);
+		});
+
+		it('preserves custom allowlists when adding new default metadata keys', async () => {
+			const plugin = new FakePlugin();
+			plugin.data = {
+				settings: {
+					outputDefaults: {
+						frontmatterPropertyAllowlist: 'title channel videoUrl',
+					},
+				},
+			};
+
+			const manager = new SettingsService(plugin as any);
+			await manager.loadSettings();
+
+			expect(manager.getOutputDefaults().frontmatterPropertyAllowlist).toBe('title channel videoUrl');
+		});
+	});
+
 	it('keeps the active model after renaming the owning provider', async () => {
 		const plugin = new FakePlugin();
 		plugin.data = {

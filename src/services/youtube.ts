@@ -16,6 +16,12 @@ type CaptionTrack = {
 	languageCode: string;
 };
 
+type Thumbnail = {
+	url?: string;
+	width?: number;
+	height?: number;
+};
+
 type PlayerEnvelope = {
 	error?: { status?: string };
 	playabilityStatus?: {
@@ -26,6 +32,12 @@ type PlayerEnvelope = {
 		title?: string;
 		author?: string;
 		channelId?: string;
+		shortDescription?: string;
+		lengthSeconds?: string;
+		keywords?: unknown;
+		thumbnail?: {
+			thumbnails?: Thumbnail[];
+		};
 	};
 	captions?: {
 		playerCaptionsTracklistRenderer?: {
@@ -367,6 +379,47 @@ function sortedEntries(entries: Map<string, PlaylistEntry>): PlaylistEntry[] {
 	return Array.from(entries.values()).sort((left, right) => left.position - right.position || left.videoId.localeCompare(right.videoId));
 }
 
+function parsePositiveInteger(value: unknown): number | undefined {
+	if (typeof value !== 'string' && typeof value !== 'number') {
+		return undefined;
+	}
+
+	const parsed = Number.parseInt(`${value}`, 10);
+	return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function normalizeStringList(value: unknown): string[] | undefined {
+	if (!Array.isArray(value)) {
+		return undefined;
+	}
+
+	const seen = new Set<string>();
+	const items: string[] = [];
+	for (const item of value) {
+		if (typeof item !== 'string') {
+			continue;
+		}
+
+		const normalized = normalizeHtmlText(item);
+		if (!normalized || seen.has(normalized)) {
+			continue;
+		}
+
+		seen.add(normalized);
+		items.push(normalized);
+	}
+
+	return items.length ? items : undefined;
+}
+
+function bestThumbnailUrl(videoId: string, thumbnails: Thumbnail[] | undefined): string {
+	const best = (thumbnails ?? [])
+		.filter((thumbnail): thumbnail is Required<Pick<Thumbnail, 'url'>> & Thumbnail => typeof thumbnail.url === 'string' && thumbnail.url.length > 0)
+		.sort((left, right) => ((right.width ?? 0) * (right.height ?? 0)) - ((left.width ?? 0) * (left.height ?? 0)))[0];
+
+	return best?.url ?? `https://img.youtube.com/vi/${videoId}/${THUMBNAIL_SLUGS.high}.jpg`;
+}
+
 function parseCaptionXml(xml: string): TranscriptLine[] {
 	const paragraphLines = parseCaptionElements(xml, /<p\s+([^>]+)>([\s\S]*?)<\/p>/g, (attributes) => {
 		const match = attributes.match(/\bt="(\d+)"/);
@@ -652,6 +705,10 @@ export class YouTubeService {
 
 			const lines = await requestCaptionLines(selectedTrack.baseUrl);
 			const details = player.videoDetails;
+			const thumbnailUrl = bestThumbnailUrl(videoId, details?.thumbnail?.thumbnails);
+			const description = details?.shortDescription ? normalizeHtmlText(details.shortDescription) : undefined;
+			const durationSeconds = parsePositiveInteger(details?.lengthSeconds);
+			const keywords = normalizeStringList(details?.keywords);
 
 			return {
 				languageCode: selectedTrack.languageCode,
@@ -660,7 +717,12 @@ export class YouTubeService {
 					videoId,
 					title: normalizeHtmlText(details?.title ?? UNKNOWN_VALUE),
 					author: normalizeHtmlText(details?.author ?? UNKNOWN_VALUE),
+					...(details?.channelId ? { channelId: details.channelId } : {}),
 					channelUrl: details?.channelId ? `https://www.youtube.com/channel/${details.channelId}` : '',
+					...(description ? { description } : {}),
+					thumbnailUrl,
+					...(durationSeconds !== undefined ? { durationSeconds } : {}),
+					...(keywords ? { keywords } : {}),
 					lines,
 				},
 			};
