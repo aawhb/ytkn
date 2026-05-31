@@ -48,7 +48,6 @@ import {
 import { renderTemplateControls } from './components/TemplateControls';
 import { stampSettingRowClasses } from './settingRows';
 import { SETTING_COPY } from './settingCopy';
-import { markDestructiveButton, renderLegacySettingsTab } from './obsidianCompat';
 
 const RESTORE_DEFAULTS_LABEL = 'Restore defaults';
 
@@ -597,7 +596,10 @@ export class SettingsTab extends PluginSettingTab {
 				'Removes all providers, models, secret selections, and per-feature defaults. Saved obsidian secrets are not deleted.',
 			)
 			.addButton((button) =>
-				markDestructiveButton(button.setButtonText(RESTORE_DEFAULTS_LABEL))
+				button
+					.setButtonText(RESTORE_DEFAULTS_LABEL)
+					// setWarning() keeps compatibility with minAppVersion 1.11.4; setDestructive() requires Obsidian 1.13.0.
+					.setWarning()
 					.onClick(() => {
 						this.resetSettings();
 					}),
@@ -774,7 +776,9 @@ export class SettingsTab extends PluginSettingTab {
 		const openedProviderName =
 			openedAccordion?.getAttribute('data-provider-name') ?? null;
 
-		renderLegacySettingsTab(this);
+		// display() is still the supported settings-tab render hook for minAppVersion 1.11.4;
+		// migrating to Obsidian's newer settings definitions API should be a separate compatibility decision.
+		this.display();
 
 		if (openedProviderName) {
 			this.containerEl

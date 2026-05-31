@@ -74,6 +74,18 @@ export default defineConfig([
 		},
 	},
 	{
+		files: [
+			'src/ui/modals/ConfirmModal.ts',
+			'src/ui/modals/QueueModal.ts',
+			'src/ui/settings.ts',
+		],
+		rules: {
+			// These files intentionally use Obsidian APIs deprecated in newer typings
+			// because they remain the compatible path for minAppVersion 1.11.4.
+			'@typescript-eslint/no-deprecated': 'off',
+		},
+	},
+	{
 		files: ['*.mjs', 'scripts/**/*.mjs', 'scripts/**/*.js', 'vitest.config.ts'],
 		languageOptions: {
 			parserOptions: {
