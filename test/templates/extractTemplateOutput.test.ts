@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { extractFrontmatterBlock } from '../../src/services/templates/extract-template-output';
+import { extractFrontmatterBlock } from '../../src/services/templates/extractTemplateOutput';
 import type { Template } from '../../src/types';
-import { extractTemplateOutput } from '../../src/services/templates/extract-template-output';
+import { extractTemplateOutput } from '../../src/services/templates/extractTemplateOutput';
 
 const generalLikeTemplate: Template = {
 	id: 'general',

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('obsidian', async () => {
-    const mod = await import('./mocks/obsidian');
+    const mod = await import('../mocks/obsidian');
     return mod;
 });
 
-import { renderTemplateControls } from '../src/ui/components/TemplateControls';
-import type { ControlDeclaration } from '../src/types';
+import { renderTemplateControls } from '../../src/ui/components/TemplateControls';
+import type { ControlDeclaration } from '../../src/types';
 
 describe('renderTemplateControls', () => {
     it('renders enum controls with the shared control-row class', () => {
@@ -50,5 +50,23 @@ describe('renderTemplateControls', () => {
         const textarea = container.querySelector('textarea.ytkn-control-row__textarea');
         expect(row).not.toBeNull();
         expect(textarea).not.toBeNull();
+    });
+
+    it('renders single-line string controls with the shared form input class', () => {
+        const container = document.createElement('div');
+        const controls: ControlDeclaration[] = [
+            {
+                id: 'focus',
+                type: 'string',
+                label: 'Focus',
+                description: 'Primary focus for the note.',
+                required: false,
+            },
+        ];
+
+        renderTemplateControls(container, controls, {}, vi.fn());
+
+        const input = container.querySelector('input.ytkn-form__input');
+        expect(input).not.toBeNull();
     });
 });

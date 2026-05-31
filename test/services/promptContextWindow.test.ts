@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { PromptService } from '../src/services/prompt';
-import { TranscriptResponse } from '../src/types';
+import { PromptService } from '../../src/services/prompt';
+import { TranscriptResponse } from '../../src/types';
 
 // Budget for openai-compatible fallback (64000 token window):
 //   safetyMargin = round(64000 * 0.1) = 6400

@@ -7,7 +7,7 @@ vi.mock('obsidian', async () => {
 
 import { App } from 'obsidian';
 import { WhatsNewModal } from '../../src/ui/modals/WhatsNewModal';
-import { SUPPORT_LINKS } from '../../src/release-notes';
+import { SUPPORT_LINKS } from '../../src/releaseNotes';
 
 describe('WhatsNewModal', () => {
 	it('renders release notes and support links', () => {

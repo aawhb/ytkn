@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { App } from 'obsidian';
-import { SettingsService } from '../src/services/settings';
+import { SettingsService } from '../../src/services/settings';
 import {
 	DEFAULT_FRONTMATTER_TAGS,
 	DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST,
@@ -27,10 +27,10 @@ import {
 	DEFAULT_TRANSCRIPT_LANGUAGE_MODE,
 	DEFAULT_USE_AI,
 	DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,
-} from '../src/defaults';
+} from '../../src/defaults';
 
 vi.mock('obsidian', async () => {
-	const mod = await import('./mocks/obsidian');
+	const mod = await import('../mocks/obsidian');
 	return mod;
 });
 

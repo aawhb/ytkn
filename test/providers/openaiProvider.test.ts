@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { OpenAIProvider } from '../src/services/providers/openai';
+import { OpenAIProvider } from '../../src/services/providers/openai';
 
 describe('OpenAIProvider', () => {
 	afterEach(() => {

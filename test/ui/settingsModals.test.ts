@@ -132,6 +132,8 @@ describe('settings modals', () => {
 
         changeInput(inputByLabel(addModal, 'Provider name'), ' Local LLM ');
         changeSelect(addModal.contentEl.querySelector('select')!, 'openai-compatible');
+        expect(inputByLabel(addModal, 'Provider name').classList.contains('ytkn-form__input')).toBe(true);
+        expect(inputByLabel(addModal, 'URL').classList.contains('ytkn-form__input')).toBe(true);
         changeInput(inputByLabel(addModal, 'URL'), ' http://localhost:11434/v1 ');
         button(addModal, 'Save').click();
         await Promise.resolve();

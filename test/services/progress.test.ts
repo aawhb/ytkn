@@ -6,7 +6,7 @@ import {
 	isAbortError,
 	replaceMarkedContent,
 	replaceRange,
-} from '../src/services/progress';
+} from '../../src/services/progress';
 
 describe('progress markers', () => {
 	it('builds unique markers per job id', () => {

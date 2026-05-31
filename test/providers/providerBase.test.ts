@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { TRUNCATION_NOTICE, DEFAULT_REQUEST_TIMEOUT_MS } from '../src/defaults';
-import { AbstractProvider } from '../src/services/providers/base';
-import { normalizeRequestTimeoutMs } from '../src/services/providers/shared';
+import { TRUNCATION_NOTICE, DEFAULT_REQUEST_TIMEOUT_MS } from '../../src/defaults';
+import { AbstractProvider } from '../../src/services/providers/base';
+import { normalizeRequestTimeoutMs } from '../../src/services/providers/shared';
 
 class TestProvider extends AbstractProvider {
     protected readonly providerName = 'TestProvider';

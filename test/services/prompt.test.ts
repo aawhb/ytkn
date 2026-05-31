@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { PromptService } from '../src/services/prompt';
+import { PromptService } from '../../src/services/prompt';
 import {
 	findTemplateChoice,
 	listTemplateChoices,
 	populateTemplateDropdown,
-} from '../src/services/templates';
+} from '../../src/services/templates';
 
 const transcript = {
 	url: 'https://youtube.com/watch?v=123',

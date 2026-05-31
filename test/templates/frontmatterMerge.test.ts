@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeFrontmatter, SACRED_FRONTMATTER_KEYS } from '../../src/services/templates/frontmatter-merge';
+import { mergeFrontmatter, SACRED_FRONTMATTER_KEYS } from '../../src/services/templates/frontmatterMerge';
 import type { FrontmatterDeclaration } from '../../src/types';
 
 const declared: FrontmatterDeclaration[] = [

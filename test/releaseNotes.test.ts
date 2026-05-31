@@ -4,7 +4,7 @@ import {
 	getReleaseNote,
 	ReleaseNote,
 	resolveReleaseNotesStartupAction,
-} from '../src/release-notes';
+} from '../src/releaseNotes';
 
 const notes: ReleaseNote[] = [
 	{ version: '2.0.0', date: '2026-02-01', showOnUpdate: true, new: ['Two'] },

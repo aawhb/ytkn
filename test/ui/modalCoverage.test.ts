@@ -7,7 +7,7 @@ vi.mock('obsidian', async () => {
 
 import { GenerationOptionsModal } from '../../src/ui/modals/GenerationOptionsModal';
 import { WhatsNewModal } from '../../src/ui/modals/WhatsNewModal';
-import { SUPPORT_LINKS } from '../../src/release-notes';
+import { SUPPORT_LINKS } from '../../src/releaseNotes';
 import type { ModelConfig, GenerationOptions } from '../../src/types';
 import { App } from 'obsidian';
 
@@ -335,8 +335,11 @@ describe('GenerationOptionsModal.onOpen', () => {
 		modal.open();
 
 		const urlField = modal.contentEl.querySelector('textarea.ytkn-modal__url-input');
+		const manualPrompt = modal.contentEl.querySelector('textarea.ytkn-modal__manual-prompt');
 		expect(urlField).not.toBeNull();
 		expect(urlField?.tagName).toBe('TEXTAREA');
+		expect(urlField?.classList.contains('ytkn-form__input')).toBe(true);
+		expect(manualPrompt?.classList.contains('ytkn-form__input')).toBe(true);
 	});
 
 	it('URL input field is present in the quick area', () => {

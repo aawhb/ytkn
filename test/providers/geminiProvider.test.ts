@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GeminiProvider } from '../src/services/providers/gemini';
-import { TRUNCATION_NOTICE } from '../src/defaults';
+import { GeminiProvider } from '../../src/services/providers/gemini';
+import { TRUNCATION_NOTICE } from '../../src/defaults';
 
 const mockGenerateContent = vi.fn();
 const mockGetGenerativeModel = vi.fn();

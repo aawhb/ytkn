@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AnthropicProvider } from '../src/services/providers/anthropic';
-import { TRUNCATION_NOTICE } from '../src/defaults';
+import { AnthropicProvider } from '../../src/services/providers/anthropic';
+import { TRUNCATION_NOTICE } from '../../src/defaults';
 
 const mockCreate = vi.fn();
 

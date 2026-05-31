@@ -8,7 +8,7 @@ function writeReleaseFiles(rootDir: string, version: string, changelogVersion = 
 	mkdirSync(join(rootDir, 'src'), { recursive: true });
 	writeFileSync(join(rootDir, 'package.json'), JSON.stringify({ version }, null, '\t'));
 	writeFileSync(join(rootDir, 'CHANGELOG.md'), `# Changelog\n\n## ${changelogVersion} - 2026-01-01\n\n- Changed.\n`);
-	writeFileSync(join(rootDir, 'src', 'release-notes.ts'), `export const RELEASE_NOTES = [{ version: '${notesVersion}' }];\n`);
+	writeFileSync(join(rootDir, 'src', 'releaseNotes.ts'), `export const RELEASE_NOTES = [{ version: '${notesVersion}' }];\n`);
 }
 
 describe('verifyChangelog', () => {

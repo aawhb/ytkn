@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { renderPlaylistNote, renderQueueBatchReport, renderVideoNote } from '../src/services/renderer';
-import { getTemplate } from '../src/services/templates';
+import { renderPlaylistNote, renderQueueBatchReport, renderVideoNote } from '../../src/services/renderer';
+import { getTemplate } from '../../src/services/templates';
 
 const transcript = {
 	url: 'https://youtube.com/watch?v=123',

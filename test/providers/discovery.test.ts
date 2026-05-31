@@ -4,8 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // before discovery.ts imports it, to control which fetch implementation is used.
 let mockFetch: ReturnType<typeof vi.fn>;
 
-vi.mock('../src/utils', async (importOriginal) => {
-	const original = await importOriginal<typeof import('../src/utils')>();
+vi.mock('../../src/utils', async (importOriginal) => {
+	const original = await importOriginal<typeof import('../../src/utils')>();
 	return {
 		...original,
 		get fetchFn() {
@@ -14,7 +14,7 @@ vi.mock('../src/utils', async (importOriginal) => {
 	};
 });
 
-import { discoverProviderModels } from '../src/services/providers/discovery';
+import { discoverProviderModels } from '../../src/services/providers/discovery';
 
 afterEach(() => {
 	vi.clearAllMocks();

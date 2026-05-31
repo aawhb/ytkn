@@ -6,6 +6,13 @@ export async function requestUrl(): Promise<{ text: string; json: unknown }> {
 	throw new Error('requestUrl mock not implemented for this test');
 }
 
+export function normalizePath(path: string): string {
+	return path
+		.replace(/\\/g, '/')
+		.replace(/\/+/g, '/')
+		.replace(/^\/+|\/+$/g, '');
+}
+
 class MockSecretStorage {
 	private secrets = new Map<string, string>();
 

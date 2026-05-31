@@ -78,9 +78,18 @@ describe('normalizeVaultFolderPath', () => {
 		expect(normalizeVaultFolderPath('  /YouTube Notes/Nested/  ')).toBe('YouTube Notes/Nested');
 	});
 
+	it('normalizes backslashes and repeated slashes', () => {
+		expect(normalizeVaultFolderPath('YouTube Notes\\Nested//Deep')).toBe('YouTube Notes/Nested/Deep');
+	});
+
+	it('trims non-breaking space around user-entered paths', () => {
+		expect(normalizeVaultFolderPath('\u00A0/YouTube Notes/\u00A0')).toBe('YouTube Notes');
+	});
+
 	it('returns an empty string when only slashes are present', () => {
 		expect(normalizeVaultFolderPath('/')).toBe('');
 		expect(normalizeVaultFolderPath('////')).toBe('');
+		expect(normalizeVaultFolderPath('\\\\')).toBe('');
 	});
 });
 

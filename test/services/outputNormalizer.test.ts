@@ -3,7 +3,7 @@ import {
     extractTldr,
     sanitizeModelOutput,
     shiftMarkdownHeadings,
-} from '../src/services/outputNormalizer';
+} from '../../src/services/outputNormalizer';
 
 describe('output normalizer', () => {
     it('sanitizes model-owned source/transcript sections and decodes Mermaid entities', () => {

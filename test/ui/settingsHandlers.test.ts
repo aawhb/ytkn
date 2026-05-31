@@ -3,15 +3,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const { mockNotice } = vi.hoisted(() => ({ mockNotice: vi.fn() }));
 
 vi.mock('obsidian', async () => {
-	const mod = await import('./mocks/obsidian');
+	const mod = await import('../mocks/obsidian');
 	return {
 		...mod,
 		Notice: mockNotice,
 	};
 });
 
-import { SettingsEventHandlers } from '../src/ui/handlers/SettingsEventHandlers';
-import type { ProviderConfig, ModelConfig } from '../src/types';
+import { SettingsEventHandlers } from '../../src/ui/handlers/SettingsEventHandlers';
+import type { ProviderConfig, ModelConfig } from '../../src/types';
 
 // ---------------------------------------------------------------------------
 // Shared fixtures

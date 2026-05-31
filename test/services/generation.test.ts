@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('obsidian', async () => {
-	const mod = await import('./mocks/obsidian');
+	const mod = await import('../mocks/obsidian');
 	return { ...mod, TFile: class TFile { } };
 });
 
-import { GenerationService } from '../src/services/generation';
-import type { GenerationOptions, PlaylistResponse, PluginSettings, TranscriptResponse } from '../src/types';
-import type { QueuedRun } from '../src/services/runQueue';
+import { GenerationService } from '../../src/services/generation';
+import type { GenerationOptions, PlaylistResponse, PluginSettings, TranscriptResponse } from '../../src/types';
+import type { QueuedRun } from '../../src/services/runQueue';
 
 const VIDEO_URL = 'https://www.youtube.com/watch?v=abcdefghijk';
 const PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PL123';

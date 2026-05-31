@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { YouTubeService } from '../src/services/youtube';
-import * as obsidianMock from './mocks/obsidian';
+import { YouTubeService } from '../../src/services/youtube';
+import * as obsidianMock from '../mocks/obsidian';
 
 vi.mock('obsidian', async () => {
-	const mod = await import('./mocks/obsidian');
+	const mod = await import('../mocks/obsidian');
 	return mod;
 });
 

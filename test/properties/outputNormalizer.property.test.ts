@@ -4,7 +4,7 @@ import {
     extractTldr,
     sanitizeModelOutput,
     shiftMarkdownHeadings,
-} from '../../src/services/output-normalizer';
+} from '../../src/services/outputNormalizer';
 import { safeLineArbitrary, safeParagraphArbitrary } from './generators';
 
 describe('output normalizer property tests', () => {

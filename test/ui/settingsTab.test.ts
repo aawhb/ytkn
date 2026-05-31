@@ -18,7 +18,7 @@ vi.mock('obsidian', async () => {
 
 import { App } from 'obsidian';
 import { SettingsTab } from '../../src/ui/settings';
-import { SUPPORT_LINKS } from '../../src/release-notes';
+import { SUPPORT_LINKS } from '../../src/releaseNotes';
 import { WhatsNewModal } from '../../src/ui/modals/WhatsNewModal';
 import { SETTING_COPY } from '../../src/ui/settingCopy';
 

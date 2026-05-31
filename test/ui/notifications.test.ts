@@ -10,7 +10,7 @@ vi.mock('obsidian', () => ({
     },
 }));
 
-import { notifyError } from '../src/ui/notifications';
+import { notifyError } from '../../src/ui/notifications';
 
 describe('notifyError', () => {
     beforeEach(() => {

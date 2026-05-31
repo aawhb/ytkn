@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ProvidersFactory } from '../src/services/providers/factory';
-import { AnthropicProvider } from '../src/services/providers/anthropic';
-import { GeminiProvider } from '../src/services/providers/gemini';
-import { OpenAIProvider } from '../src/services/providers/openai';
-import type { ModelConfig } from '../src/types';
+import { ProvidersFactory } from '../../src/services/providers/factory';
+import { AnthropicProvider } from '../../src/services/providers/anthropic';
+import { GeminiProvider } from '../../src/services/providers/gemini';
+import { OpenAIProvider } from '../../src/services/providers/openai';
+import type { ModelConfig } from '../../src/types';
 
 vi.mock('@anthropic-ai/sdk');
 vi.mock('@google/generative-ai');

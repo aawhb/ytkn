@@ -7,8 +7,8 @@ import {
 	RunQueueService,
 	RunWorker,
 	buildFolderTargetPolicy,
-} from '../src/services/runQueue';
-import { QueueBatchReport, QueueRunReportEntry } from '../src/types';
+} from '../../src/services/runQueue';
+import { QueueBatchReport, QueueRunReportEntry } from '../../src/types';
 
 // ── Test helpers ──────────────────────────────────────────────────────────────
 
@@ -272,9 +272,7 @@ describe('RunQueueService', () => {
 
 		it('classifies AbortError-shaped thrown values as canceled', async () => {
 			const worker: RunWorker = {
-				executeRun: vi.fn(async () => {
-					throw { name: 'AbortError', message: 'The operation was aborted.' };
-				}),
+				executeRun: vi.fn(() => Promise.reject({ name: 'AbortError', message: 'The operation was aborted.' })),
 				resolveTitle: vi.fn().mockRejectedValue(new Error()),
 				persistBatchReport: vi.fn().mockResolvedValue(undefined),
 			};
@@ -409,4 +407,4 @@ describe('RunQueueService', () => {
 });
 
 // needed for the option clone isolation test type
-type GenerationOptions = import('../src/types').GenerationOptions;
+type GenerationOptions = import('../../src/types').GenerationOptions;

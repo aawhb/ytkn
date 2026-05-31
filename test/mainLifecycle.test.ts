@@ -209,7 +209,7 @@ vi.mock('../src/ui/modals/WhatsNewModal', () => ({
     },
 }));
 
-vi.mock('../src/release-notes', () => ({
+vi.mock('../src/releaseNotes', () => ({
     resolveReleaseNotesStartupAction: mocks.resolveReleaseNotesStartupAction,
 }));
 
@@ -242,7 +242,7 @@ describe('YTKN plugin lifecycle', () => {
             'cancel-all-queued',
             'manage-knowledge-note-queue',
         ]);
-        expect(plugin.statusBarItems[0].classList.contains('ytkn__status-bar--clickable')).toBe(true);
+        expect(plugin.statusBarItems[0].classList.contains('ytkn-status-bar--clickable')).toBe(true);
         expect(plugin.statusBarItems[0].style.display).toBe('none');
 
         plugin.statusBarItems[0].click();
