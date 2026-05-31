@@ -48,6 +48,7 @@ import {
 import { renderTemplateControls } from './components/TemplateControls';
 import { stampSettingRowClasses } from './settingRows';
 import { SETTING_COPY } from './settingCopy';
+import { markDestructiveButton, renderLegacySettingsTab } from './obsidianCompat';
 
 const RESTORE_DEFAULTS_LABEL = 'Restore defaults';
 
@@ -596,9 +597,7 @@ export class SettingsTab extends PluginSettingTab {
 				'Removes all providers, models, secret selections, and per-feature defaults. Saved obsidian secrets are not deleted.',
 			)
 			.addButton((button) =>
-				button
-					.setButtonText(RESTORE_DEFAULTS_LABEL)
-					.setWarning()
+				markDestructiveButton(button.setButtonText(RESTORE_DEFAULTS_LABEL))
 					.onClick(() => {
 						this.resetSettings();
 					}),
@@ -775,7 +774,7 @@ export class SettingsTab extends PluginSettingTab {
 		const openedProviderName =
 			openedAccordion?.getAttribute('data-provider-name') ?? null;
 
-		this.display();
+		renderLegacySettingsTab(this);
 
 		if (openedProviderName) {
 			this.containerEl

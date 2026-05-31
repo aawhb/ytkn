@@ -2,6 +2,7 @@ import { App, Modal, Setting } from 'obsidian';
 import { QueuedRun, RunQueueService } from '../../services/runQueue';
 import { QueueRunReportEntry } from '../../types';
 import { createSettingsCard } from '../components/SettingsUIComponents';
+import { markDestructiveButton } from '../obsidianCompat';
 
 export class QueueModal extends Modal {
 	private offListener?: () => void;
@@ -58,9 +59,7 @@ export class QueueModal extends Modal {
 		const hasWork = snap.current !== null || snap.queued.length > 0;
 		new Setting(footer)
 			.addButton((btn) =>
-				btn
-					.setButtonText('Cancel all')
-					.setWarning()
+				markDestructiveButton(btn.setButtonText('Cancel all'))
 					.setDisabled(!hasWork)
 					.onClick(() => {
 						this.runQueue.cancelAll();
