@@ -1,7 +1,5 @@
 import { GenerationOptions, QueueBatchReport, QueueRunOutcome, QueueRunReportEntry, RunReportLocation } from '../types';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export type QueuedRunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'canceled';
 export type QueuedRunKind = 'video' | 'playlist' | 'unknown';
 
@@ -82,8 +80,6 @@ export interface RunWorker {
 	persistBatchReport(batch: RunBatch, report: QueueBatchReport): Promise<void>;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 let _ordinalCounter = 0;
 
 function nextOrdinal(): number {
@@ -162,8 +158,6 @@ function buildErrorEntry(run: QueuedRun, error: unknown, signal: AbortSignal): Q
 	};
 }
 
-// ─── RunQueueService ──────────────────────────────────────────────────────────
-
 export class RunQueueService {
 	private readonly queue: QueuedRun[] = [];
 	private readonly batches = new Map<string, RunBatch>();
@@ -172,9 +166,7 @@ export class RunQueueService {
 	private current: { run: QueuedRun; controller: AbortController } | null = null;
 	private workerActive = false;
 
-	constructor(private readonly worker: RunWorker) {}
-
-	// ── Subscriptions ──────────────────────────────────────────────────────────
+	constructor(private readonly worker: RunWorker) { }
 
 	on(listener: RunQueueListener): () => void {
 		this.listeners.add(listener);
@@ -186,8 +178,6 @@ export class RunQueueService {
 			listener(event);
 		}
 	}
-
-	// ── Snapshot ───────────────────────────────────────────────────────────────
 
 	getSnapshot(): {
 		current: QueuedRun | null;
@@ -210,8 +200,6 @@ export class RunQueueService {
 	getRunSignal(): AbortSignal | undefined {
 		return this.current?.controller.signal;
 	}
-
-	// ── Enqueue ────────────────────────────────────────────────────────────────
 
 	enqueueBatch(input: BatchEnqueueInput): RunBatch {
 		const batchId = generateId();
@@ -270,13 +258,9 @@ export class RunQueueService {
 			});
 	}
 
-	// ── Status update ──────────────────────────────────────────────────────────
-
 	notifyStatus(run: QueuedRun): void {
 		this.emit({ type: 'status', run });
 	}
-
-	// ── Cancellation ───────────────────────────────────────────────────────────
 
 	cancelRun(runId: string): void {
 		if (this.current?.run.id === runId) {
@@ -332,8 +316,6 @@ export class RunQueueService {
 		this.emit({ type: 'cleared' });
 	}
 
-	// ── Worker loop ────────────────────────────────────────────────────────────
-
 	private kickWorker(): void {
 		if (this.workerActive) return;
 		this.workerActive = true;
@@ -379,8 +361,6 @@ export class RunQueueService {
 		}
 	}
 
-	// ── Batch finalization ─────────────────────────────────────────────────────
-
 	private allRunsTerminal(batch: RunBatch): boolean {
 		return batch.runIds.every((id) => {
 			if (this.current?.run.id === id) return false;
@@ -399,8 +379,6 @@ export class RunQueueService {
 		this.emit({ type: 'batch-finished', batch });
 	}
 
-	// ── History ────────────────────────────────────────────────────────────────
-
 	private pushHistory(entry: QueueRunReportEntry): void {
 		this.history.push(entry);
 		if (this.history.length > 50) {
@@ -408,8 +386,6 @@ export class RunQueueService {
 		}
 	}
 }
-
-// ── Utilities ─────────────────────────────────────────────────────────────────
 
 function outcomeToStatus(outcome: QueueRunOutcome): QueuedRunStatus {
 	switch (outcome) {

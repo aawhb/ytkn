@@ -257,7 +257,7 @@ function normalizeTemperature(temperature?: number): number {
 	return Math.min(Math.max(temperature as number, 0), 2);
 }
 
-function normalizeRequestTimeoutMs(timeoutMs?: number): number {
+function normalizeSettingsRequestTimeoutMs(timeoutMs?: number): number {
 	if (!Number.isFinite(timeoutMs) || (timeoutMs ?? 0) <= 0) {
 		return DEFAULT_REQUEST_TIMEOUT_MS;
 	}
@@ -301,7 +301,7 @@ export class SettingsService implements PluginSettings {
 			outputDefaults: normalizeOutputDefaults(savedSettings?.outputDefaults),
 			instructionConfig: normalizeInstructionConfig(savedSettings?.instructionConfig),
 			temperature: normalizeTemperature(savedSettings?.temperature),
-			requestTimeoutMs: normalizeRequestTimeoutMs(savedSettings?.requestTimeoutMs),
+			requestTimeoutMs: normalizeSettingsRequestTimeoutMs(savedSettings?.requestTimeoutMs),
 			lastSeenReleaseNotesVersion: normalizeReleaseNotesVersion(savedSettings?.lastSeenReleaseNotesVersion),
 		};
 
@@ -545,7 +545,7 @@ export class SettingsService implements PluginSettings {
 	}
 
 	async updateRequestTimeoutMs(timeoutMs: number): Promise<void> {
-		this.settings.requestTimeoutMs = normalizeRequestTimeoutMs(timeoutMs);
+		this.settings.requestTimeoutMs = normalizeSettingsRequestTimeoutMs(timeoutMs);
 		await this.saveData();
 	}
 

@@ -46,6 +46,21 @@ const provider: ProviderConfig = {
     ],
 };
 
+function makeProvider(type: ProviderConfig['type'], modelCount: number): ProviderConfig {
+    const testProvider: ProviderConfig = {
+        name: type,
+        type,
+        apiKey: '',
+        models: [],
+    };
+    testProvider.models = Array.from({ length: modelCount }, (_, index) => ({
+        name: `model-${index}`,
+        displayName: `Model ${index}`,
+        provider: testProvider,
+    }));
+    return testProvider;
+}
+
 describe('settings UI helpers', () => {
     it('creates a settings card with shared card and legacy settings classes', () => {
         const host = document.createElement('div');
@@ -66,23 +81,82 @@ describe('settings UI helpers', () => {
 
         const accordion = host.querySelector<HTMLElement>('.ytkn-settings__provider-accordion')!;
         const header = host.querySelector<HTMLElement>('.ytkn-settings__provider-header')!;
+        const providerInfo = host.querySelector<HTMLElement>('.ytkn-settings__provider-info')!;
+        const title = host.querySelector<HTMLElement>('.ytkn-settings__provider-title')!;
+        const description = host.querySelector<HTMLElement>('.ytkn-settings__provider-description')!;
+        const providerControls = host.querySelector<HTMLElement>('.ytkn-settings__provider-controls')!;
         const fetchButton = host.querySelector<HTMLButtonElement>('.ytkn-settings__provider-fetch')!;
         const editButton = host.querySelector<HTMLButtonElement>('.ytkn-settings__provider-edit')!;
         const deleteButton = host.querySelector<HTMLButtonElement>('.ytkn-settings__provider-delete')!;
+        const providerFields = host.querySelector<HTMLElement>('.ytkn-settings__provider-fields')!;
+        const modelsHeader = host.querySelector<HTMLElement>('.ytkn-settings__models-header')!;
+        const modelsHeaderInfo = modelsHeader.querySelector<HTMLElement>(':scope > .setting-item-info')!;
+        const modelsHeaderControl = modelsHeader.querySelector<HTMLElement>(':scope > .setting-item-control')!;
+        const modelActionButtons = Array.from(
+            modelsHeaderControl.querySelectorAll<HTMLButtonElement>(':scope > button'),
+        );
+        const modelItem = host.querySelector<HTMLElement>('.setting-model')!;
+        const modelEditButton = modelItem.querySelector<HTMLButtonElement>('[aria-label="Edit model"]')!;
+        const modelDeleteButton = modelItem.querySelector<HTMLButtonElement>('[aria-label="Delete model"]')!;
 
         expect(accordion.getAttribute('data-provider-name')).toBe('Local');
-        expect(host.querySelector('.ytkn-settings__provider-badge')?.textContent).toBe('OpenAI compatible');
-        expect(host.querySelector('.setting-model')?.getAttribute('data-model-id')).toBe('Local:llama3');
+        expect(header.classList.contains('setting-item')).toBe(true);
+        expect(header.classList.contains('ytkn-setting-row--fit-control')).toBe(true);
+        expect(providerInfo.classList.contains('setting-item-info')).toBe(true);
+        expect(providerControls.classList.contains('setting-item-control')).toBe(true);
+        expect(title.classList.contains('setting-item-name')).toBe(true);
+        expect(description.classList.contains('setting-item-description')).toBe(true);
+        expect(providerInfo.children[0]).toBe(title);
+        expect(providerInfo.children[1]).toBe(description);
+        expect(providerInfo.children).toHaveLength(2);
+        expect(title.textContent).toBe('Local');
+        expect(description.textContent).toBe('OpenAI-compatible · 1 model');
+        expect(host.querySelector('.ytkn-settings__provider-meta')).toBeNull();
+        expect(host.querySelector('.ytkn-settings__provider-badge')).toBeNull();
+        expect(host.querySelector('.ytkn-settings__provider-count')).toBeNull();
+        expect(providerFields.querySelectorAll('.ytkn-settings__provider-field')).toHaveLength(2);
+        expect(modelsHeader.classList.contains('setting-item')).toBe(true);
+        expect(modelsHeaderInfo.querySelector('.setting-item-name')?.textContent).toBe('Models');
+        expect(modelActionButtons.map((button) => button.textContent)).toEqual(['Fetch models', 'Add model']);
+        expect(modelActionButtons.every((button) => button.closest('.setting-item') === modelsHeader)).toBe(true);
+        expect(modelItem.getAttribute('data-model-id')).toBe('Local:llama3');
+        expect(modelItem.classList.contains('ytkn-setting-row--model')).toBe(true);
 
         header.click();
         fetchButton.click();
         editButton.click();
         deleteButton.click();
+        modelActionButtons[0].click();
+        modelActionButtons[1].click();
+        modelEditButton.click();
+        modelDeleteButton.click();
 
         expect(handlers.handleAccordionToggle).toHaveBeenCalledWith(accordion);
-        expect(handlers.handleFetchProviderModels).toHaveBeenCalledWith(provider);
+        expect(handlers.handleFetchProviderModels).toHaveBeenCalledTimes(2);
+        expect(handlers.handleFetchProviderModels).toHaveBeenLastCalledWith(provider);
         expect(handlers.handleProviderEditClick).toHaveBeenCalledWith(provider);
         expect(handlers.handleProviderDeleteClick).toHaveBeenCalledWith(provider);
+        expect(handlers.handleAddModelClick).toHaveBeenCalledWith(provider);
+        expect(handlers.handleModelEditClick).toHaveBeenCalledWith(provider.models![0]);
+        expect(handlers.handleModelDeleteClick).toHaveBeenCalledWith(provider.models![0]);
+    });
+
+    it('formats provider descriptions as plain type and model-count summaries', () => {
+        const cases: Array<[ProviderConfig['type'], number, string]> = [
+            ['openai', 3, 'OpenAI · 3 models'],
+            ['openai-compatible', 7, 'OpenAI-compatible · 7 models'],
+            ['anthropic', 2, 'Anthropic · 2 models'],
+            ['gemini', 12, 'Gemini · 12 models'],
+        ];
+        const host = document.createElement('div');
+        const components = new SettingsUIComponents(new App());
+
+        for (const [type, modelCount, expected] of cases) {
+            host.replaceChildren();
+            components.createProviderAccordion(host, makeProvider(type, modelCount));
+
+            expect(host.querySelector('.ytkn-settings__provider-description')?.textContent).toBe(expected);
+        }
     });
 
     it('stamps setting rows based on direct controls and modal stacking context', () => {
@@ -92,6 +166,9 @@ describe('settings UI helpers', () => {
             text.inputEl.type = 'number';
         });
         new Setting(host).setName('Button').addButton((button) => button.setButtonText('Run'));
+        const providerHeader = new Setting(host).setName('Provider');
+        providerHeader.settingEl.addClass('ytkn-settings__provider-header');
+        providerHeader.controlEl.createEl('button', { cls: 'clickable-icon' });
         const quickGrid = host.createDiv({ cls: 'ytkn-modal__quick-grid' });
         new Setting(quickGrid).setName('Quick select').addDropdown((dropdown) => dropdown.addOption('a', 'A'));
 
@@ -102,8 +179,9 @@ describe('settings UI helpers', () => {
         expect(rows[0].classList.contains('ytkn-setting-row--fit-control')).toBe(true);
         expect(rows[1].classList.contains('ytkn-setting-row--number')).toBe(true);
         expect(rows[2].classList.contains('ytkn-setting-row--button')).toBe(true);
-        expect(rows[3].classList.contains('ytkn-setting-row--stacked')).toBe(true);
-        expect(rows[3].classList.contains('ytkn-setting-row--fit-control')).toBe(false);
+        expect(rows[3].classList.contains('ytkn-setting-row--fit-control')).toBe(true);
+        expect(rows[4].classList.contains('ytkn-setting-row--stacked')).toBe(true);
+        expect(rows[4].classList.contains('ytkn-setting-row--fit-control')).toBe(false);
     });
 
     it('renders brand actions as accessible icon-only links and buttons', () => {

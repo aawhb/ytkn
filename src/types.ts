@@ -1,17 +1,5 @@
+// Provider and settings
 export type ProviderType = 'openai' | 'openai-compatible' | 'anthropic' | 'gemini';
-
-interface BaseProvider {
-	name: string;
-	type: ProviderType;
-	apiKeySecretId?: string;
-	url?: string;
-}
-
-export interface ProviderConfig extends BaseProvider {
-	apiKey: string;
-	models?: ModelConfig[];
-}
-
 export type TranscriptMode = 'none' | 'readable' | 'timestamped';
 export type PlaylistMode = 'per-video' | 'combined';
 export type NoteDestinationMode = 'current-note' | 'folder' | 'append-to-active-note';
@@ -28,6 +16,31 @@ export type TranscriptFailureMode = 'skip' | 'fail';
 export type RunReportLocation = 'generated-note' | 'separate-note';
 export type SourceSectionPosition = 'top' | 'bottom';
 export type MediaEmbedMode = 'video' | 'thumbnail' | 'none';
+
+interface BaseProvider {
+	name: string;
+	type: ProviderType;
+	apiKeySecretId?: string;
+	url?: string;
+}
+
+export interface DiscoveredModel {
+	name: string;
+	displayName: string;
+	contextWindow?: number;
+}
+
+export interface ModelConfig {
+	name: string;
+	displayName?: string;
+	contextWindow?: number;
+	provider: ProviderConfig;
+}
+
+export interface ProviderConfig extends BaseProvider {
+	apiKey: string;
+	models?: ModelConfig[];
+}
 
 export interface InstructionConfig {
 	mode: InstructionMode;
@@ -58,50 +71,6 @@ export interface OutputDefaults {
 	sourceSectionPosition: SourceSectionPosition;
 	linkTimestamps: boolean;
 	tldrCalloutAtTop: boolean;
-}
-
-export interface GenerationOptions {
-	useAi?: boolean;
-	generateAiSummary?: boolean;
-	instructionMode?: InstructionMode;
-	instructionTemplate?: InstructionTemplate;
-	manualInstructions?: string;
-	includeMindmap?: boolean;
-	includeMemorableQuotes?: boolean;
-	controlValues?: Record<string, string>;
-	transcriptMode?: TranscriptMode;
-	playlistMode?: PlaylistMode;
-	transcriptLanguageMode?: TranscriptLanguageMode;
-	preferredTranscriptLanguage?: string;
-	transcriptFailureMode?: TranscriptFailureMode;
-	mediaEmbedMode?: MediaEmbedMode;
-	includeRunReport?: boolean;
-	runReportLocation?: RunReportLocation;
-	useVideoTitleAsNoteName?: boolean;
-	noteDestinationMode?: NoteDestinationMode;
-	noteDestinationFolder?: string;
-	modelId?: string;
-	temperature?: number;
-	requestTimeoutMs?: number;
-	includeFrontmatter?: boolean;
-	frontmatterTags?: string;
-	frontmatterPropertyAllowlist?: string;
-	sourceSectionPosition?: SourceSectionPosition;
-	linkTimestamps?: boolean;
-	tldrCalloutAtTop?: boolean;
-}
-
-export interface DiscoveredModel {
-	name: string;
-	displayName: string;
-	contextWindow?: number;
-}
-
-export interface ModelConfig {
-	name: string;
-	displayName?: string;
-	contextWindow?: number;
-	provider: ProviderConfig;
 }
 
 export interface StoredModel {
@@ -157,6 +126,43 @@ export interface PluginSettings {
 	validateModelId(modelId: string): boolean;
 }
 
+// Generation options and providers
+export interface GenerationOptions {
+	useAi?: boolean;
+	generateAiSummary?: boolean;
+	instructionMode?: InstructionMode;
+	instructionTemplate?: InstructionTemplate;
+	manualInstructions?: string;
+	includeMindmap?: boolean;
+	includeMemorableQuotes?: boolean;
+	controlValues?: Record<string, string>;
+	transcriptMode?: TranscriptMode;
+	playlistMode?: PlaylistMode;
+	transcriptLanguageMode?: TranscriptLanguageMode;
+	preferredTranscriptLanguage?: string;
+	transcriptFailureMode?: TranscriptFailureMode;
+	mediaEmbedMode?: MediaEmbedMode;
+	includeRunReport?: boolean;
+	runReportLocation?: RunReportLocation;
+	useVideoTitleAsNoteName?: boolean;
+	noteDestinationMode?: NoteDestinationMode;
+	noteDestinationFolder?: string;
+	modelId?: string;
+	temperature?: number;
+	requestTimeoutMs?: number;
+	includeFrontmatter?: boolean;
+	frontmatterTags?: string;
+	frontmatterPropertyAllowlist?: string;
+	sourceSectionPosition?: SourceSectionPosition;
+	linkTimestamps?: boolean;
+	tldrCalloutAtTop?: boolean;
+}
+
+export interface AIModelProvider {
+	summarizeVideo(prompt: string, signal?: AbortSignal): Promise<string>;
+}
+
+// YouTube, transcripts, and playlists
 export interface TranscriptLine {
 	text: string;
 	offset: number;
@@ -212,10 +218,7 @@ export interface PlaylistRunReportEntry {
 	warnings?: string[];
 }
 
-export interface AIModelProvider {
-	summarizeVideo(prompt: string, signal?: AbortSignal): Promise<string>;
-}
-
+// Templates and rendering metadata
 export interface SectionDeclaration {
 	id: string;
 	heading: string;
@@ -269,6 +272,7 @@ export interface Template {
 	customBlocks?: BlockDeclaration[];
 }
 
+// Queue and reporting
 export type QueueRunOutcome = 'completed' | 'skipped' | 'failed' | 'canceled';
 
 export type QueueRunReportEntry =
@@ -306,6 +310,7 @@ export interface QueueBatchReport {
 	entries: QueueRunReportEntry[];
 }
 
+// Output extraction
 export interface ExtractedTemplateOutput {
 	frontmatter: Record<string, unknown> | null;
 	sections: Map<string, string>;

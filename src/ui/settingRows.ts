@@ -14,10 +14,13 @@ export function stampSettingRowClasses(containerEl: HTMLElement): void {
 		const hasSelect = controlEl.querySelector(':scope > select') !== null;
 		const hasNumberInput = controlEl.querySelector(':scope > input[type="number"]') !== null;
 		const hasTextButton = controlEl.querySelector(':scope > button:not(.clickable-icon)') !== null;
+		const hasProviderHeaderControls = settingEl.classList.contains('ytkn-settings__provider-header');
 		const shouldStayStacked =
 			(settingEl.closest('.ytkn-modal__quick-grid') !== null && (hasSelect || hasNumberInput)) ||
 			(settingEl.classList.contains('ytkn-modal__model-setting') && hasSelect);
-		const shouldFitControl = (hasSelect || hasNumberInput || hasTextButton) && !shouldStayStacked;
+		const shouldFitControl =
+			(hasSelect || hasNumberInput || hasTextButton || hasProviderHeaderControls) &&
+			!shouldStayStacked;
 
 		settingEl.toggleClass(
 			SELECT_ROW_CLASS,

@@ -34,30 +34,18 @@ export class SettingsUIComponents {
 		const accordion = parent.createDiv({ cls: 'ytkn-settings__provider-accordion' });
 		accordion.setAttribute('data-provider-name', provider.name);
 
-		const header = accordion.createDiv({ cls: 'ytkn-settings__provider-header' });
-		const headerInfo = header.createDiv({ cls: 'ytkn-settings__provider-info' });
-		headerInfo.createEl('h3', {
-			text: provider.name,
-			cls: 'ytkn-settings__provider-title',
-		});
+		const headerSetting = new Setting(accordion)
+			.setName(provider.name)
+			.setDesc(formatProviderSummary(provider));
+		const header = headerSetting.settingEl;
+		header.addClass('ytkn-settings__provider-header');
+		header.addClass('ytkn-setting-row--fit-control');
+		headerSetting.infoEl.addClass('ytkn-settings__provider-info');
+		headerSetting.nameEl.addClass('ytkn-settings__provider-title');
+		headerSetting.descEl.addClass('ytkn-settings__provider-description');
 
-		const meta = headerInfo.createDiv({ cls: 'ytkn-settings__provider-meta' });
-		meta.createSpan({
-			text: provider.type === 'openai'
-				? 'OpenAI'
-				: provider.type === 'openai-compatible'
-					? 'OpenAI compatible'
-					: provider.type,
-			cls: 'ytkn-settings__provider-badge',
-		});
-
-		const modelCount = provider.models?.length ?? 0;
-		meta.createSpan({
-			text: modelCount === 0 ? '0 models - Fetch Now' : `${modelCount} model${modelCount === 1 ? '' : 's'}`,
-			cls: `ytkn-settings__provider-count ${modelCount === 0 ? 'is-warning' : 'is-active'}`,
-		});
-
-		const headerControls = header.createDiv({ cls: 'ytkn-settings__provider-controls' });
+		const headerControls = headerSetting.controlEl;
+		headerControls.addClass('ytkn-settings__provider-controls');
 		const fetchButton = headerControls.createEl('button', {
 			cls: 'clickable-icon ytkn-settings__provider-fetch',
 			attr: { 'aria-label': 'Fetch models' },
@@ -116,9 +104,10 @@ export class SettingsUIComponents {
 		editButton.addEventListener('click', () => handlers.handleProviderEditClick(provider));
 		deleteButton.addEventListener('click', () => handlers.handleProviderDeleteClick(provider));
 
-		this.createApiKeySetting(content, provider, handlers);
+		const fields = content.createDiv({ cls: 'ytkn-settings__provider-fields' });
+		this.createApiKeySetting(fields, provider, handlers);
 
-		const urlSetting = new Setting(content)
+		const urlSetting = new Setting(fields)
 			.setName('URL')
 			.setDesc(provider.type === 'openai-compatible' ? 'Base URL for OpenAI-compatible providers like Ollama.' : 'Optional custom API URL.')
 			.addText((text) =>
@@ -132,7 +121,23 @@ export class SettingsUIComponents {
 		urlSetting.settingEl.addClass('ytkn-settings__provider-field');
 
 		const modelsSection = content.createDiv({ cls: 'ytkn-settings__models-section' });
-		modelsSection.createEl('h4', { text: 'Models', cls: 'ytkn-settings__models-header' });
+		const modelsHeader = new Setting(modelsSection)
+			.setName('Models')
+			.addButton((button) =>
+				button
+					.setButtonText('Fetch models')
+					.onClick(() => {
+						void handlers.handleFetchProviderModels(provider);
+					}),
+			)
+			.addButton((button) =>
+				button
+					.setButtonText('Add model')
+					.onClick(() => {
+						handlers.handleAddModelClick(provider);
+					}),
+			);
+		modelsHeader.settingEl.addClass('ytkn-settings__models-header');
 
 		const modelsList = modelsSection.createDiv({ cls: 'ytkn-settings__models-list' });
 		if (!provider.models?.length) {
@@ -143,7 +148,7 @@ export class SettingsUIComponents {
 		}
 
 		for (const model of provider.models ?? []) {
-			const modelItem = modelsList.createDiv({ cls: 'setting-item setting-model' });
+			const modelItem = modelsList.createDiv({ cls: 'setting-item setting-model ytkn-setting-row--model' });
 			modelItem.setAttribute('data-model-id', buildModelId(model));
 
 			const info = modelItem.createDiv({ cls: 'setting-item-info' });
@@ -165,23 +170,19 @@ export class SettingsUIComponents {
 			modelEditButton.addEventListener('click', () => handlers.handleModelEditClick(model));
 			modelDeleteButton.addEventListener('click', () => handlers.handleModelDeleteClick(model));
 		}
+	}
+}
 
-		const actionRow = modelsSection.createDiv({ cls: 'ytkn-settings__model-actions' });
+function formatProviderSummary(provider: ProviderConfig): string {
+	const modelCount = provider.models?.length ?? 0;
+	return `${formatProviderTypeLabel(provider.type)} · ${modelCount} model${modelCount === 1 ? '' : 's'}`;
+}
 
-		new Setting(actionRow)
-			.addButton((button) =>
-				button.setButtonText('Fetch models').onClick(() => {
-					void handlers.handleFetchProviderModels(provider);
-				}),
-			)
-			.settingEl.addClass('ytkn-settings__add-button');
-
-		new Setting(actionRow)
-			.addButton((button) =>
-				button.setButtonText('Add model').onClick(() => {
-					handlers.handleAddModelClick(provider);
-				}),
-			)
-			.settingEl.addClass('ytkn-settings__add-button');
+function formatProviderTypeLabel(type: ProviderConfig['type']): string {
+	switch (type) {
+		case 'openai': return 'OpenAI';
+		case 'openai-compatible': return 'OpenAI-compatible';
+		case 'anthropic': return 'Anthropic';
+		case 'gemini': return 'Gemini';
 	}
 }

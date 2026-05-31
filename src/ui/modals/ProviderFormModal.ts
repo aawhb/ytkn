@@ -91,7 +91,6 @@ export class ProviderFormModal extends Modal {
 				.setValue(this.apiKeySecretId)
 				.onChange((value) => (this.apiKeySecretId = value)));
 
-		// URL: only for openai-compatible
 		if (this.type === 'openai-compatible') {
 			new Setting(contentEl)
 				.setName('URL')
