@@ -1,22 +1,32 @@
 import type { ButtonComponent } from 'obsidian';
 
-type DestructiveButtonCompat = ButtonComponent & {
-	setDestructive?: () => ButtonComponent;
-	setWarning?: () => ButtonComponent;
-};
+type ButtonMethod = () => ButtonComponent;
 
 type LegacySettingsTabRenderer = {
 	display: () => void;
 };
 
+function getButtonMethod(
+	button: ButtonComponent,
+	methodName: string,
+): ButtonMethod | null {
+	const candidate = (button as unknown as Record<string, unknown>)[methodName];
+	return typeof candidate === 'function'
+		? (candidate.bind(button) as ButtonMethod)
+		: null;
+}
+
 export function markDestructiveButton(button: ButtonComponent): ButtonComponent {
-	const compat = button as DestructiveButtonCompat;
-	if (typeof compat.setDestructive === 'function') {
-		return compat.setDestructive();
+	const setDestructive = getButtonMethod(button, 'setDestructive');
+	if (setDestructive) {
+		return setDestructive();
 	}
-	if (typeof compat.setWarning === 'function') {
-		return compat.setWarning();
+
+	const setWarning = getButtonMethod(button, 'setWarning');
+	if (setWarning) {
+		return setWarning();
 	}
+
 	return button;
 }
 
