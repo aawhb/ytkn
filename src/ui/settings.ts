@@ -47,6 +47,7 @@ import {
 } from '../services/templates';
 import { renderTemplateControls } from './components/TemplateControls';
 import { stampSettingRowClasses } from './settingRows';
+import { SETTING_COPY } from './settingCopy';
 
 const RESTORE_DEFAULTS_LABEL = 'Restore defaults';
 
@@ -234,16 +235,16 @@ export class SettingsTab extends PluginSettingTab {
 		}
 
 		new Setting(containerEl)
-			.setName('Default AI model')
+			.setName(SETTING_COPY.aiModel.name)
 			.setDesc(
 				availableModels.length
-					? 'Used by every generation unless overridden per run.'
-					: 'Add a provider and at least one model to enable AI generation.',
+					? SETTING_COPY.aiModel.defaultDesc
+					: SETTING_COPY.aiModel.unavailableDesc,
 			)
 			.addDropdown((dropdown) => {
 				dropdown.selectEl.addClass(ACTIVE_MODEL_SELECT_CLASS);
 				if (!availableModels.length) {
-					dropdown.addOption('', 'No models available').setValue('');
+					dropdown.addOption('', SETTING_COPY.aiModel.noModelsOption).setValue('');
 					dropdown.setDisabled(true);
 					return;
 				}
@@ -268,15 +269,11 @@ export class SettingsTab extends PluginSettingTab {
 		const outputDefaults = this.settings.getOutputDefaults();
 
 		new Setting(containerEl)
-			.setName('Media embed')
-			.setDesc('Embed the YouTube video, thumbnail, or no media near the top of the note.')
+			.setName(SETTING_COPY.mediaEmbed.name)
+			.setDesc(SETTING_COPY.mediaEmbed.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						video: 'Video',
-						thumbnail: 'Thumbnail',
-						none: 'Off',
-					})
+					.addOptions(SETTING_COPY.mediaEmbed.options!)
 					.setValue(outputDefaults.mediaEmbedMode)
 					.onChange(async (value) => {
 						await this.updateOutputDefaults({
@@ -286,10 +283,8 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Use video title as note title')
-			.setDesc(
-				'Renames the destination note to the video\'s title after generation. Applies to single-URL "insert at caret" runs and all "folder" destination runs. Multi-URL editor-target batches never rename to avoid breaking subsequent runs.',
-			)
+			.setName(SETTING_COPY.useVideoTitleAsNoteName.name)
+			.setDesc(SETTING_COPY.useVideoTitleAsNoteName.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(outputDefaults.useVideoTitleAsNoteName)
@@ -301,10 +296,8 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Include frontmatter')
-			.setDesc(
-				'Add a YAML frontmatter block (title, channel, video URL, generated, …) so the note works with properties, Dataview, and search.',
-			)
+			.setName(SETTING_COPY.includeFrontmatter.name)
+			.setDesc(SETTING_COPY.includeFrontmatter.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(outputDefaults.includeFrontmatter)
@@ -318,13 +311,11 @@ export class SettingsTab extends PluginSettingTab {
 
 		if (outputDefaults.includeFrontmatter) {
 			new Setting(containerEl)
-				.setName('Frontmatter tags')
-				.setDesc(
-					'Comma- or space-separated tags added to the frontmatter. Example: YouTube, AI/summary',
-				)
+				.setName(SETTING_COPY.frontmatterTags.name)
+				.setDesc(SETTING_COPY.frontmatterTags.desc!)
 				.addText((text) =>
 					text
-						.setPlaceholder('YouTube, AI/summary')
+						.setPlaceholder(SETTING_COPY.frontmatterTags.placeholder!)
 						.setValue(outputDefaults.frontmatterTags)
 						.onChange(async (value) => {
 							await this.updateOutputDefaults({
@@ -334,13 +325,11 @@ export class SettingsTab extends PluginSettingTab {
 				);
 
 			new Setting(containerEl)
-				.setName('Frontmatter properties')
-				.setDesc(
-					'Space- or comma-separated list of property keys the plugin will write. Remove a key to suppress it. Allowed keys: title, aliases, source, channel, channelUrl, channelId, videoUrl, playlistUrl, videoId, playlistId, thumbnailUrl, videoDescription, durationSeconds, keywords, generated, videoCount.',
-				)
+				.setName(SETTING_COPY.frontmatterProperties.name)
+				.setDesc(SETTING_COPY.frontmatterProperties.desc!)
 				.addText((text) =>
 					text
-						.setPlaceholder('Title channel channelUrl videoId …')
+						.setPlaceholder(SETTING_COPY.frontmatterProperties.placeholder!)
 						.setValue(outputDefaults.frontmatterPropertyAllowlist)
 						.onChange(async (value) => {
 							await this.updateOutputDefaults({
@@ -351,16 +340,11 @@ export class SettingsTab extends PluginSettingTab {
 		}
 
 		new Setting(containerEl)
-			.setName('Source metadata position')
-			.setDesc(
-				'Render the source block (title, channel, URL) above or below the AI summary.',
-			)
+			.setName(SETTING_COPY.sourceMetadataPosition.name)
+			.setDesc(SETTING_COPY.sourceMetadataPosition.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						top: 'Top',
-						bottom: 'Bottom',
-					})
+					.addOptions(SETTING_COPY.sourceMetadataPosition.options!)
 					.setValue(outputDefaults.sourceSectionPosition)
 					.onChange(async (value) => {
 						await this.updateOutputDefaults({
@@ -374,15 +358,11 @@ export class SettingsTab extends PluginSettingTab {
 		const outputDefaults = this.settings.getOutputDefaults();
 
 		new Setting(containerEl)
-			.setName('Default destination')
-			.setDesc('Use the current note or create new notes in a folder.')
+			.setName(SETTING_COPY.outputDestination.name)
+			.setDesc(SETTING_COPY.outputDestination.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						'current-note': 'Current note',
-						'append-to-active-note': 'Append to active note',
-						folder: 'Folder',
-					})
+					.addOptions(SETTING_COPY.outputDestination.options!)
 					.setValue(outputDefaults.noteDestinationMode)
 					.onChange(async (value) => {
 						await this.updateOutputDefaults({
@@ -393,13 +373,11 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Folder for new notes')
-			.setDesc(
-				'Created automatically if it does not exist. Vault root if left empty (not recommended).',
-			)
+			.setName(SETTING_COPY.destinationFolder.name)
+			.setDesc(SETTING_COPY.destinationFolder.desc!)
 			.addText((text) =>
 				text
-					.setPlaceholder('YouTube notes')
+					.setPlaceholder(SETTING_COPY.destinationFolder.placeholder!)
 					.setValue(outputDefaults.noteDestinationFolder)
 					.onChange(async (value) => {
 						await this.updateOutputDefaults({
@@ -413,15 +391,11 @@ export class SettingsTab extends PluginSettingTab {
 		const outputDefaults = this.settings.getOutputDefaults();
 
 		new Setting(containerEl)
-			.setName('Transcript in note')
-			.setDesc('How transcript content appears in the generated note.')
+			.setName(SETTING_COPY.transcriptInNote.name)
+			.setDesc(SETTING_COPY.transcriptInNote.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						none: 'Off',
-						'readable': 'Readable',
-						'timestamped': 'Timestamped',
-					})
+					.addOptions(SETTING_COPY.transcriptInNote.options!)
 					.setValue(outputDefaults.transcriptMode)
 					.onChange(async (value) => {
 						await this.updateOutputDefaults({
@@ -431,10 +405,8 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Link timestamps to YouTube')
-			.setDesc(
-				'When using the timestamped transcript, wrap each timestamp as a deep-link to the video at that time.',
-			)
+			.setName(SETTING_COPY.linkTimestamps.name)
+			.setDesc(SETTING_COPY.linkTimestamps.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(outputDefaults.linkTimestamps)
@@ -446,16 +418,11 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Transcript language')
-			.setDesc(
-				'Auto picks any available transcript. Preferred tries your language first, then falls back.',
-			)
+			.setName(SETTING_COPY.transcriptLanguage.name)
+			.setDesc(SETTING_COPY.transcriptLanguage.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						auto: 'Auto-detect best available',
-						preferred: 'Preferred language with fallback',
-					})
+					.addOptions(SETTING_COPY.transcriptLanguage.options!)
 					.setValue(outputDefaults.transcriptLanguageMode)
 					.onChange(async (value) => {
 						await this.updateOutputDefaults({
@@ -467,13 +434,11 @@ export class SettingsTab extends PluginSettingTab {
 
 		if (outputDefaults.transcriptLanguageMode === 'preferred') {
 			new Setting(containerEl)
-				.setName('Preferred language code')
-				.setDesc(
-					'Used when transcript language is set to preferred. Example: en, hi, fr.',
-				)
+				.setName(SETTING_COPY.preferredLanguageCode.name)
+				.setDesc(SETTING_COPY.preferredLanguageCode.desc!)
 				.addText((text) =>
 					text
-						.setPlaceholder('En')
+						.setPlaceholder(SETTING_COPY.preferredLanguageCode.placeholder!)
 						.setValue(outputDefaults.preferredTranscriptLanguage)
 						.onChange(async (value) => {
 							await this.updateOutputDefaults({
@@ -488,16 +453,11 @@ export class SettingsTab extends PluginSettingTab {
 		const outputDefaults = this.settings.getOutputDefaults();
 
 		new Setting(containerEl)
-			.setName('Playlist handling')
-			.setDesc(
-				'Create a single combined note for the whole playlist, or one note per video.',
-			)
+			.setName(SETTING_COPY.playlistHandling.name)
+			.setDesc(SETTING_COPY.playlistHandling.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						'per-video': 'Per video: multiple individual notes',
-						combined: 'Combined: single aggregated note',
-					})
+					.addOptions(SETTING_COPY.playlistHandling.options!)
 					.setValue(outputDefaults.playlistMode)
 					.onChange(async (value) => {
 						await this.updateOutputDefaults({
@@ -507,14 +467,11 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('When a transcript fails')
-			.setDesc('Skip the video with a missing transcript, or stop the entire run.')
+			.setName(SETTING_COPY.transcriptFailure.name)
+			.setDesc(SETTING_COPY.transcriptFailure.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						skip: 'Skip and keep going',
-						fail: 'Stop the whole run',
-					})
+					.addOptions(SETTING_COPY.transcriptFailure.options!)
 					.setValue(outputDefaults.transcriptFailureMode)
 					.onChange(async (value) => {
 						await this.updateOutputDefaults({
@@ -524,10 +481,8 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Include run report')
-			.setDesc(
-				'Add a collapsible report listing completed, skipped, failed, and canceled runs after each batch.',
-			)
+			.setName(SETTING_COPY.includeRunReport.name)
+			.setDesc(SETTING_COPY.includeRunReport.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(outputDefaults.includeRunReport)
@@ -541,16 +496,11 @@ export class SettingsTab extends PluginSettingTab {
 
 		if (outputDefaults.includeRunReport) {
 			new Setting(containerEl)
-				.setName('Run report location')
-				.setDesc(
-					'Where to put the run report after all generations in a batch complete.',
-				)
+				.setName(SETTING_COPY.runReportLocation.name)
+				.setDesc(SETTING_COPY.runReportLocation.desc!)
 				.addDropdown((dropdown) =>
 					dropdown
-						.addOptions({
-							'generated-note': 'Generated note',
-							'separate-note': 'Separate report note',
-						})
+						.addOptions(SETTING_COPY.runReportLocation.options!)
 						.setValue(outputDefaults.runReportLocation)
 						.onChange(async (value) => {
 							await this.updateOutputDefaults({
@@ -564,8 +514,8 @@ export class SettingsTab extends PluginSettingTab {
 	private displayGenAiDefaultsSection(containerEl: HTMLElement): void {
 		const outputDefaults = this.settings.getOutputDefaults();
 		new Setting(containerEl)
-			.setName('Use AI by default')
-			.setDesc('Off = transcript-only notes when transcript inclusion is enabled.')
+			.setName(SETTING_COPY.useAi.name)
+			.setDesc(SETTING_COPY.useAi.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(outputDefaults.useAi)
@@ -582,8 +532,8 @@ export class SettingsTab extends PluginSettingTab {
 		}
 
 		new Setting(containerEl)
-			.setName('Generate AI summary by default')
-			.setDesc('Create the template/manual AI note body. Mindmap and memorable quotes can be enabled separately.')
+			.setName(SETTING_COPY.aiSummary.name)
+			.setDesc(SETTING_COPY.aiSummary.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(outputDefaults.generateAiSummary)
@@ -604,10 +554,10 @@ export class SettingsTab extends PluginSettingTab {
 
 	private displayAdvancedModelTuningSection(containerEl: HTMLElement): void {
 		new Setting(containerEl)
-			.setName('Temperature')
-			.setDesc('If supported by the provider; 0 = deterministic. 0.3 (default) = focused. 1 = more varied.')
+			.setName(SETTING_COPY.temperature.name)
+			.setDesc(SETTING_COPY.temperature.desc!)
 			.addText((text) => {
-				text.setPlaceholder('0.3')
+				text.setPlaceholder(SETTING_COPY.temperature.placeholder!)
 					.setValue(String(this.settings.getTemperature()))
 					.onChange(async (value) => {
 						await this.settings.updateTemperature(Number(value));
@@ -619,13 +569,11 @@ export class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Request timeout (seconds)')
-			.setDesc(
-				'Increase for slow local models or long runs. 300 = 5 minutes.',
-			)
+			.setName(SETTING_COPY.requestTimeout.name)
+			.setDesc(SETTING_COPY.requestTimeout.desc!)
 			.addText((text) => {
 				const seconds = Math.round(this.settings.getRequestTimeoutMs() / 1000);
-				text.setPlaceholder('300')
+				text.setPlaceholder(SETTING_COPY.requestTimeout.placeholder!)
 					.setValue(String(seconds))
 					.onChange(async (value) => {
 						const parsed = Number(value);
@@ -664,16 +612,11 @@ export class SettingsTab extends PluginSettingTab {
 	): void {
 		if (showSummaryConfig) {
 			new Setting(containerEl)
-				.setName('Instruction style')
-				.setDesc(
-					'Pick a built-in template or write your own instructions for the AI.',
-				)
+				.setName(SETTING_COPY.instructionStyle.name)
+				.setDesc(SETTING_COPY.instructionStyle.desc!)
 				.addDropdown((dropdown) =>
 					dropdown
-						.addOptions({
-							template: 'Built-in template',
-							manual: 'Fully manual',
-						})
+						.addOptions(SETTING_COPY.instructionStyle.options!)
 						.setValue(instructionConfig.mode)
 						.onChange(async (value) => {
 							await this.updateInstructionConfig({
@@ -688,8 +631,8 @@ export class SettingsTab extends PluginSettingTab {
 				const choice = findTemplateChoice(instructionConfig.template);
 				const templateCard = containerEl.createDiv({ cls: 'ytkn-settings__template-card' });
 
-				new Setting(templateCard)
-					.setName('Default content template')
+				const templateSetting = new Setting(templateCard)
+					.setName(SETTING_COPY.contentTemplate.name)
 					.addDropdown((dropdown) => {
 						populateTemplateDropdown(dropdown.selectEl);
 						dropdown
@@ -703,10 +646,8 @@ export class SettingsTab extends PluginSettingTab {
 							});
 					});
 				if (choice) {
-					templateCard.createEl('p', {
-						cls: 'ytkn-settings__template-description',
-						text: choice.subtitle,
-					});
+					templateSetting.setDesc(choice.subtitle);
+					templateSetting.descEl.addClass('ytkn-settings__template-description');
 				}
 
 				if (choice && (choice.controls?.length ?? 0) > 0) {
@@ -727,13 +668,11 @@ export class SettingsTab extends PluginSettingTab {
 				}
 			} else {
 				new Setting(containerEl)
-					.setName('Manual instructions')
-					.setDesc(
-						'Custom prompt. The video metadata block is still added automatically.',
-					)
+					.setName(SETTING_COPY.manualInstructions.name)
+					.setDesc(SETTING_COPY.manualInstructions.desc!)
 					.addTextArea((text) =>
 						text
-							.setPlaceholder('You are an assistant that extracts ...')
+							.setPlaceholder(SETTING_COPY.manualInstructions.placeholder!)
 							.setValue(instructionConfig.manualInstructions)
 							.onChange(async (value) => {
 								await this.updateInstructionConfig({
@@ -752,10 +691,8 @@ export class SettingsTab extends PluginSettingTab {
 			const outputDefaults = this.settings.getOutputDefaults();
 
 			new Setting(containerEl)
-				.setName('Add summary callout')
-				.setDesc(
-					'Tl;dr section in a summary callout',
-				)
+				.setName(SETTING_COPY.tldrCallout.name)
+				.setDesc(SETTING_COPY.tldrCallout.desc!)
 				.addToggle((toggle) =>
 					toggle
 						.setValue(outputDefaults.tldrCalloutAtTop)
@@ -768,10 +705,8 @@ export class SettingsTab extends PluginSettingTab {
 		}
 
 		new Setting(containerEl)
-			.setName('Add mermaid mindmap')
-			.setDesc(
-				'Adds a final `## Mindmap` section with a Mermaid mindmap, independent of the selected template.',
-			)
+			.setName(SETTING_COPY.mindmap.name)
+			.setDesc(SETTING_COPY.mindmap.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(instructionConfig.includeMindmap)
@@ -784,10 +719,8 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Add memorable quotes')
-			.setDesc(
-				'Adds a final `## Memorable quotes` section with 3–7 verbatim quotes. Independent of the selected template.',
-			)
+			.setName(SETTING_COPY.memorableQuotes.name)
+			.setDesc(SETTING_COPY.memorableQuotes.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(instructionConfig.includeMemorableQuotes)

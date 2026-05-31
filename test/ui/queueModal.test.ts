@@ -87,6 +87,9 @@ describe('QueueModal', () => {
 
 		const runningBadge = modal.contentEl.querySelector('.ytkn-queue__badge--running');
 		expect(runningBadge).not.toBeNull();
+		expect(modal.contentEl.querySelector('.ytkn-card.ytkn-settings__group')).not.toBeNull();
+		expect(modal.contentEl.querySelector('.ytkn-card__title.ytkn-settings__group-title')).not.toBeNull();
+		expect(modal.contentEl.querySelector('.ytkn-card__body.ytkn-settings__group-cards')).not.toBeNull();
 
 		resolveRun();
 		await flush();

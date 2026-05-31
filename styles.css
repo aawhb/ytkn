@@ -46,32 +46,11 @@
 	border: 1px solid var(--background-modifier-border);
 }
 
-.ytkn__actions {
-	display: flex;
-	justify-content: flex-end;
-	gap: var(--size-4-2);
-}
-
-.ytkn__button {
-	padding: var(--size-4-2) var(--size-4-4);
-	border-radius: var(--radius-s);
-	font-weight: var(--font-medium);
-	cursor: pointer;
-}
-
-.ytkn .ytkn__button.ytkn__button--primary {
-	background-color: var(--interactive-accent);
-}
-
-.ytkn .ytkn__button.ytkn__button--danger {
-	background-color: var(--text-error);
-}
-
-.ytkn-settings__group {
+.ytkn-card {
 	margin-bottom: var(--size-4-6);
 }
 
-.ytkn-settings__group-title {
+.ytkn-card__title {
 	margin: 0 0 var(--size-4-3) 0;
 	padding-bottom: var(--size-4-2);
 	font-size: var(--font-ui-small);
@@ -82,15 +61,7 @@
 	border-bottom: 1px solid color-mix(in srgb, var(--interactive-accent) 30%, transparent);
 }
 
-.ytkn-settings__subsection-title {
-	margin-top: var(--size-4-5);
-	border-bottom: none;
-	border-top: 1px solid var(--background-modifier-border);
-	padding-top: var(--size-4-4);
-	padding-bottom: 0;
-}
-
-.ytkn-settings__group-cards {
+.ytkn-card__body {
 	padding: var(--size-4-3);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-l);
@@ -100,7 +71,7 @@
 	gap: var(--size-4-2);
 }
 
-.ytkn-settings__group-cards .setting-item {
+.ytkn-card__body .setting-item {
 	flex-direction: column;
 	align-items: stretch;
 	gap: var(--size-4-1);
@@ -132,6 +103,8 @@
 	width: 100%;
 }
 
+/* Obsidian modal content adds padding in normal and settings modals. Keep this
+   scoped bridge instead of using global modal resets or `!important`. */
 .modal.mod-settings .modal-content.ytkn-modal-scroll-container,
 .modal .modal-content.ytkn-modal-scroll-container {
 	padding: 0;
@@ -201,6 +174,8 @@
 	gap: var(--size-4-2);
 }
 
+/* Specificity bridge for Obsidian/theme `.setting-item` borders in modals and
+   plugin settings. Keep scoped and explicit so normal Obsidian settings remain untouched. */
 .modal .ytkn-modal .setting-item.setting-item,
 .mod-settings .ytkn-settings .setting-item.setting-item {
 	border: none;
@@ -269,11 +244,11 @@
 
 /* Re-stamp pill chrome inside modal cards so `.ytkn-modal .setting-item`
    doesn't zero out horizontal padding for toggles. */
-.ytkn-modal .ytkn-settings__group-cards {
+.ytkn-modal .ytkn-card__body {
 	gap: var(--size-4-1);
 }
 
-.ytkn-modal .ytkn-settings__group-cards .setting-item {
+.ytkn-modal .ytkn-card__body .setting-item {
 	padding: var(--size-4-1) var(--size-4-2);
 	background: var(--background-secondary);
 	border-radius: var(--radius-m);
@@ -615,58 +590,60 @@
 	font-size: var(--font-ui-small);
 }
 
-.ytkn-settings.ytkn-settings .ytkn-settings__group-cards>.setting-item.setting-item {
+/* Obsidian settings can restore roomy `.setting-item` chrome; keep direct card
+   rows compact without affecting nested template-card rows. */
+.ytkn-settings.ytkn-settings .ytkn-card__body>.setting-item.setting-item {
 	padding: var(--size-4-3);
 	margin: 0;
 	border: none;
 }
 
-.ytkn-settings__group-cards .setting-item-info,
-.ytkn-settings__group-cards .setting-item-control {
+.ytkn-card__body .setting-item-info,
+.ytkn-card__body .setting-item-control {
 	width: 100%;
 	padding-right: 0;
 }
 
-.ytkn-settings__group-cards .setting-item-control select,
-.ytkn-settings__group-cards .setting-item-control input[type='text'],
-.ytkn-settings__group-cards .setting-item-control input[type='password'],
-.ytkn-settings__group-cards .setting-item-control input[type='number'],
-.ytkn-settings__group-cards .setting-item-control textarea {
+.ytkn-card__body .setting-item-control select,
+.ytkn-card__body .setting-item-control input[type='text'],
+.ytkn-card__body .setting-item-control input[type='password'],
+.ytkn-card__body .setting-item-control input[type='number'],
+.ytkn-card__body .setting-item-control textarea {
 	width: 100%;
 }
 
-.ytkn-settings__group-cards .setting-item.mod-toggle {
+.ytkn-card__body .setting-item.mod-toggle {
 	flex-direction: row;
 	align-items: center;
 	justify-content: space-between;
 	gap: var(--size-4-2);
 }
 
-.ytkn-settings__group-cards .setting-item.mod-toggle .setting-item-info {
+.ytkn-card__body .setting-item.mod-toggle .setting-item-info {
 	flex: 1 1 auto;
 	width: auto;
 	padding-right: var(--size-4-2);
 }
 
-.ytkn-settings__group-cards .setting-item.mod-toggle .setting-item-control {
+.ytkn-card__body .setting-item.mod-toggle .setting-item-control {
 	width: auto;
 	flex: 0 0 auto;
 }
 
-.ytkn-settings__group-cards .setting-item.ytkn-settings__provider-field {
+.ytkn-card__body .setting-item.ytkn-settings__provider-field {
 	flex-direction: row;
 	align-items: center;
 	gap: var(--size-4-2);
 }
 
-.ytkn-settings__group-cards .setting-item.ytkn-settings__provider-field .setting-item-info {
+.ytkn-card__body .setting-item.ytkn-settings__provider-field .setting-item-info {
 	flex: 1 1 auto;
 	width: auto;
 	min-width: 0;
 	padding-right: var(--size-4-2);
 }
 
-.ytkn-settings__group-cards .setting-item.ytkn-settings__provider-field .setting-item-control {
+.ytkn-card__body .setting-item.ytkn-settings__provider-field .setting-item-control {
 	flex: 0 1 auto;
 	width: min(320px, 45%);
 	margin-inline-start: 0;
@@ -676,110 +653,71 @@
 	gap: var(--size-4-2);
 }
 
-/* Dropdown rows: fit control to content, let info wrap - mirrors the mod-toggle row treatment */
-.ytkn-modal .setting-item.ytkn-setting-row--select,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--select {
-	flex-direction: row;
-	align-items: center;
-	gap: var(--size-4-2);
-}
-
-.ytkn-modal .setting-item.ytkn-setting-row--select .setting-item-info,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--select .setting-item-info {
-	flex: 1 1 auto;
-	width: auto;
-	min-width: 0;
-	padding-right: var(--size-4-2);
-}
-
-.ytkn-modal .setting-item.ytkn-setting-row--select .setting-item-control,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--select .setting-item-control {
-	flex: 0 0 auto;
-	width: auto;
-}
-
-.ytkn-modal .setting-item.ytkn-setting-row--select .setting-item-control select,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--select .setting-item-control select {
-	width: auto;
-	max-width: 100%;
-}
-
-/* Number input and button rows: same fit-to-content treatment */
-.ytkn-modal .setting-item.ytkn-setting-row--number,
-.ytkn-modal .setting-item.ytkn-setting-row--button,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--number,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--button {
-	flex-direction: row;
-	align-items: center;
-	gap: var(--size-4-2);
-}
-
-.ytkn-modal .setting-item.ytkn-setting-row--number .setting-item-info,
-.ytkn-modal .setting-item.ytkn-setting-row--button .setting-item-info,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--number .setting-item-info,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--button .setting-item-info {
-	flex: 1 1 auto;
-	width: auto;
-	min-width: 0;
-	padding-right: var(--size-4-2);
-}
-
-.ytkn-modal .setting-item.ytkn-setting-row--number .setting-item-control,
-.ytkn-modal .setting-item.ytkn-setting-row--button .setting-item-control,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--number .setting-item-control,
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--button .setting-item-control {
-	flex: 0 0 auto;
-	width: auto;
-}
-
-.ytkn-modal .setting-item.ytkn-setting-row--number .setting-item-control input[type='number'],
-.ytkn-settings__group-cards .setting-item.ytkn-setting-row--number .setting-item-control input[type='number'] {
-	width: var(--ytkn-number-input-width);
-	max-width: 100%;
-}
-
-/* Quick setup grid cells are narrow (2-col 1fr each) - keep them column-stacked */
-.ytkn-modal__quick-grid .setting-item.ytkn-setting-row--select,
-.ytkn-modal__quick-grid .setting-item.ytkn-setting-row--number {
+/* Control rows stack by default for narrow/mobile layouts. Desktop
+   fit-to-content behavior is opt-in below so mobile no longer needs reversals. */
+.ytkn-setting-row--fit-control.setting-item,
+.ytkn-setting-row--stacked.setting-item {
 	flex-direction: column;
 	align-items: stretch;
+	gap: var(--size-4-2);
 }
 
-.ytkn-modal__quick-grid .setting-item.ytkn-setting-row--select .setting-item-info,
-.ytkn-modal__quick-grid .setting-item.ytkn-setting-row--select .setting-item-control,
-.ytkn-modal__quick-grid .setting-item.ytkn-setting-row--number .setting-item-info,
-.ytkn-modal__quick-grid .setting-item.ytkn-setting-row--number .setting-item-control {
+.ytkn-setting-row--fit-control>.setting-item-info,
+.ytkn-setting-row--stacked>.setting-item-info {
 	width: 100%;
 	padding-right: 0;
 }
 
-.ytkn-modal__quick-grid .setting-item.ytkn-setting-row--select .setting-item-control select,
-.ytkn-modal__quick-grid .setting-item.ytkn-setting-row--number .setting-item-control input[type='number'] {
+.ytkn-setting-row--fit-control>.setting-item-control,
+.ytkn-setting-row--stacked>.setting-item-control {
+	width: 100%;
+}
+
+.ytkn-setting-row--fit-control.ytkn-setting-row--select>.setting-item-control>select,
+.ytkn-setting-row--stacked.ytkn-setting-row--select>.setting-item-control>select,
+.ytkn-setting-row--fit-control.ytkn-setting-row--number>.setting-item-control>input[type='number'],
+.ytkn-setting-row--stacked.ytkn-setting-row--number>.setting-item-control>input[type='number'] {
 	width: 100%;
 	max-width: none;
 }
 
-/* Model names can be much longer than other dropdown labels; keep this row
-   stacked so the setting title never gets squeezed out of view. */
-.ytkn-modal .setting-item.ytkn-modal__model-setting.ytkn-setting-row--select {
-	flex-direction: column;
-	align-items: stretch;
+@media (min-width: 721px) {
+
+	/* Fit-control rows: let text wrap while the control hugs its content. */
+	.ytkn-setting-row--fit-control.setting-item {
+		flex-direction: row;
+		align-items: center;
+		gap: var(--size-4-2);
+	}
+
+	.ytkn-setting-row--fit-control>.setting-item-info {
+		flex: 1 1 auto;
+		width: auto;
+		min-width: 0;
+		padding-right: var(--size-4-2);
+	}
+
+	.ytkn-setting-row--fit-control>.setting-item-control {
+		flex: 0 0 auto;
+		width: auto;
+	}
+
+	.ytkn-setting-row--fit-control.ytkn-setting-row--select>.setting-item-control>select {
+		width: auto;
+		max-width: 100%;
+	}
+
+	.ytkn-setting-row--fit-control.ytkn-setting-row--number>.setting-item-control>input[type='number'] {
+		width: var(--ytkn-number-input-width);
+		max-width: 100%;
+	}
 }
 
-.ytkn-modal .setting-item.ytkn-modal__model-setting.ytkn-setting-row--select .setting-item-info,
-.ytkn-modal .setting-item.ytkn-modal__model-setting.ytkn-setting-row--select .setting-item-control {
-	width: 100%;
-	padding-right: 0;
-}
-
-.ytkn-modal .setting-item.ytkn-modal__model-setting.ytkn-setting-row--select .setting-item-control select {
-	width: 100%;
-	max-width: none;
-}
+/* `.ytkn-setting-row--stacked` is stamped for deliberate desktop-stacked
+   exceptions: narrow quick-grid controls and the long model selector row. */
 
 .ytkn-settings__template-description {
 	margin: 0;
-	padding-top: var(--size-4-1);
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
 	font-style: italic;
@@ -795,13 +733,15 @@
 	margin-bottom: var(--size-4-3);
 }
 
-.ytkn-settings__group-cards .ytkn-settings__template-card .setting-item {
+.ytkn-card__body .ytkn-settings__template-card .setting-item {
 	padding: 0;
 	background: transparent;
 	border: none;
 }
 
-.ytkn-settings.ytkn-settings .ytkn-settings__group-cards .ytkn-settings__template-card .setting-item.setting-item {
+/* Nested template controls intentionally opt out of settings-card row chrome;
+   this mirrors the scoped specificity used for direct card rows above. */
+.ytkn-settings.ytkn-settings .ytkn-card__body .ytkn-settings__template-card .setting-item.setting-item {
 	padding: 0;
 	border: none;
 	background: transparent;
@@ -1104,21 +1044,21 @@
 	background: transparent;
 }
 
-.ytkn-settings__group-cards .setting-item-name,
+.ytkn-card__body .setting-item-name,
 .ytkn-modal .setting-item-name {
 	font-weight: var(--font-medium);
 }
 
-.ytkn-settings__group-cards .setting-item-description,
+.ytkn-card__body .setting-item-description,
 .ytkn-modal .setting-item-description {
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
 	line-height: 1.35;
 }
 
-.ytkn-settings__group-cards .setting-item-control select,
-.ytkn-settings__group-cards .setting-item-control input[type='text'],
-.ytkn-settings__group-cards .setting-item-control input[type='password'],
+.ytkn-card__body .setting-item-control select,
+.ytkn-card__body .setting-item-control input[type='text'],
+.ytkn-card__body .setting-item-control input[type='password'],
 .ytkn-modal .setting-item-control select,
 .ytkn-modal .setting-item-control input[type='text'],
 .ytkn-modal .setting-item-control input[type='number'] {
@@ -1215,6 +1155,8 @@
 	min-width: 0;
 }
 
+/* Mirror the quick-grid reset at modal specificity so Obsidian's setting row
+   padding cannot reappear inside the compact two-column card. */
 .modal .ytkn-modal .ytkn-modal__quick-grid .setting-item.setting-item {
 	padding: 0;
 	border: none;
@@ -1304,6 +1246,8 @@
 	min-width: 0;
 }
 
+/* Template control rows are rendered after dynamic updates; this scoped reset
+   keeps generated controls compact regardless of Obsidian modal defaults. */
 .modal .ytkn-modal .ytkn-modal__controls-area .setting-item.setting-item {
 	padding: 0;
 	border: none;
@@ -1459,7 +1403,6 @@
 	letter-spacing: -0.01em;
 }
 
-/* Textarea control rows: stack label above, textarea full-width below */
 .ytkn-control-row--textarea.setting-item,
 .ytkn-modal .setting-item.ytkn-control-row--textarea {
 	flex-direction: column;
@@ -1508,7 +1451,6 @@
 	margin-inline-start: 0;
 }
 
-/* Textarea control rows in template card: stack label above, textarea full width */
 .ytkn-settings__template-card .setting-item.ytkn-control-row--textarea {
 	flex-direction: column;
 	align-items: stretch;
@@ -1529,26 +1471,30 @@
 
 	/* Obsidian restores roomy desktop `.setting-item` spacing inside settings
 	   dialogs; keep our card rows compact on desktop while leaving mobile alone. */
-	.ytkn-settings__group-cards {
+	.ytkn-card__body {
 		gap: var(--size-4-1);
 	}
 
-	.ytkn-settings__group-cards>.setting-item {
+	.ytkn-card__body>.setting-item {
 		padding: var(--size-4-2);
 		margin: 0;
 	}
 
-	.ytkn-settings.ytkn-settings .ytkn-settings__group-cards>.setting-item.setting-item {
+	/* Desktop settings modals reintroduce roomier `.setting-item` spacing; match
+	   their specificity so card rows stay compact on wider viewports. */
+	.ytkn-settings.ytkn-settings .ytkn-card__body>.setting-item.setting-item {
 		padding: var(--size-4-2);
 		margin: 0;
 		border: none;
 	}
 
-	.ytkn-modal .ytkn-settings__group-cards>.setting-item {
+	.ytkn-modal .ytkn-card__body>.setting-item {
 		padding: var(--size-4-1) var(--size-4-2);
 	}
 
-	.modal .ytkn-modal .ytkn-settings__group-cards>.setting-item.setting-item {
+	/* Modal cards reuse the generic card body class; keep the modal variant's
+	   tighter desktop padding even when Obsidian modal rows add their own spacing. */
+	.modal .ytkn-modal .ytkn-card__body>.setting-item.setting-item {
 		padding: var(--size-4-1) var(--size-4-2);
 		border: none;
 	}
@@ -1577,60 +1523,6 @@
 
 	.ytkn-brand-mark {
 		--ytkn-brand-mark-size: 40px;
-	}
-
-	/* Revert dropdown rows to stacked column on small screens */
-	.ytkn-modal .setting-item.ytkn-setting-row--select,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--select {
-		flex-direction: column;
-		align-items: stretch;
-	}
-
-	.ytkn-modal .setting-item.ytkn-setting-row--select .setting-item-info,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--select .setting-item-info {
-		width: 100%;
-		padding-right: 0;
-	}
-
-	.ytkn-modal .setting-item.ytkn-setting-row--select .setting-item-control,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--select .setting-item-control {
-		width: 100%;
-	}
-
-	.ytkn-modal .setting-item.ytkn-setting-row--select .setting-item-control select,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--select .setting-item-control select {
-		width: 100%;
-		max-width: none;
-	}
-
-	/* Revert number input and button rows on small screens */
-	.ytkn-modal .setting-item.ytkn-setting-row--number,
-	.ytkn-modal .setting-item.ytkn-setting-row--button,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--number,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--button {
-		flex-direction: column;
-		align-items: stretch;
-	}
-
-	.ytkn-modal .setting-item.ytkn-setting-row--number .setting-item-info,
-	.ytkn-modal .setting-item.ytkn-setting-row--button .setting-item-info,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--number .setting-item-info,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--button .setting-item-info {
-		width: 100%;
-		padding-right: 0;
-	}
-
-	.ytkn-modal .setting-item.ytkn-setting-row--number .setting-item-control,
-	.ytkn-modal .setting-item.ytkn-setting-row--button .setting-item-control,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--number .setting-item-control,
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--button .setting-item-control {
-		width: 100%;
-	}
-
-	.ytkn-modal .setting-item.ytkn-setting-row--number .setting-item-control input[type='number'],
-	.ytkn-settings__group-cards .setting-item.ytkn-setting-row--number .setting-item-control input[type='number'] {
-		width: 100%;
-		max-width: none;
 	}
 
 	.ytkn-whats-new-modal__support {

@@ -20,6 +20,7 @@ import { App } from 'obsidian';
 import { SettingsTab } from '../../src/ui/settings';
 import { SUPPORT_LINKS } from '../../src/release-notes';
 import { WhatsNewModal } from '../../src/ui/modals/WhatsNewModal';
+import { SETTING_COPY } from '../../src/ui/settingCopy';
 
 function makeFakeSettings() {
     return {
@@ -116,7 +117,39 @@ describe('SettingsTab', () => {
             .find((button) => button.textContent === 'Restore defaults');
 
         expect(selectRow?.classList.contains('ytkn-setting-row--select')).toBe(true);
+        expect(selectRow?.classList.contains('ytkn-setting-row--fit-control')).toBe(true);
         expect(restoreButton?.closest('.setting-item')?.classList.contains('ytkn-setting-row--button')).toBe(true);
+        expect(restoreButton?.closest('.setting-item')?.classList.contains('ytkn-setting-row--fit-control')).toBe(true);
+    });
+
+    it('renders settings cards with generic card classes and legacy hooks', () => {
+        const plugin = makeFakePlugin();
+        const tab = new SettingsTab(new App(), plugin as any);
+
+        tab.display();
+
+        const card = tab.containerEl.querySelector('.ytkn-card.ytkn-settings__group');
+        const title = card?.querySelector('.ytkn-card__title.ytkn-settings__group-title');
+        const body = card?.querySelector('.ytkn-card__body.ytkn-settings__group-cards');
+
+        expect(card).not.toBeNull();
+        expect(title).not.toBeNull();
+        expect(body).not.toBeNull();
+    });
+
+    it('renders the default content template subtitle inside its setting row', () => {
+        const plugin = makeFakePlugin();
+        const tab = new SettingsTab(new App(), plugin as any);
+
+        tab.display();
+
+        const templateRow = Array.from(tab.containerEl.querySelectorAll('.setting-item'))
+            .find((row) => row.querySelector('.setting-item-name')?.textContent === SETTING_COPY.contentTemplate.name);
+        const description = templateRow?.querySelector('.setting-item-description.ytkn-settings__template-description');
+
+        expect(templateRow).not.toBeUndefined();
+        expect(description?.textContent).toBe('Balanced summary, takeaways, where it applies, and limits. Best default.');
+        expect(tab.containerEl.querySelector('p.ytkn-settings__template-description')).toBeNull();
     });
 
     it('renders only General and GenAI as semantic settings tabs', () => {

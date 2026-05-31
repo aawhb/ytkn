@@ -51,6 +51,19 @@ describe('GenerationOptionsModal.onOpen', () => {
 		expect(advancedHeading).not.toBeUndefined();
 	});
 
+	it('renders advanced setting cards with generic card classes and legacy hooks', () => {
+		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
+		modal.open();
+
+		const card = modal.contentEl.querySelector('.ytkn-card.ytkn-settings__group');
+		const title = card?.querySelector('.ytkn-card__title.ytkn-settings__group-title');
+		const body = card?.querySelector('.ytkn-card__body.ytkn-settings__group-cards');
+
+		expect(card).not.toBeNull();
+		expect(title).not.toBeNull();
+		expect(body).not.toBeNull();
+	});
+
 	it('renders tab nav with class ytkn-tabs containing at least 2 tabs', () => {
 		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
 		modal.open();
@@ -79,6 +92,19 @@ describe('GenerationOptionsModal.onOpen', () => {
 
 		expect(modal.contentEl.querySelector('.ytkn-modal__scroll-sentinel')).not.toBeNull();
 		expect(modal.contentEl.querySelector('.ytkn-modal__header-wrap')).not.toBeNull();
+	});
+
+	it('renders Generate as the only generation modal action', () => {
+		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
+		modal.open();
+
+		const actionButtons = Array.from(
+			modal.contentEl.querySelectorAll('.ytkn-modal__actions button'),
+		);
+		const actionLabels = actionButtons.map((button) => button.textContent);
+
+		expect(actionLabels).toEqual(['Generate']);
+		expect(actionLabels).not.toContain('Cancel');
 	});
 
 	it('renders icon-only brand actions in the modal header', () => {
@@ -195,7 +221,7 @@ describe('GenerationOptionsModal.onOpen', () => {
 		modal.open();
 
 		const settings = Array.from(modal.contentEl.querySelectorAll('.setting-item'));
-		const mindmapSetting = settings.find((setting) => setting.textContent?.includes('Add mermaid mindmap')) as HTMLElement | undefined;
+		const mindmapSetting = settings.find((setting) => setting.textContent?.includes('Add mindmap')) as HTMLElement | undefined;
 		const quotesSetting = settings.find((setting) => setting.textContent?.includes('Add memorable quotes')) as HTMLElement | undefined;
 		const instructionSetting = settings.find((setting) => setting.textContent?.includes('Instruction style')) as HTMLElement | undefined;
 
@@ -241,6 +267,8 @@ describe('GenerationOptionsModal.onOpen', () => {
 		expect(modelSetting).not.toBeNull();
 		expect(modelSetting?.querySelector('select')).not.toBeNull();
 		expect(modelSetting?.classList.contains('ytkn-setting-row--select')).toBe(true);
+		expect(modelSetting?.classList.contains('ytkn-setting-row--stacked')).toBe(true);
+		expect(modelSetting?.classList.contains('ytkn-setting-row--fit-control')).toBe(false);
 	});
 
 	it('stamps modal select and number setting rows with explicit layout classes', () => {
@@ -252,9 +280,14 @@ describe('GenerationOptionsModal.onOpen', () => {
 			return ['none', 'readable', 'timestamped'].every((value) => values.includes(value));
 		});
 		const temperatureInput = modal.contentEl.querySelector('input[type="number"]');
+		const transcriptRow = transcriptSelect?.closest('.setting-item');
+		const temperatureRow = temperatureInput?.closest('.setting-item');
 
-		expect(transcriptSelect?.closest('.setting-item')?.classList.contains('ytkn-setting-row--select')).toBe(true);
-		expect(temperatureInput?.closest('.setting-item')?.classList.contains('ytkn-setting-row--number')).toBe(true);
+		expect(transcriptRow?.classList.contains('ytkn-setting-row--select')).toBe(true);
+		expect(transcriptRow?.classList.contains('ytkn-setting-row--stacked')).toBe(true);
+		expect(transcriptRow?.classList.contains('ytkn-setting-row--fit-control')).toBe(false);
+		expect(temperatureRow?.classList.contains('ytkn-setting-row--number')).toBe(true);
+		expect(temperatureRow?.classList.contains('ytkn-setting-row--fit-control')).toBe(true);
 	});
 
 	it('renders the media embed dropdown with video, thumbnail, and off choices', () => {

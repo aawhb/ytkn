@@ -53,6 +53,7 @@ interface MockText {
 	getValue(): string;
 	setValue(v: string): MockText;
 	setPlaceholder(p: string): MockText;
+	setDisabled(disabled: boolean): MockText;
 	onChange(cb: (v: string) => void): MockText;
 }
 
@@ -61,6 +62,7 @@ interface MockTextArea {
 	getValue(): string;
 	setValue(v: string): MockTextArea;
 	setPlaceholder(p: string): MockTextArea;
+	setDisabled(disabled: boolean): MockTextArea;
 	onChange(cb: (v: string) => void): MockTextArea;
 }
 
@@ -129,7 +131,12 @@ export class Setting {
 			getValue: () => inputEl.value,
 			setValue(v: string): MockText { inputEl.value = v; return this; },
 			setPlaceholder(p: string): MockText { inputEl.placeholder = p; return this; },
-			onChange(_cb: (v: string) => void): MockText { return this; },
+			setDisabled(disabled: boolean): MockText { inputEl.disabled = disabled; return this; },
+			onChange(cb: (v: string) => void): MockText {
+				inputEl.addEventListener('input', () => cb(inputEl.value));
+				inputEl.addEventListener('change', () => cb(inputEl.value));
+				return this;
+			},
 		};
 		cb(text);
 		return this;
@@ -143,7 +150,12 @@ export class Setting {
 			getValue: () => inputEl.value,
 			setValue(v: string): MockTextArea { inputEl.value = v; return this; },
 			setPlaceholder(p: string): MockTextArea { inputEl.placeholder = p; return this; },
-			onChange(_cb: (v: string) => void): MockTextArea { return this; },
+			setDisabled(disabled: boolean): MockTextArea { inputEl.disabled = disabled; return this; },
+			onChange(cb: (v: string) => void): MockTextArea {
+				inputEl.addEventListener('input', () => cb(inputEl.value));
+				inputEl.addEventListener('change', () => cb(inputEl.value));
+				return this;
+			},
 		};
 		cb(text);
 		return this;
@@ -169,7 +181,10 @@ export class Setting {
 			},
 			getValue(): string { return selectEl.value; },
 			setValue(v: string): MockDropdown { selectEl.value = v; return this; },
-			onChange(_cb: (v: string) => void): MockDropdown { return this; },
+			onChange(cb: (v: string) => void): MockDropdown {
+				selectEl.addEventListener('change', () => cb(selectEl.value));
+				return this;
+			},
 			setDisabled(disabled: boolean): MockDropdown { selectEl.disabled = disabled; return this; },
 		};
 		cb(dropdown);

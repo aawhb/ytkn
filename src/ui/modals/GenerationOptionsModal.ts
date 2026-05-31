@@ -53,6 +53,7 @@ import {
 } from '../../release-notes';
 import { WhatsNewModal } from './WhatsNewModal';
 import { stampSettingRowClasses } from '../settingRows';
+import { SETTING_COPY } from '../settingCopy';
 
 interface FormState {
 	url: string;
@@ -334,7 +335,7 @@ export class GenerationOptionsModal extends Modal {
 		const urlZone = quickTop.createDiv({ cls: 'ytkn-modal__quick-top-url' });
 		const toggleZone = quickTop.createDiv({ cls: 'ytkn-modal__quick-top-toggle' });
 		new Setting(toggleZone)
-			.setName('Use AI')
+			.setName(SETTING_COPY.useAi.name)
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.state.useAi)
@@ -350,7 +351,7 @@ export class GenerationOptionsModal extends Modal {
 		const quickGrid = section.createDiv({ cls: 'ytkn-modal__quick-grid' });
 
 		const aiSummarySetting = new Setting(quickGrid)
-			.setName('AI summary')
+			.setName(SETTING_COPY.aiSummary.name)
 			.addToggle((toggle) => {
 				toggle
 					.setValue(this.state.generateAiSummary)
@@ -364,11 +365,10 @@ export class GenerationOptionsModal extends Modal {
 		aiSummarySetting.settingEl.addClass('ytkn-modal__ai-summary-setting');
 
 		const instructionSetting = new Setting(quickGrid)
-			.setName('Instruction style')
+			.setName(SETTING_COPY.instructionStyle.name)
 			.addDropdown((dropdown) => {
 				dropdown
-					.addOption('template', 'Built-in template')
-					.addOption('manual', 'Manual prompt')
+					.addOptions(SETTING_COPY.instructionStyle.options!)
 					.setValue(this.state.instructionMode)
 					.onChange((value) => {
 						this.state.instructionMode = value as InstructionMode;
@@ -378,14 +378,13 @@ export class GenerationOptionsModal extends Modal {
 		this.instructionSettingEl = instructionSetting.settingEl;
 
 		const templateSetting = new Setting(quickGrid)
-			.setName('Content template')
+			.setName(SETTING_COPY.contentTemplate.name)
 			.addDropdown((dropdown) => {
 				populateTemplateDropdown(dropdown.selectEl);
 				dropdown
 					.setValue(this.state.instructionTemplate)
 					.onChange((value) => {
 						this.state.instructionTemplate = value as InstructionTemplate;
-						// Reset control values to defaults for the new template
 						this.state.controlValues = {};
 						for (const control of getTemplate(this.state.instructionTemplate).controls ?? []) {
 							if (control.default !== undefined) {
@@ -409,9 +408,9 @@ export class GenerationOptionsModal extends Modal {
 		this.updateControlsArea();
 
 		const manualSetting = new Setting(quickGrid)
-			.setName('Manual prompt')
+			.setName(SETTING_COPY.manualInstructions.name)
 			.addTextArea((text) => {
-				text.setPlaceholder('Provide specific instructions for the note...')
+				text.setPlaceholder(SETTING_COPY.manualInstructions.placeholder!)
 					.setValue(this.state.manualInstructions)
 					.onChange((value) => {
 						this.state.manualInstructions = value;
@@ -424,7 +423,7 @@ export class GenerationOptionsModal extends Modal {
 		manualSetting.settingEl.addClass('ytkn-modal__quick-full');
 
 		const tldrCalloutSetting = new Setting(quickGrid)
-			.setName('Add summary callout')
+			.setName(SETTING_COPY.tldrCallout.name)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.state.tldrCalloutAtTop)
@@ -435,7 +434,7 @@ export class GenerationOptionsModal extends Modal {
 		tldrCalloutSetting.settingEl.addClass('ytkn-modal__tldr-callout-setting');
 
 		const mindmapSetting = new Setting(quickGrid)
-			.setName('Add mermaid mindmap')
+			.setName(SETTING_COPY.mindmap.name)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.state.includeMindmap)
@@ -445,7 +444,7 @@ export class GenerationOptionsModal extends Modal {
 		mindmapSetting.settingEl.addClass('ytkn-modal__quick-full');
 
 		const memorableQuotesSetting = new Setting(quickGrid)
-			.setName('Add memorable quotes')
+			.setName(SETTING_COPY.memorableQuotes.name)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.state.includeMemorableQuotes)
@@ -457,14 +456,10 @@ export class GenerationOptionsModal extends Modal {
 		quickGrid.createDiv({ cls: 'ytkn-modal__quick-divider' });
 
 		new Setting(quickGrid)
-			.setName('Output destination')
+			.setName(SETTING_COPY.outputDestination.name)
 			.addDropdown((dropdown) => {
 				dropdown
-					.addOptions({
-						'current-note': 'Insert at caret',
-						'append-to-active-note': 'Append to active note',
-						folder: 'Create new note',
-					})
+					.addOptions(SETTING_COPY.outputDestination.options!)
 					.setValue(this.state.noteDestinationMode)
 					.onChange((v: string) => {
 						this.state.noteDestinationMode = v as NoteDestinationMode;
@@ -479,12 +474,10 @@ export class GenerationOptionsModal extends Modal {
 			});
 
 		new Setting(quickGrid)
-			.setName('Transcript in note')
+			.setName(SETTING_COPY.transcriptInNote.name)
 			.addDropdown((dropdown) => {
 				dropdown
-					.addOption('none', 'Off')
-					.addOption('readable', 'Readable')
-					.addOption('timestamped', 'Timestamped')
+					.addOptions(SETTING_COPY.transcriptInNote.options!)
 					.setValue(this.state.transcriptMode)
 					.onChange((value) => {
 						this.state.transcriptMode = value as TranscriptMode;
@@ -496,10 +489,10 @@ export class GenerationOptionsModal extends Modal {
 			});
 
 		const folderSettingEl = new Setting(quickGrid)
-			.setName('Destination folder')
+			.setName(SETTING_COPY.destinationFolder.name)
 			.addText((text) =>
 				text
-					.setPlaceholder('Inbox or folder/subfolder')
+					.setPlaceholder(SETTING_COPY.destinationFolder.placeholder!)
 					.setValue(this.state.noteDestinationFolder)
 					.onChange((v) => (this.state.noteDestinationFolder = v)),
 			).settingEl;
@@ -508,13 +501,10 @@ export class GenerationOptionsModal extends Modal {
 		this.folderSettingEl = folderSettingEl;
 
 		const playlistSetting = new Setting(quickGrid)
-			.setName('Playlist handling')
+			.setName(SETTING_COPY.playlistHandling.name)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						'per-video': 'Individual notes (per video)',
-						combined: 'Combined note (all videos)',
-					})
+					.addOptions(SETTING_COPY.playlistHandling.options!)
 					.setValue(this.state.playlistMode)
 					.onChange((v) => {
 						this.state.playlistMode = v as PlaylistMode;
@@ -545,22 +535,18 @@ export class GenerationOptionsModal extends Modal {
 
 	private renderNoteCustomizationGroup(containerEl: HTMLElement): void {
 		new Setting(containerEl)
-			.setName('Media embed')
-			.setDesc('Embed the YouTube video, thumbnail, or no media near the top of the note.')
+			.setName(SETTING_COPY.mediaEmbed.name)
+			.setDesc(SETTING_COPY.mediaEmbed.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						video: 'Video',
-						thumbnail: 'Thumbnail',
-						none: 'Off',
-					})
+					.addOptions(SETTING_COPY.mediaEmbed.options!)
 					.setValue(this.state.mediaEmbedMode)
 					.onChange((v) => (this.state.mediaEmbedMode = v as MediaEmbedMode)),
 			);
 
 		new Setting(containerEl)
-			.setName('Use video title as note title')
-			.setDesc('Renames the destination note to the video\'s title after generation. Applies to single-URL "insert at caret" runs and all "folder" destination runs. Multi-URL editor-target batches never rename to avoid breaking subsequent runs.')
+			.setName(SETTING_COPY.useVideoTitleAsNoteName.name)
+			.setDesc(SETTING_COPY.useVideoTitleAsNoteName.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.state.useVideoTitleAsNoteName)
@@ -568,8 +554,8 @@ export class GenerationOptionsModal extends Modal {
 			);
 
 		new Setting(containerEl)
-			.setName('Include frontmatter')
-			.setDesc('Add a YAML frontmatter block (title, channel, video URL, generated, …) so the note works with properties, Dataview, and search.')
+			.setName(SETTING_COPY.includeFrontmatter.name)
+			.setDesc(SETTING_COPY.includeFrontmatter.desc!)
 			.addToggle((toggle) =>
 				toggle.setValue(this.state.includeFrontmatter).onChange((v) => {
 					this.state.includeFrontmatter = v;
@@ -582,11 +568,11 @@ export class GenerationOptionsModal extends Modal {
 		};
 
 		const tagsSettingEl = new Setting(containerEl)
-			.setName('Frontmatter tags')
-			.setDesc('Comma- or space-separated tags added to the frontmatter. Example: YouTube, AI/summary')
+			.setName(SETTING_COPY.frontmatterTags.name)
+			.setDesc(SETTING_COPY.frontmatterTags.desc!)
 			.addText((text) => {
 				text
-					.setPlaceholder('YouTube, AI/summary')
+					.setPlaceholder(SETTING_COPY.frontmatterTags.placeholder!)
 					.setValue(this.state.frontmatterTags)
 					.onChange((v) => (this.state.frontmatterTags = v));
 			}).settingEl;
@@ -594,11 +580,11 @@ export class GenerationOptionsModal extends Modal {
 		this.frontmatterTagsSettingEl = tagsSettingEl;
 
 		const allowlistSettingEl = new Setting(containerEl)
-			.setName('Frontmatter properties')
-			.setDesc('Space- or comma-separated list of property keys the plugin will write. Remove a key to suppress it. Allowed keys: title, aliases, source, channel, channelUrl, channelId, videoUrl, playlistUrl, videoId, playlistId, thumbnailUrl, videoDescription, durationSeconds, keywords, generated, videoCount.')
+			.setName(SETTING_COPY.frontmatterProperties.name)
+			.setDesc(SETTING_COPY.frontmatterProperties.desc!)
 			.addText((text) => {
 				text
-					.setPlaceholder('Title channel channelUrl videoId …')
+					.setPlaceholder(SETTING_COPY.frontmatterProperties.placeholder!)
 					.setValue(this.state.frontmatterPropertyAllowlist)
 					.onChange((value) => {
 						this.state.frontmatterPropertyAllowlist = value;
@@ -608,14 +594,11 @@ export class GenerationOptionsModal extends Modal {
 		this.frontmatterPropertyAllowlistSettingEl = allowlistSettingEl;
 
 		new Setting(containerEl)
-			.setName('Source metadata position')
-			.setDesc('Render the source block (title, channel, URL) above or below the AI summary.')
+			.setName(SETTING_COPY.sourceMetadataPosition.name)
+			.setDesc(SETTING_COPY.sourceMetadataPosition.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						top: 'Top',
-						bottom: 'Bottom',
-					})
+					.addOptions(SETTING_COPY.sourceMetadataPosition.options!)
 					.setValue(this.state.sourceSectionPosition)
 					.onChange(
 						(v: string) => (this.state.sourceSectionPosition = v as SourceSectionPosition),
@@ -625,13 +608,11 @@ export class GenerationOptionsModal extends Modal {
 
 	private renderTranscriptInNoteGroup(containerEl: HTMLElement): void {
 		new Setting(containerEl)
-			.setName('Transcript in note')
-			.setDesc('How transcript content appears in the generated note.')
+			.setName(SETTING_COPY.transcriptInNote.name)
+			.setDesc(SETTING_COPY.transcriptInNote.desc!)
 			.addDropdown((dropdown) => {
 				dropdown
-					.addOption('none', 'Off')
-					.addOption('readable', 'Readable')
-					.addOption('timestamped', 'Timestamped')
+					.addOptions(SETTING_COPY.transcriptInNote.options!)
 					.setValue(this.state.transcriptMode)
 					.onChange((value) => {
 						this.state.transcriptMode = value as TranscriptMode;
@@ -643,8 +624,8 @@ export class GenerationOptionsModal extends Modal {
 			});
 
 		new Setting(containerEl)
-			.setName('Link timestamps to YouTube')
-			.setDesc('When using the timestamped transcript, wrap each timestamp as a deep-link to the video at that time.')
+			.setName(SETTING_COPY.linkTimestamps.name)
+			.setDesc(SETTING_COPY.linkTimestamps.desc!)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.state.linkTimestamps)
@@ -652,14 +633,11 @@ export class GenerationOptionsModal extends Modal {
 			);
 
 		new Setting(containerEl)
-			.setName('Transcript language')
-			.setDesc('Auto picks any available transcript. Preferred tries your language first, then falls back.')
+			.setName(SETTING_COPY.transcriptLanguage.name)
+			.setDesc(SETTING_COPY.transcriptLanguage.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						auto: 'Auto-detect best available',
-						preferred: 'Preferred language with fallback',
-					})
+					.addOptions(SETTING_COPY.transcriptLanguage.options!)
 					.setValue(this.state.transcriptLanguageMode)
 					.onChange((v) => {
 						this.state.transcriptLanguageMode = v as TranscriptLanguageMode;
@@ -668,11 +646,11 @@ export class GenerationOptionsModal extends Modal {
 			);
 
 		const langSetting = new Setting(containerEl)
-			.setName('Preferred language code')
-			.setDesc('Used when transcript language is set to preferred. Example: en, hi, fr.')
+			.setName(SETTING_COPY.preferredLanguageCode.name)
+			.setDesc(SETTING_COPY.preferredLanguageCode.desc!)
 			.addText((text) =>
 				text
-					.setPlaceholder('En, es, etc.')
+					.setPlaceholder(SETTING_COPY.preferredLanguageCode.placeholder!)
 					.setValue(this.state.preferredTranscriptLanguage)
 					.onChange((v) => (this.state.preferredTranscriptLanguage = v)),
 			);
@@ -681,14 +659,11 @@ export class GenerationOptionsModal extends Modal {
 
 	private renderQueueAndRunReportsGroup(containerEl: HTMLElement): void {
 		new Setting(containerEl)
-			.setName('When a transcript fails')
-			.setDesc('Skip the video with a missing transcript, or stop the entire run.')
+			.setName(SETTING_COPY.transcriptFailure.name)
+			.setDesc(SETTING_COPY.transcriptFailure.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						skip: 'Skip and keep going',
-						fail: 'Stop the whole run',
-					})
+					.addOptions(SETTING_COPY.transcriptFailure.options!)
 					.setValue(this.state.transcriptFailureMode)
 					.onChange((v) => {
 						this.state.transcriptFailureMode = v as TranscriptFailureMode;
@@ -696,8 +671,8 @@ export class GenerationOptionsModal extends Modal {
 			);
 
 		new Setting(containerEl)
-			.setName('Include run report')
-			.setDesc('Add a collapsible report listing completed, skipped, failed, and canceled runs after each batch.')
+			.setName(SETTING_COPY.includeRunReport.name)
+			.setDesc(SETTING_COPY.includeRunReport.desc!)
 			.addToggle((toggle) =>
 				toggle.setValue(this.state.includeRunReport).onChange((v) => {
 					this.state.includeRunReport = v;
@@ -706,14 +681,11 @@ export class GenerationOptionsModal extends Modal {
 			);
 
 		const runReport = new Setting(containerEl)
-			.setName('Run report location')
-			.setDesc('Where to put the run report after all generations in a batch complete.')
+			.setName(SETTING_COPY.runReportLocation.name)
+			.setDesc(SETTING_COPY.runReportLocation.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions({
-						'generated-note': 'Generated note',
-						'separate-note': 'Separate report note',
-					})
+					.addOptions(SETTING_COPY.runReportLocation.options!)
 					.setValue(this.state.runReportLocation)
 					.onChange((v) => {
 						this.state.runReportLocation = v as RunReportLocation;
@@ -728,16 +700,16 @@ export class GenerationOptionsModal extends Modal {
 
 	private renderAiGroup(containerEl: HTMLElement): void {
 		const modelSetting = new Setting(containerEl)
-			.setName('AI model')
+			.setName(SETTING_COPY.aiModel.name)
 			.addDropdown((dropdown) => {
 				if (!this.availableModels.length) {
-					dropdown.addOption('', 'No models available').setValue('');
+					dropdown.addOption('', SETTING_COPY.aiModel.noModelsOption).setValue('');
 					dropdown.setDisabled(true);
 					return;
 				}
 
 				const options: Record<string, string> = {
-					'': 'Plugin Default',
+					'': SETTING_COPY.aiModel.pluginDefaultOption,
 				};
 
 				for (const model of this.availableModels) {
@@ -757,8 +729,8 @@ export class GenerationOptionsModal extends Modal {
 		this.aiModelSettingEl = modelSetting.settingEl;
 
 		this.temperatureSettingEl = new Setting(containerEl)
-			.setName('Temperature')
-			.setDesc('If supported by the provider; 0 = deterministic. 0.3 (default) = focused. 1 = more varied.')
+			.setName(SETTING_COPY.temperature.name)
+			.setDesc(SETTING_COPY.temperature.desc!)
 			.addText((text) => {
 				text.setValue(this.state.temperature).onChange(
 					(v) => (this.state.temperature = v),
@@ -770,8 +742,8 @@ export class GenerationOptionsModal extends Modal {
 			}).settingEl;
 
 		this.requestTimeoutSettingEl = new Setting(containerEl)
-			.setName('Request timeout (seconds)')
-			.setDesc('Increase for slow local models or long runs. 300 = 5 minutes.')
+			.setName(SETTING_COPY.requestTimeout.name)
+			.setDesc(SETTING_COPY.requestTimeout.desc!)
 			.addText((text) => {
 				text.setValue(this.state.requestTimeoutSeconds).onChange(
 					(v) => (this.state.requestTimeoutSeconds = v),
@@ -831,9 +803,6 @@ export class GenerationOptionsModal extends Modal {
 	private renderActionRow(wrap: HTMLElement): void {
 		const actions = wrap.createDiv({ cls: 'ytkn-modal__actions' });
 		new Setting(actions)
-			.addButton((button) =>
-				button.setButtonText('Cancel').onClick(() => this.close()),
-			)
 			.addButton((button) =>
 				button
 					.setButtonText('Generate')
