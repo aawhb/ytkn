@@ -11,6 +11,7 @@
 		"typecheck": "tsc --noEmit",
 		"test": "vitest",
 		"test:run": "vitest --run",
+		"test:coverage": "vitest --run --coverage",
 		"verify": "npm run lint:full && npm run typecheck && npm run test:run && npm audit --audit-level=moderate && npm run build",
 		"sync": "node sync.mjs",
 		"release:prep": "npm version --no-git-tag-version",

@@ -7,6 +7,12 @@ export default defineConfig({
 		include: ['test/**/*.test.ts'],
 		exclude: ['node_modules/**'],
 		setupFiles: ['./test/setupTests.ts'],
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'lcov'],
+			include: ['src/**/*.ts'],
+			exclude: ['src/types.ts'],
+		},
 	},
 	resolve: {
 		alias: {
