@@ -24,11 +24,13 @@ interface BaseProvider {
 	url?: string;
 }
 
-export interface DiscoveredModel {
+interface ModelIdentity {
 	name: string;
 	displayName: string;
 	contextWindow?: number;
 }
+
+export type DiscoveredModel = ModelIdentity;
 
 export interface ModelConfig {
 	name: string;
@@ -73,11 +75,7 @@ export interface OutputDefaults {
 	tldrCalloutAtTop: boolean;
 }
 
-export interface StoredModel {
-	name: string;
-	displayName: string;
-	contextWindow?: number;
-}
+export type StoredModel = ModelIdentity;
 
 export interface StoredProvider extends BaseProvider {
 	models: StoredModel[];

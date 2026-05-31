@@ -36,7 +36,7 @@ import { ACTIVE_MODEL_SELECT_CLASS } from '../defaults';
 import {
 	SUPPORT_LINKS,
 	getRecentReleaseNotes,
-} from '../release-notes';
+} from '../releaseNotes';
 import {
 	buildModelId,
 	getErrorMessage,

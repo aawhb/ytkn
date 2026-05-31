@@ -1,7 +1,7 @@
 import { Setting } from 'obsidian';
 import type { ControlDeclaration } from '../../types';
 
-function controlDefaultToString(value: unknown): string {
+export function controlDefaultToString(value: unknown): string {
 	if (value === undefined || value === null) {
 		return '';
 	}
@@ -63,7 +63,7 @@ export function renderTemplateControls(
 						.onChange((v) => {
 							onChange(control.id, v);
 						});
-					text.inputEl.addClass('ytkn__input');
+					text.inputEl.addClass('ytkn-form__input');
 				});
 		}
 	}

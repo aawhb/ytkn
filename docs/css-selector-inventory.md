@@ -4,7 +4,7 @@ This inventory records the current ownership and cleanup status of plugin CSS se
 
 ## Guardrails
 
-- Do not rename existing selectors during routine cleanup; source and tests assert many of them.
+- Do not rename existing selectors during routine cleanup; intentional migrations must update source, tests, and this inventory together.
 - Treat Obsidian/theme classes as external dependencies even when they do not appear in source.
 - Treat generated classes such as queue outcome badges as used when they are assembled dynamically.
 - Move CSS in small chunks and validate with tests plus manual UI review when visual cascade could change.
@@ -14,6 +14,8 @@ This inventory records the current ownership and cleanup status of plugin CSS se
 | Area | Selector families | Owners |
 | --- | --- | --- |
 | Root/tokens | `.ytkn`, `.ytkn-settings`, `.ytkn-modal`, `.ytkn-queue-modal` | Shared stylesheet roots and CSS custom properties |
+| Form controls | `.ytkn-form__input` | Shared text/textarea styling for provider forms, generation modal fields, and template controls |
+| Status bar | `.ytkn-status-bar--clickable` | Status bar queue affordance in `src/main.ts` |
 | Generic cards | `.ytkn-card`, `.ytkn-card__title`, `.ytkn-card__body` | `createSettingsCard` in `src/ui/components/SettingsUIComponents.ts` |
 | Settings shell | `.ytkn-settings*` | `src/ui/settings.ts`, `SettingsUIComponents`, settings modals |
 | Provider accordions/models | `.ytkn-settings__provider-*`, `.ytkn-settings__models-*`, `.setting-model` | `SettingsUIComponents`, `SettingsEventHandlers` |
@@ -34,9 +36,12 @@ These may not appear as exact string literals in source but are intentionally us
 - `.is-phone`, `.modal`, `.modal-content`, `.mod-settings`, `.mod-toggle`: Obsidian/theme classes.
 - `.clickable-icon`, `.setting-item`, `.setting-item-info`, `.setting-item-name`, `.setting-item-description`, `.setting-item-control`: Obsidian setting DOM classes.
 
-## Removed in cleanup
+## Renamed or removed in cleanup
 
-Verified-unused plugin-owned selectors removed from `styles.css`:
+Plugin-owned selectors intentionally renamed or removed from `styles.css`:
+
+- `.ytkn__input` (renamed to `.ytkn-form__input`)
+- `.ytkn__status-bar--clickable` (renamed to `.ytkn-status-bar--clickable`)
 
 - `.ytkn__actions`
 - `.ytkn__button`

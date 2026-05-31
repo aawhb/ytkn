@@ -16,7 +16,7 @@ import {
 import { GenerationOptionsModal } from './ui/modals/GenerationOptionsModal';
 import { QueueModal } from './ui/modals/QueueModal';
 import { WhatsNewModal } from './ui/modals/WhatsNewModal';
-import { resolveReleaseNotesStartupAction } from './release-notes';
+import { resolveReleaseNotesStartupAction } from './releaseNotes';
 import {
 	buildModelId,
 	createJobId,
@@ -252,7 +252,7 @@ export class YTKN extends Plugin {
 	private initializeStatusBar(): void {
 		try {
 			this.statusBarEl = this.addStatusBarItem();
-			this.statusBarEl.addClass('ytkn__status-bar--clickable');
+			this.statusBarEl.addClass('ytkn-status-bar--clickable');
 			this.registerDomEvent(this.statusBarEl, 'click', () => this.onStatusBarClick());
 			this.renderStatusBar();
 		} catch (error) {

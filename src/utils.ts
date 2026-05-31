@@ -1,3 +1,4 @@
+import { normalizePath } from 'obsidian';
 import { ModelConfig } from './types';
 
 const INVALID_NOTE_NAME_CHARS = new Set(['\\', '/', ':', '*', '?', '"', '<', '>', '|']);
@@ -43,7 +44,7 @@ function replaceInvalidNoteNameChars(value: string): string {
 }
 
 export function normalizeVaultFolderPath(folderPath: string): string {
-	return folderPath.trim().replace(/^\/+|\/+$/g, '');
+	return normalizePath(folderPath.trim()).replace(/^\/+|\/+$/g, '');
 }
 
 export function formatSequenceName(prefix: string, index: number, total: number): string {

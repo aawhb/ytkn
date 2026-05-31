@@ -65,7 +65,7 @@ export class ProviderFormModal extends Modal {
 				text.setPlaceholder('E.g. My OpenAI')
 					.setValue(this.name)
 					.onChange((value) => (this.name = value));
-				text.inputEl.addClass('ytkn__input');
+				text.inputEl.addClass('ytkn-form__input');
 			});
 
 		new Setting(contentEl)
@@ -99,7 +99,7 @@ export class ProviderFormModal extends Modal {
 					text.setPlaceholder(DEFAULT_OPENAI_COMPATIBLE_URL)
 						.setValue(this.url)
 						.onChange((value) => (this.url = value));
-					text.inputEl.addClass('ytkn__input');
+					text.inputEl.addClass('ytkn-form__input');
 				});
 		}
 

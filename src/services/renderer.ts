@@ -6,9 +6,9 @@ import {
 	extractTldr,
 	sanitizeModelOutput,
 	shiftMarkdownHeadings,
-} from './output-normalizer';
-import { extractTemplateOutput } from './templates/extract-template-output';
-import { mergeFrontmatter } from './templates/frontmatter-merge';
+} from './outputNormalizer';
+import { extractTemplateOutput } from './templates/extractTemplateOutput';
+import { mergeFrontmatter } from './templates/frontmatterMerge';
 
 interface RenderResult {
 	content: string;

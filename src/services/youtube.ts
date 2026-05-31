@@ -9,6 +9,7 @@ import {
 	TranscriptLine,
 } from '../types';
 import { getErrorMessage } from '../utils';
+import { decodeHtmlEntities } from './outputNormalizer';
 
 type JsonObject = Record<string, unknown>;
 
@@ -119,17 +120,6 @@ function normalizeHtmlText(text: string): string {
 		.replace(/\\n/g, ' ')
 		.replace(/\s+/g, ' ')
 		.trim();
-}
-
-function decodeHtmlEntities(text: string): string {
-	return text
-		.replace(/&#39;/g, "'")
-		.replace(/&amp;/g, '&')
-		.replace(/&quot;/g, '"')
-		.replace(/&apos;/g, "'")
-		.replace(/&lt;/g, '<')
-		.replace(/&gt;/g, '>')
-		.replace(/&#(\d+);/g, (_match: string, code: string) => String.fromCharCode(Number.parseInt(code, 10)));
 }
 
 function rendererText(value: unknown): string | null {

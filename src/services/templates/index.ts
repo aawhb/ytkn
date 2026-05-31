@@ -1,8 +1,8 @@
 import type { ControlDeclaration, InstructionTemplate, Template } from '../../types';
 import { generalTemplate } from './general';
 import { studyTemplate } from './study';
-import { fullExtractTemplate } from './full-extract';
-import { deepDiveTemplate } from './deep-dive';
+import { fullExtractTemplate } from './fullExtract';
+import { deepDiveTemplate } from './deepDive';
 import { researchTemplate } from './research';
 import { implementationTemplate } from './implementation';
 

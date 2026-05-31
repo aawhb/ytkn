@@ -1,5 +1,5 @@
 import { App, Modal, Setting } from 'obsidian';
-import { ReleaseNote, SUPPORT_LINKS } from '../../release-notes';
+import { ReleaseNote, SUPPORT_LINKS } from '../../releaseNotes';
 
 const SECTION_LABELS: Array<{ key: keyof Pick<ReleaseNote, 'new' | 'improved' | 'fixed' | 'changed'>; label: string }> = [
 	{ key: 'new', label: 'New' },

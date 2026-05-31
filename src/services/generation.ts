@@ -195,7 +195,7 @@ export class GenerationService {
 		}
 
 		const folderPath = this.pickReportFolder(report.entries);
-		const baseName = this.getReportBaseName(report);
+		const baseName = this.buildReportBaseName(report);
 		const target = await this.createNewTarget(folderPath, baseName);
 		await this.writeContentToTarget(target, `# Queue Run Report\n\n${rendered}`);
 		target.finalized = true;
@@ -385,34 +385,34 @@ export class GenerationService {
 		);
 	}
 
-	private getSafeBaseName(baseName: string, fallbackName: string): string {
+	private buildSafeBaseName(baseName: string, fallbackName: string): string {
 		return sanitizeNoteFileName(baseName) || fallbackName;
 	}
 
-	private getSingleVideoBaseName(transcript: TranscriptResponse, options: GenerationOptions): string {
+	private buildSingleVideoBaseName(transcript: TranscriptResponse, options: GenerationOptions): string {
 		if (options.useVideoTitleAsNoteName) {
-			return this.getSafeBaseName(transcript.title, 'Video Note');
+			return this.buildSafeBaseName(transcript.title, 'Video Note');
 		}
 		return 'Video Note';
 	}
 
-	private getCombinedPlaylistBaseName(playlist: PlaylistResponse, options: GenerationOptions): string {
+	private buildCombinedPlaylistBaseName(playlist: PlaylistResponse, options: GenerationOptions): string {
 		if (options.useVideoTitleAsNoteName) {
-			return this.getSafeBaseName(playlist.title, 'Playlist Note');
+			return this.buildSafeBaseName(playlist.title, 'Playlist Note');
 		}
 		return 'Playlist Note';
 	}
 
-	private getPerVideoBaseName(
+	private buildPerVideoBaseName(
 		playlist: PlaylistResponse,
 		transcript: TranscriptResponse,
 		index: number,
 		options: GenerationOptions,
 	): string {
 		if (options.useVideoTitleAsNoteName) {
-			return this.getSafeBaseName(transcript.title, formatSequenceName('Playlist Video', index, playlist.entries.length));
+			return this.buildSafeBaseName(transcript.title, formatSequenceName('Playlist Video', index, playlist.entries.length));
 		}
-		const prefix = this.getSafeBaseName(playlist.title, 'Playlist Video');
+		const prefix = this.buildSafeBaseName(playlist.title, 'Playlist Video');
 		return formatSequenceName(prefix, index, playlist.entries.length);
 	}
 
@@ -434,7 +434,7 @@ export class GenerationService {
 		await this.ensureFolderExists(directoryPath);
 		const targetPath = resolveUniqueNotePath(
 			directoryPath,
-			this.getSafeBaseName(baseName, 'Untitled'),
+			this.buildSafeBaseName(baseName, 'Untitled'),
 			extension,
 			'',
 			(path) => this.app.vault.getAbstractFileByPath(path) !== null,
@@ -720,7 +720,7 @@ export class GenerationService {
 		if (effectiveOptions.noteDestinationMode === 'folder') {
 			target = await this.createFolderTarget(
 				effectiveOptions.noteDestinationFolder ?? '',
-				this.getSingleVideoBaseName(transcript, effectiveOptions),
+				this.buildSingleVideoBaseName(transcript, effectiveOptions),
 			);
 		} else if (effectiveOptions.noteDestinationMode !== 'append-to-active-note' && effectiveOptions.useVideoTitleAsNoteName) {
 			titleToRenameTo = transcript.title;
@@ -767,7 +767,7 @@ export class GenerationService {
 		const target: NoteInsertionTarget = effectiveOptions.noteDestinationMode === 'folder'
 			? await this.createFolderTarget(
 				effectiveOptions.noteDestinationFolder ?? '',
-				this.getCombinedPlaylistBaseName(playlist, effectiveOptions),
+				this.buildCombinedPlaylistBaseName(playlist, effectiveOptions),
 			)
 			: initialTarget!;
 
@@ -818,7 +818,7 @@ export class GenerationService {
 		const target: NoteInsertionTarget = effectiveOptions.noteDestinationMode === 'folder'
 			? await this.createFolderTarget(
 				effectiveOptions.noteDestinationFolder ?? '',
-				this.getCombinedPlaylistBaseName(playlist, effectiveOptions),
+				this.buildCombinedPlaylistBaseName(playlist, effectiveOptions),
 			)
 			: initialTarget!;
 
@@ -972,7 +972,7 @@ export class GenerationService {
 				const transcript = videoData.transcript;
 
 				if (!target) {
-					const baseName = this.getPerVideoBaseName(playlist, transcript, index + 1, effectiveOptions);
+					const baseName = this.buildPerVideoBaseName(playlist, transcript, index + 1, effectiveOptions);
 					if (effectiveOptions.noteDestinationMode === 'folder') {
 						target = await this.createFolderTarget(effectiveOptions.noteDestinationFolder ?? '', baseName);
 					} else {
@@ -1117,10 +1117,10 @@ export class GenerationService {
 		return parts.length > 1 ? parts.slice(0, -1).join('/') : '';
 	}
 
-	private getReportBaseName(report: QueueBatchReport): string {
+	private buildReportBaseName(report: QueueBatchReport): string {
 		const firstEntry = report.entries[0];
 		if (firstEntry) {
-			return this.getSafeBaseName(`${firstEntry.displayTitle} Queue Run Report`, 'Queue Run Report');
+			return this.buildSafeBaseName(`${firstEntry.displayTitle} Queue Run Report`, 'Queue Run Report');
 		}
 		const now = new Date();
 		const pad = (n: number) => String(n).padStart(2, '0');

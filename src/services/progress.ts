@@ -84,5 +84,9 @@ export function isAbortError(error: unknown, signal?: AbortSignal): boolean {
 		return true;
 	}
 
+	if (error instanceof Error && error.message.toLowerCase().includes('aborted')) {
+		return true;
+	}
+
 	return false;
 }

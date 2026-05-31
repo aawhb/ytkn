@@ -48,7 +48,9 @@ import {
 	DEFAULT_USE_AI,
 	DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,
 } from '../defaults';
+import { normalizeVaultFolderPath } from '../utils';
 import { isInstructionTemplate } from './templates';
+import { normalizeRequestTimeoutMs } from './providers/shared';
 
 function normalizeOneOf<T extends string>(value: unknown, allowedValues: readonly T[], fallback: T): T {
 	return allowedValues.includes(value as T) ? (value as T) : fallback;
@@ -178,7 +180,7 @@ function normalizeNoteDestinationMode(noteDestinationMode?: NoteDestinationMode)
 }
 
 function normalizeNoteDestinationFolder(noteDestinationFolder?: string): string {
-	return noteDestinationFolder?.trim() ?? DEFAULT_NOTE_DESTINATION_FOLDER;
+	return normalizeVaultFolderPath(noteDestinationFolder ?? DEFAULT_NOTE_DESTINATION_FOLDER);
 }
 
 function normalizeTranscriptLanguageMode(transcriptLanguageMode?: TranscriptLanguageMode): TranscriptLanguageMode {
@@ -257,14 +259,6 @@ function normalizeTemperature(temperature?: number): number {
 	return Math.min(Math.max(temperature as number, 0), 2);
 }
 
-function normalizeSettingsRequestTimeoutMs(timeoutMs?: number): number {
-	if (!Number.isFinite(timeoutMs) || (timeoutMs ?? 0) <= 0) {
-		return DEFAULT_REQUEST_TIMEOUT_MS;
-	}
-
-	return Math.round(timeoutMs as number);
-}
-
 function normalizeReleaseNotesVersion(value?: string | null): string | null {
 	const trimmed = typeof value === 'string' ? value.trim() : '';
 	return trimmed || null;
@@ -301,7 +295,7 @@ export class SettingsService implements PluginSettings {
 			outputDefaults: normalizeOutputDefaults(savedSettings?.outputDefaults),
 			instructionConfig: normalizeInstructionConfig(savedSettings?.instructionConfig),
 			temperature: normalizeTemperature(savedSettings?.temperature),
-			requestTimeoutMs: normalizeSettingsRequestTimeoutMs(savedSettings?.requestTimeoutMs),
+			requestTimeoutMs: normalizeRequestTimeoutMs(savedSettings?.requestTimeoutMs),
 			lastSeenReleaseNotesVersion: normalizeReleaseNotesVersion(savedSettings?.lastSeenReleaseNotesVersion),
 		};
 
@@ -545,7 +539,7 @@ export class SettingsService implements PluginSettings {
 	}
 
 	async updateRequestTimeoutMs(timeoutMs: number): Promise<void> {
-		this.settings.requestTimeoutMs = normalizeSettingsRequestTimeoutMs(timeoutMs);
+		this.settings.requestTimeoutMs = normalizeRequestTimeoutMs(timeoutMs);
 		await this.saveData();
 	}
 

@@ -37,7 +37,7 @@
 	gap: var(--size-4-4);
 }
 
-.ytkn__input {
+.ytkn-form__input {
 	width: 100%;
 	margin-bottom: var(--size-4-4);
 	padding: var(--size-4-2);
@@ -422,7 +422,7 @@
 	margin-top: var(--size-4-3);
 }
 
-.ytkn__status-bar--clickable {
+.ytkn-status-bar--clickable {
 	cursor: var(--cursor);
 }
 
@@ -1118,7 +1118,7 @@
 	min-width: 0;
 }
 
-.ytkn-modal__quick-grid .ytkn__input {
+.ytkn-modal__quick-grid .ytkn-form__input {
 	margin-bottom: 0;
 }
 

@@ -11,7 +11,7 @@ export function decodeHtmlEntities(text: string): string {
         .replace(/&apos;/g, "'")
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
-        .replace(/&#(\d+);/g, (_match: string, code: string) => String.fromCharCode(parseInt(code, 10)));
+        .replace(/&#(\d+);/g, (_match: string, code: string) => String.fromCharCode(Number.parseInt(code, 10)));
 }
 
 export function normalizeMermaidBlocks(summaryText: string): string {

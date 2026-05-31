@@ -23,14 +23,14 @@ export function verifyChangelog(rootDir = process.cwd()) {
 
 	const escapedVersion = escapeRegExp(version);
 	const changelog = readText(rootDir, 'CHANGELOG.md');
-	const releaseNotes = readText(rootDir, 'src/release-notes.ts');
+	const releaseNotes = readText(rootDir, 'src/releaseNotes.ts');
 
 	if (!new RegExp(`^##\\s+(?:\\[${escapedVersion}\\]|${escapedVersion})\\b`, 'm').test(changelog)) {
 		throw new Error(`CHANGELOG.md is missing a section for ${version}.`);
 	}
 
 	if (!new RegExp(`version:\\s*['"]${escapedVersion}['"]`).test(releaseNotes)) {
-		throw new Error(`src/release-notes.ts is missing a release note for ${version}.`);
+		throw new Error(`src/releaseNotes.ts is missing a release note for ${version}.`);
 	}
 
 	return version;

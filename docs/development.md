@@ -17,7 +17,7 @@ This document captures maintainer-facing conventions for YT Knowledge Notes. Use
 - `src/services/templates/` owns note template definitions, template extraction, and frontmatter merging helpers.
 - `src/ui/` owns Obsidian DOM rendering, settings UI, modals, notifications, and UI event handlers.
 - `src/ui/components/` owns reusable DOM helpers and small UI components.
-- `test/` mirrors source seams with unit, DOM, provider, renderer, queue, and property tests.
+- `test/services/`, `test/providers/`, `test/ui/`, `test/templates/`, `test/renderer/`, and `test/properties/` mirror source seams; root-level tests are reserved for repo metadata, lifecycle, release notes, and shared utilities.
 
 ## Naming defaults
 
@@ -31,6 +31,16 @@ Use these prefixes consistently when adding or renaming code:
 - `handle*` for event-handler entry points.
 - `validate*` for invariant checks that can reject input.
 
+Use camelCase for TypeScript source and test filenames. Keep persisted/user-facing IDs unchanged when filenames move: template `id` values such as `full-extract` and `deep-dive`, provider IDs, manifest command IDs, and settings keys are compatibility contracts.
+
+## Obsidian API conventions
+
+- Keep the plugin mobile-safe: do not introduce Node/Electron-only APIs while `manifest.json` has `isDesktopOnly: false`.
+- Normalize user-configured vault paths with Obsidian `normalizePath()` before trimming root slashes.
+- Prefer `requestUrl` for network calls that need Obsidian's adapter behavior. A guarded/browser `fetch` fallback is acceptable for provider-safe discovery or compatible-provider requests when `requestUrl` fails or is unavailable; do not describe the policy as absolute no-`fetch`.
+- Keep `Vault.process()` for asynchronous/background note writes that need atomic file updates. Prefer editor APIs only for immediate active-editor edits.
+- Existing settings UI is imperative because `minAppVersion` remains `1.11.4`; revisit Obsidian's newer declarative settings API only if the minimum app version is intentionally raised.
+
 ## UI copy
 
 Shared settings and generation-modal copy must live in `src/ui/settingCopy.ts`.
@@ -43,7 +53,7 @@ Shared settings and generation-modal copy must live in `src/ui/settingCopy.ts`.
 ## CSS and DOM conventions
 
 - Use [CSS selector inventory](css-selector-inventory.md) when moving, renaming, or deleting stylesheet rules.
-- Keep existing selectors stable during maintenance cleanup; tests and Obsidian CSS interactions depend on them.
+- Keep existing selectors stable during routine maintenance cleanup; intentional selector migrations must update `styles.css`, source class stamping, tests, and the selector inventory in one slice.
 - Prefer new selectors in the form `.ytkn-<area>__<element>--<modifier>`.
 - Treat classes such as `ytkn-setting-row--button` as semantic JS/CSS/test seams unless proven unused across source, tests, and CSS.
 - Move CSS in small chunks because ordering can change cascade behavior.
@@ -116,4 +126,4 @@ These ideas need evidence before implementation:
 - `GenerationOptions` normalization: introduce a dedicated effective-options module only if repeated option-resolution logic remains hard to test after small local cleanups.
 - Target/progress writer seam: extract only when there are at least two real adapters, such as Obsidian vault writes plus a test/fake implementation.
 - Split settings interfaces: prefer narrower consumer types only when they remove boilerplate or clarify ownership without changing persisted settings.
-- CSS selector renames: handle as a separate migration/test pass, not as routine cleanup.
+- CSS selector renames: handle future renames as separate migration/test passes, not as routine cleanup.

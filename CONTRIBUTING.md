@@ -39,7 +39,7 @@ Releases are published by GitHub Actions from version tags in `x.y.z` format (no
    npm run release:prep -- 1.2.3
    ```
 
-2. Add the same version to `src/release-notes.ts` and `CHANGELOG.md`.
+2. Add the same version to `src/releaseNotes.ts` and `CHANGELOG.md`.
 3. Review the changes to `manifest.json`, `package.json`, `versions.json`, and release notes.
 4. Run the full verification gate:
 

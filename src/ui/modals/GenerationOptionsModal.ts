@@ -2,7 +2,7 @@ import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import { SETTINGS_TABS, TabGroup } from '../components/Tabs';
 import { createSettingsCard } from '../components/SettingsUIComponents';
 import { renderBrandActions } from '../components/BrandActions';
-import { renderTemplateControls } from '../components/TemplateControls';
+import { controlDefaultToString, renderTemplateControls } from '../components/TemplateControls';
 import {
 	ControlDeclaration,
 	GenerationOptions,
@@ -50,7 +50,7 @@ import {
 import {
 	SUPPORT_LINKS,
 	getRecentReleaseNotes,
-} from '../../release-notes';
+} from '../../releaseNotes';
 import { WhatsNewModal } from './WhatsNewModal';
 import { stampSettingRowClasses } from '../settingRows';
 import { SETTING_COPY } from '../settingCopy';
@@ -85,19 +85,6 @@ interface FormState {
 	temperature: string;
 	requestTimeoutSeconds: string;
 	controlValues: Record<string, string>;
-}
-
-function controlDefaultToString(value: unknown): string {
-	if (value === undefined || value === null) {
-		return '';
-	}
-	if (typeof value === 'string') {
-		return value;
-	}
-	if (typeof value === 'number' || typeof value === 'boolean') {
-		return `${value}`;
-	}
-	return JSON.stringify(value) ?? '';
 }
 
 export class GenerationOptionsModal extends Modal {
@@ -256,7 +243,7 @@ export class GenerationOptionsModal extends Modal {
 					this.autoGrowUrlField(textarea.inputEl);
 					this.setHint(playlistHintEl);
 				});
-			textarea.inputEl.addClass('ytkn__input');
+			textarea.inputEl.addClass('ytkn-form__input');
 			textarea.inputEl.addClass('ytkn-modal__url-input');
 			textarea.inputEl.rows = 1;
 			textarea.inputEl.addEventListener('keydown', (e) => {
@@ -416,7 +403,7 @@ export class GenerationOptionsModal extends Modal {
 						this.state.manualInstructions = value;
 					});
 				text.inputEl.rows = 4;
-				text.inputEl.addClass('ytkn__input');
+				text.inputEl.addClass('ytkn-form__input');
 				text.inputEl.addClass('ytkn-modal__manual-prompt');
 			});
 		this.manualSettingEl = manualSetting.settingEl;

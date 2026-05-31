@@ -1,4 +1,5 @@
 import { GenerationOptions, QueueBatchReport, QueueRunOutcome, QueueRunReportEntry, RunReportLocation } from '../types';
+import { isAbortError } from './progress';
 
 export type QueuedRunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'canceled';
 export type QueuedRunKind = 'video' | 'playlist' | 'unknown';
@@ -94,13 +95,6 @@ function buildUrlFallbackTitle(run: QueuedRun): string {
 	return `#${run.ordinal} · ${run.kind}:${run.url.split('/').pop() ?? run.url}`;
 }
 
-function isAbortLike(error: unknown, signal: AbortSignal): boolean {
-	if (signal.aborted) return true;
-	if (error instanceof DOMException && error.name === 'AbortError') return true;
-	if (error instanceof Error && error.message.includes('aborted')) return true;
-	return false;
-}
-
 function buildCanceledEntry(run: QueuedRun): QueueRunReportEntry {
 	if (run.kind === 'playlist') {
 		return {
@@ -129,7 +123,7 @@ function buildCanceledEntry(run: QueuedRun): QueueRunReportEntry {
 }
 
 function buildErrorEntry(run: QueuedRun, error: unknown, signal: AbortSignal): QueueRunReportEntry {
-	const outcome: QueueRunOutcome = isAbortLike(error, signal) ? 'canceled' : 'failed';
+	const outcome: QueueRunOutcome = isAbortError(error, signal) ? 'canceled' : 'failed';
 	const reason = error instanceof Error ? error.message : String(error);
 	if (run.kind === 'playlist') {
 		return {
