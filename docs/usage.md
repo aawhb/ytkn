@@ -60,9 +60,9 @@ YT Knowledge Notes includes a queue so you can keep working while batches finish
 
 Available commands:
 
-- **Generate knowledge note** - open the generation modal
+- **Generate** - open the generation modal
 - **Manage queue** - inspect active work, queued work, and recent results
-- **Cancel all generations** - stop the current run and clear queued work
+- **Cancel all queued** - stop the current run and clear queued work
 
 The status bar shows the active run title and how many items are queued. Clicking it opens the queue manager.
 

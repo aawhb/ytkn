@@ -78,7 +78,7 @@ export class YTKN extends Plugin {
 	private registerCommands(): void {
 		this.addCommand({
 			id: 'generate-video-knowledge-note',
-			name: 'Generate knowledge note',
+			name: 'Generate',
 			callback: async () => {
 				try {
 					const context = await this.captureInsertionTargetFromActiveView();
@@ -93,8 +93,8 @@ export class YTKN extends Plugin {
 		});
 
 		this.addCommand({
-			id: 'cancel-all-generations',
-			name: 'Cancel all generations',
+			id: 'cancel-all-queued',
+			name: 'Cancel all queued',
 			callback: () => {
 				const snap = this.runQueue.getSnapshot();
 				if (!snap.current && snap.queued.length === 0) {
@@ -231,7 +231,7 @@ export class YTKN extends Plugin {
 			new Notice(INSERT_AT_CARET_REQUIRES_NOTE);
 			return null;
 		}
-		// Decision 9: hard-fail editor-target + per-video playlist mode + playlist URL in multi-URL batch
+		// Editor-target batches cannot safely expand playlist URLs into many per-video writes.
 		if (urlCount > 1 && options.playlistMode === 'per-video' && classifications.includes('playlist')) {
 			new Notice("Multi-URL paste with editor target can't include playlists in per-video mode. Switch playlist mode to combined, switch destination to a folder, or remove playlist links.");
 			return null;
@@ -246,7 +246,6 @@ export class YTKN extends Plugin {
 			};
 			return buildEditorReplaceRangeFirstPolicy(ref);
 		}
-		// append-to-active-note, or current-note with multiple URLs → sequential append
 		return buildEditorAppendSequentialPolicy(target.file.path);
 	}
 

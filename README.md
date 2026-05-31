@@ -44,7 +44,7 @@ Full setup steps: [Getting started](https://github.com/aawhb/ytkn/blob/main/docs
 
 1. Set default settings in **Obsidian Settings → YT Knowledge Notes** including optional AI provider and model.
 2. Open a note if you want to insert at the caret or append to the active note
-3. Run **YT Knowledge Notes: Generate knowledge note** from Obsidian command panel
+3. Run **YT Knowledge Notes: Generate** from Obsidian command panel
 4. Provide a YouTube video or playlist URL
 5. Choose a template, transcript mode, and destination
 6. Click **Generate**.
