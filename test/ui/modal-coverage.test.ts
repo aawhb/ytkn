@@ -82,7 +82,8 @@ describe('GenerationOptionsModal.onOpen', () => {
 	});
 
 	it('renders icon-only brand actions in the modal header', () => {
-		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit, true, '1.7.0');
+		const openQueue = vi.fn();
+		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit, true, '1.7.0', openQueue);
 		const openSpy = vi.spyOn(WhatsNewModal.prototype, 'open').mockImplementation(() => undefined);
 		modal.open();
 
@@ -100,26 +101,34 @@ describe('GenerationOptionsModal.onOpen', () => {
 		expect(copy?.children.item(1)).toBe(brandActions);
 		expect(headerWrap?.querySelector('.ytkn-modal__actions')?.contains(brandActions ?? null)).toBe(false);
 		expect(actions.map((action) => action.getAttribute('aria-label'))).toEqual([
+			'Manage queue',
 			'Sponsor',
 			'Buy Me a Coffee',
 			'Recent updates',
 		]);
-		expect(actions.map((action) => action.textContent)).toEqual(['', '', '']);
+		expect(actions.map((action) => action.textContent)).toEqual(['', '', '', '']);
 		expect(actions.map((action) => action.querySelector('.ytkn-brand-action__icon')?.getAttribute('data-icon'))).toEqual([
+			'list-todo',
 			'heart-handshake',
 			'coffee',
 			'history',
 		]);
-		expect(actions[0].getAttribute('href')).toBe(SUPPORT_LINKS.githubSponsors);
-		expect(actions[1].getAttribute('href')).toBe(SUPPORT_LINKS.buyMeACoffee);
-		expect(actions[0].tagName).toBe('A');
-		expect(actions[0].classList.contains('ytkn-brand-action--link')).toBe(true);
+		expect(actions[1].getAttribute('href')).toBe(SUPPORT_LINKS.githubSponsors);
+		expect(actions[2].getAttribute('href')).toBe(SUPPORT_LINKS.buyMeACoffee);
+		expect(actions[0].tagName).toBe('BUTTON');
+		expect(actions[0].classList.contains('ytkn-brand-action--button')).toBe(true);
+		expect(actions[0].classList.contains('ytkn-brand-action--utility')).toBe(true);
+		expect(actions[1].tagName).toBe('A');
 		expect(actions[1].classList.contains('ytkn-brand-action--link')).toBe(true);
-		expect(actions[2].tagName).toBe('BUTTON');
-		expect(actions[2].classList.contains('ytkn-brand-action--button')).toBe(true);
-		expect(actions[2].classList.contains('ytkn-brand-action--utility')).toBe(true);
+		expect(actions[2].classList.contains('ytkn-brand-action--link')).toBe(true);
+		expect(actions[3].tagName).toBe('BUTTON');
+		expect(actions[3].classList.contains('ytkn-brand-action--button')).toBe(true);
+		expect(actions[3].classList.contains('ytkn-brand-action--utility')).toBe(true);
 
-		(actions[2] as HTMLButtonElement).click();
+		(actions[0] as HTMLButtonElement).click();
+		expect(openQueue).toHaveBeenCalledOnce();
+
+		(actions[3] as HTMLButtonElement).click();
 		expect(openSpy).toHaveBeenCalledOnce();
 		openSpy.mockRestore();
 	});

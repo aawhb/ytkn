@@ -25,7 +25,7 @@
 	--ytkn-brand-title-size-modal: var(--h2-size, 1.55em);
 	--ytkn-brand-action-size: 25px;
 	--ytkn-brand-action-icon-size: 20px;
-	--ytkn-brand-action-gap: var(--size-4-6);
+	--ytkn-brand-action-gap: var(--size-4-4);
 	--ytkn-brand-action-radius: var(--radius-s);
 	--ytkn-brand-shadow: 0 4px 12px color-mix(in srgb,
 			var(--interactive-accent) 20%,

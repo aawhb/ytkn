@@ -131,6 +131,7 @@ export class GenerationOptionsModal extends Modal {
 		private onSubmit: (urls: string[], options: GenerationOptions) => void,
 		private hasActiveNote: boolean = true,
 		private currentVersion: string = 'current version',
+		private onOpenQueue?: () => void,
 	) {
 		super(app);
 	}
@@ -1029,7 +1030,17 @@ export class GenerationOptionsModal extends Modal {
 	}
 
 	private getBrandActions() {
+		const queueActions = this.onOpenQueue
+			? [{
+				id: 'manage-queue',
+				label: 'Manage queue',
+				icon: 'list-todo',
+				onClick: this.onOpenQueue,
+			}]
+			: [];
+
 		return [
+			...queueActions,
 			{
 				id: 'sponsor',
 				label: 'Sponsor',

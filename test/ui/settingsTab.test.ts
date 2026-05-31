@@ -64,12 +64,17 @@ function makeFakeSettings() {
     };
 }
 
+function makeFakePlugin(openQueueModal = vi.fn()) {
+    return {
+        manifest: { name: 'YT Knowledge Notes', version: '1.7.0' },
+        settings: makeFakeSettings(),
+        openQueueModal,
+    };
+}
+
 describe('SettingsTab', () => {
     it('renders the plugin name without the old intro slogan', () => {
-        const plugin = {
-            manifest: { name: 'YT Knowledge Notes', version: '1.7.0' },
-            settings: makeFakeSettings(),
-        };
+        const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
         tab.display();
@@ -82,10 +87,7 @@ describe('SettingsTab', () => {
     });
 
     it('renders settings branding with shared layout classes and stable DOM order', () => {
-        const plugin = {
-            manifest: { name: 'YT Knowledge Notes', version: '1.7.0' },
-            settings: makeFakeSettings(),
-        };
+        const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
         tab.display();
@@ -104,10 +106,7 @@ describe('SettingsTab', () => {
     });
 
     it('stamps settings select and button rows with explicit layout classes', () => {
-        const plugin = {
-            manifest: { name: 'YT Knowledge Notes', version: '1.7.0' },
-            settings: makeFakeSettings(),
-        };
+        const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
         tab.display();
@@ -121,10 +120,7 @@ describe('SettingsTab', () => {
     });
 
     it('renders only General and GenAI as semantic settings tabs', () => {
-        const plugin = {
-            manifest: { name: 'YT Knowledge Notes', version: '1.7.0' },
-            settings: makeFakeSettings(),
-        };
+        const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
         tab.display();
@@ -135,10 +131,7 @@ describe('SettingsTab', () => {
     });
 
     it('renders icon-only brand actions with support links', () => {
-        const plugin = {
-            manifest: { name: 'YT Knowledge Notes', version: '1.7.0' },
-            settings: makeFakeSettings(),
-        };
+        const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
         tab.display();
@@ -146,34 +139,51 @@ describe('SettingsTab', () => {
         const actionGroup = tab.containerEl.querySelector('.ytkn-brand-actions');
         const actions = Array.from(actionGroup?.querySelectorAll('.ytkn-brand-action') ?? []);
         expect(actions.map((action) => action.getAttribute('aria-label'))).toEqual([
+            'Manage queue',
             'Sponsor',
             'Buy Me a Coffee',
             'Recent updates',
         ]);
-        expect(actions.map((action) => action.textContent)).toEqual(['', '', '']);
+        expect(actions.map((action) => action.textContent)).toEqual(['', '', '', '']);
         expect(actions.map((action) => action.querySelector('.ytkn-brand-action__icon')?.getAttribute('data-icon'))).toEqual([
+            'list-todo',
             'heart-handshake',
             'coffee',
             'history',
         ]);
-        expect(actions[0].getAttribute('href')).toBe(SUPPORT_LINKS.githubSponsors);
-        expect(actions[1].getAttribute('href')).toBe(SUPPORT_LINKS.buyMeACoffee);
-        expect(actions[0].tagName).toBe('A');
-        expect(actions[0].classList.contains('ytkn-brand-action--link')).toBe(true);
+        expect(actions[1].getAttribute('href')).toBe(SUPPORT_LINKS.githubSponsors);
+        expect(actions[2].getAttribute('href')).toBe(SUPPORT_LINKS.buyMeACoffee);
+        expect(actions[0].tagName).toBe('BUTTON');
+        expect(actions[0].classList.contains('ytkn-brand-action--button')).toBe(true);
+        expect(actions[0].classList.contains('ytkn-brand-action--utility')).toBe(true);
+        expect(actions[1].tagName).toBe('A');
         expect(actions[1].classList.contains('ytkn-brand-action--link')).toBe(true);
-        expect(actions[2].tagName).toBe('BUTTON');
-        expect(actions[2].classList.contains('ytkn-brand-action--button')).toBe(true);
-        expect(actions[2].classList.contains('ytkn-brand-action--utility')).toBe(true);
-        expect(actions[2].getAttribute('role')).toBeNull();
-        expect(actions[2].classList.contains('is-active')).toBe(false);
+        expect(actions[2].classList.contains('ytkn-brand-action--link')).toBe(true);
+        expect(actions[3].tagName).toBe('BUTTON');
+        expect(actions[3].classList.contains('ytkn-brand-action--button')).toBe(true);
+        expect(actions[3].classList.contains('ytkn-brand-action--utility')).toBe(true);
+        expect(actions[3].getAttribute('role')).toBeNull();
+        expect(actions[3].classList.contains('is-active')).toBe(false);
+    });
+
+    it('opens queue management from the Manage queue utility action', () => {
+        const openQueueModal = vi.fn();
+        const plugin = makeFakePlugin(openQueueModal);
+        const tab = new SettingsTab(new App(), plugin as any);
+
+        tab.display();
+
+        const queueButton = Array.from(tab.containerEl.querySelectorAll('.ytkn-brand-action'))
+            .find((button) => button.getAttribute('aria-label') === 'Manage queue') as HTMLButtonElement | undefined;
+        queueButton?.click();
+
+        expect(queueButton).toBeTruthy();
+        expect(openQueueModal).toHaveBeenCalledTimes(1);
     });
 
     it('opens release notes from the Recent updates utility action', () => {
         const openSpy = vi.spyOn(WhatsNewModal.prototype, 'open').mockImplementation(() => undefined);
-        const plugin = {
-            manifest: { name: 'YT Knowledge Notes', version: '1.7.0' },
-            settings: makeFakeSettings(),
-        };
+        const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
         tab.display();

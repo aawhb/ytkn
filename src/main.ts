@@ -110,9 +110,13 @@ export class YTKN extends Plugin {
 			id: 'manage-knowledge-note-queue',
 			name: 'Manage queue',
 			callback: () => {
-				new QueueModal(this.app, this.runQueue).open();
+				this.openQueueModal();
 			},
 		});
+	}
+
+	public openQueueModal(): void {
+		new QueueModal(this.app, this.runQueue).open();
 	}
 
 	private async showReleaseNotesIfUpdated(): Promise<void> {
@@ -210,6 +214,7 @@ export class YTKN extends Plugin {
 			},
 			hasActiveNote,
 			this.manifest.version,
+			() => this.openQueueModal(),
 		).open();
 	}
 
@@ -257,7 +262,7 @@ export class YTKN extends Plugin {
 	}
 
 	private onStatusBarClick(): void {
-		new QueueModal(this.app, this.runQueue).open();
+		this.openQueueModal();
 	}
 
 	private renderStatusBar(message?: string): void {

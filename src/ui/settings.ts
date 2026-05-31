@@ -134,6 +134,12 @@ export class SettingsTab extends PluginSettingTab {
 	private getBrandActions() {
 		return [
 			{
+				id: 'manage-queue',
+				label: 'Manage queue',
+				icon: 'list-todo',
+				onClick: () => this.plugin.openQueueModal(),
+			},
+			{
 				id: 'sponsor',
 				label: 'Sponsor',
 				icon: 'heart-handshake',
