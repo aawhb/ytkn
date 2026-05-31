@@ -73,12 +73,18 @@ function makeFakePlugin(openQueueModal = vi.fn()) {
     };
 }
 
+type LegacySettingsTabRenderer = { display: () => void };
+
+function renderSettingsTab(tab: SettingsTab): void {
+    (tab as LegacySettingsTabRenderer).display();
+}
+
 describe('SettingsTab', () => {
     it('renders the plugin name without the old intro slogan', () => {
         const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const heading = tab.containerEl.querySelector('.ytkn-settings__intro-title .setting-item-name');
 
@@ -91,7 +97,7 @@ describe('SettingsTab', () => {
         const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const header = tab.containerEl.querySelector('.ytkn-settings__intro-header');
         const brandMark = header?.children.item(0);
@@ -110,7 +116,7 @@ describe('SettingsTab', () => {
         const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const selectRow = tab.containerEl.querySelector('select')?.closest('.setting-item');
         const restoreButton = Array.from(tab.containerEl.querySelectorAll('button'))
@@ -126,7 +132,7 @@ describe('SettingsTab', () => {
         const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const card = tab.containerEl.querySelector('.ytkn-card.ytkn-settings__group');
         const title = card?.querySelector('.ytkn-card__title.ytkn-settings__group-title');
@@ -141,7 +147,7 @@ describe('SettingsTab', () => {
         const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const templateRow = Array.from(tab.containerEl.querySelectorAll('.setting-item'))
             .find((row) => row.querySelector('.setting-item-name')?.textContent === SETTING_COPY.contentTemplate.name);
@@ -156,7 +162,7 @@ describe('SettingsTab', () => {
         const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const semanticTabs = Array.from(tab.containerEl.querySelectorAll('[role="tab"]'));
         expect(semanticTabs.map((tabEl) => tabEl.textContent)).toEqual(['General', 'GenAI']);
@@ -167,7 +173,7 @@ describe('SettingsTab', () => {
         const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const actionGroup = tab.containerEl.querySelector('.ytkn-brand-actions');
         const actions = Array.from(actionGroup?.querySelectorAll('.ytkn-brand-action') ?? []);
@@ -204,7 +210,7 @@ describe('SettingsTab', () => {
         const plugin = makeFakePlugin(openQueueModal);
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const queueButton = Array.from(tab.containerEl.querySelectorAll('.ytkn-brand-action'))
             .find((button) => button.getAttribute('aria-label') === 'Manage queue') as HTMLButtonElement | undefined;
@@ -219,7 +225,7 @@ describe('SettingsTab', () => {
         const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const releaseNotesButton = Array.from(tab.containerEl.querySelectorAll('.ytkn-brand-action'))
             .find((button) => button.getAttribute('aria-label') === 'Recent updates') as HTMLButtonElement | undefined;

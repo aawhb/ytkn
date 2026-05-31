@@ -109,6 +109,12 @@ function makeFakePlugin() {
     };
 }
 
+type LegacySettingsTabRenderer = { display: () => void };
+
+function renderSettingsTab(tab: SettingsTab): void {
+    (tab as LegacySettingsTabRenderer).display();
+}
+
 function settingRows(root: HTMLElement, label: string): HTMLElement[] {
     return Array.from(root.querySelectorAll<HTMLElement>('.setting-item')).filter(
         (row) => row.querySelector('.setting-item-name')?.textContent === label,
@@ -156,7 +162,7 @@ describe('shared setting copy', () => {
         const plugin = makeFakePlugin();
         const tab = new SettingsTab(new App(), plugin as any);
 
-        tab.display();
+        renderSettingsTab(tab);
 
         const destinationRow = settingRow(tab.containerEl, SETTING_COPY.outputDestination.name);
         expect(description(destinationRow)).toBe(SETTING_COPY.outputDestination.desc);
