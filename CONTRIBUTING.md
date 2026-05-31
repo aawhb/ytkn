@@ -26,23 +26,24 @@ Releases are published by GitHub Actions from version tags in `x.y.z` format (no
    npm run release:prep -- 1.2.3
    ```
 
-2. Review the changes to `manifest.json`, `package.json`, and `versions.json`.
-3. Run the full verification gate:
+2. Add the same version to `src/release-notes.ts` and `CHANGELOG.md`.
+3. Review the changes to `manifest.json`, `package.json`, `versions.json`, and release notes.
+4. Run the full verification gate:
 
    ```bash
    npm run verify
    ```
 
-4. Commit the version bump.
-5. Create a matching tag:
+5. Commit the version bump and release notes.
+6. Create a matching tag:
 
    ```bash
    git tag 1.2.3
    ```
 
-6. Push `main` and the tag.
+7. Push `main` and the tag.
 
-The release workflow will verify that the tag, `manifest.json`, `package.json`, and `versions.json` all match before it publishes the GitHub release assets. Published releases include the installable plugin files, `ytkn.zip`, `ytkn-release.sha256`, and `ytkn-release.sigstore.json`.
+The release workflow will verify that the tag, `manifest.json`, `package.json`, `versions.json`, `CHANGELOG.md`, and bundled release notes all match before it publishes the GitHub release assets. Published releases include the installable plugin files, `ytkn.zip`, `ytkn-release.sha256`, and `ytkn-release.sigstore.json`.
 
 ## Pull Requests
 

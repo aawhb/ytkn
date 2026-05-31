@@ -1,6 +1,7 @@
 import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
 import { SETTINGS_TABS, TabGroup } from '../components/Tabs';
 import { createSettingsCard } from '../components/SettingsUIComponents';
+import { renderBrandActions } from '../components/BrandActions';
 import { renderTemplateControls } from '../components/TemplateControls';
 import {
 	ControlDeclaration,
@@ -46,6 +47,11 @@ import {
 	getTemplate,
 	populateTemplateDropdown,
 } from '../../services/templates';
+import {
+	SUPPORT_LINKS,
+	getRecentReleaseNotes,
+} from '../../release-notes';
+import { WhatsNewModal } from './WhatsNewModal';
 import { stampSettingRowClasses } from '../settingRows';
 
 interface FormState {
@@ -124,6 +130,7 @@ export class GenerationOptionsModal extends Modal {
 		private initialOptions: GenerationOptions,
 		private onSubmit: (urls: string[], options: GenerationOptions) => void,
 		private hasActiveNote: boolean = true,
+		private currentVersion: string = 'current version',
 	) {
 		super(app);
 	}
@@ -148,14 +155,15 @@ export class GenerationOptionsModal extends Modal {
 		);
 		observer.observe(sentinel);
 
-		const brand = headerWrap.createDiv({ cls: 'ytkn-modal__brand' });
+		const brand = headerWrap.createDiv({ cls: 'ytkn-modal__brand ytkn-brand-header ytkn-brand-header--modal' });
 		const brandIcon = brand.createDiv({ cls: 'ytkn-brand-mark' });
 		setIcon(brandIcon, 'play');
-		const brandCopy = brand.createDiv({ cls: 'ytkn-modal__brand-copy' });
+		const brandCopy = brand.createDiv({ cls: 'ytkn-modal__brand-copy ytkn-brand-copy ytkn-brand-copy--modal' });
 		brandCopy.createEl('h2', {
 			text: 'YT Knowledge Notes',
-			cls: 'ytkn-modal__title ytkn-modal__title--inline',
+			cls: 'ytkn-modal__title ytkn-brand-title',
 		});
+		renderBrandActions(brandCopy, this.getBrandActions());
 		this.renderActionRow(headerWrap);
 
 		const quickWrap = wrap.createDiv({ cls: 'ytkn-modal__quick-area' });
@@ -1018,5 +1026,34 @@ export class GenerationOptionsModal extends Modal {
 			...(Number.isFinite(parsedTimeoutSecs) && (parsedTimeoutSecs ?? 0) > 0 ? { requestTimeoutMs: Math.round((parsedTimeoutSecs ?? 0) * 1000) } : {}),
 		});
 		this.close();
+	}
+
+	private getBrandActions() {
+		return [
+			{
+				id: 'sponsor',
+				label: 'Sponsor',
+				icon: 'heart-handshake',
+				href: SUPPORT_LINKS.githubSponsors,
+			},
+			{
+				id: 'buy-me-a-coffee',
+				label: 'Buy Me a Coffee',
+				icon: 'coffee',
+				href: SUPPORT_LINKS.buyMeACoffee,
+			},
+			{
+				id: 'recent-updates',
+				label: 'Recent updates',
+				icon: 'history',
+				onClick: () => {
+					new WhatsNewModal(
+						this.app,
+						this.currentVersion,
+						getRecentReleaseNotes(),
+					).open();
+				},
+			},
+		];
 	}
 }

@@ -265,8 +265,14 @@ function normalizeRequestTimeoutMs(timeoutMs?: number): number {
 	return Math.round(timeoutMs as number);
 }
 
+function normalizeReleaseNotesVersion(value?: string | null): string | null {
+	const trimmed = typeof value === 'string' ? value.trim() : '';
+	return trimmed || null;
+}
+
 export class SettingsService implements PluginSettings {
 	private settings: StoredSettings;
+	private loadedSettingsExisted = false;
 
 	constructor(private plugin: YTKN) {
 		this.settings = this.getDefaultSettings();
@@ -275,6 +281,7 @@ export class SettingsService implements PluginSettings {
 	async loadSettings(): Promise<void> {
 		const loaded = (await this.plugin.loadData()) as { settings?: Partial<Omit<StoredSettings, 'providers'>> & { providers?: RawStoredProvider[]; outputDefaults?: RawOutputDefaults } } | undefined;
 		const savedSettings = loaded?.settings;
+		this.loadedSettingsExisted = savedSettings !== undefined;
 
 		// One-shot migration: if the user previously set addAlias=false, honour that intent by
 		// removing 'aliases' from frontmatterPropertyAllowlist before we drop the field entirely.
@@ -295,6 +302,7 @@ export class SettingsService implements PluginSettings {
 			instructionConfig: normalizeInstructionConfig(savedSettings?.instructionConfig),
 			temperature: normalizeTemperature(savedSettings?.temperature),
 			requestTimeoutMs: normalizeRequestTimeoutMs(savedSettings?.requestTimeoutMs),
+			lastSeenReleaseNotesVersion: normalizeReleaseNotesVersion(savedSettings?.lastSeenReleaseNotesVersion),
 		};
 
 		this.settings = normalized;
@@ -352,6 +360,19 @@ export class SettingsService implements PluginSettings {
 
 	getRequestTimeoutMs(): number {
 		return this.settings.requestTimeoutMs;
+	}
+
+	hasSavedSettings(): boolean {
+		return this.loadedSettingsExisted;
+	}
+
+	getLastSeenReleaseNotesVersion(): string | null {
+		return this.settings.lastSeenReleaseNotesVersion;
+	}
+
+	async setLastSeenReleaseNotesVersion(version: string): Promise<void> {
+		this.settings.lastSeenReleaseNotesVersion = normalizeReleaseNotesVersion(version);
+		await this.saveData();
 	}
 
 	async addProvider(provider: ProviderConfig): Promise<void> {
@@ -529,7 +550,9 @@ export class SettingsService implements PluginSettings {
 	}
 
 	async resetSettings(): Promise<void> {
+		const lastSeenReleaseNotesVersion = this.settings.lastSeenReleaseNotesVersion;
 		this.settings = this.getDefaultSettings();
+		this.settings.lastSeenReleaseNotesVersion = lastSeenReleaseNotesVersion;
 		await this.saveData();
 	}
 
@@ -560,6 +583,7 @@ export class SettingsService implements PluginSettings {
 			instructionConfig: normalizeInstructionConfig(),
 			temperature: DEFAULT_TEMPERATURE,
 			requestTimeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
+			lastSeenReleaseNotesVersion: null,
 		};
 	}
 

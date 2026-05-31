@@ -15,6 +15,8 @@ import {
 } from './services/generation';
 import { GenerationOptionsModal } from './ui/modals/GenerationOptionsModal';
 import { QueueModal } from './ui/modals/QueueModal';
+import { WhatsNewModal } from './ui/modals/WhatsNewModal';
+import { resolveReleaseNotesStartupAction } from './release-notes';
 import {
 	buildModelId,
 	createJobId,
@@ -41,6 +43,9 @@ export class YTKN extends Plugin {
 			this.initializeStatusBar();
 			this.addSettingTab(new SettingsTab(this.app, this));
 			this.registerCommands();
+			window.setTimeout(() => {
+				void this.showReleaseNotesIfUpdated();
+			}, 0);
 		} catch (error) {
 			notifyError('YT Knowledge Notes failed to load', error);
 		}
@@ -108,6 +113,29 @@ export class YTKN extends Plugin {
 				new QueueModal(this.app, this.runQueue).open();
 			},
 		});
+	}
+
+	private async showReleaseNotesIfUpdated(): Promise<void> {
+		try {
+			const currentVersion = this.manifest.version;
+			const action = resolveReleaseNotesStartupAction({
+				currentVersion,
+				hasSavedSettings: this.settings.hasSavedSettings(),
+				lastSeenVersion: this.settings.getLastSeenReleaseNotesVersion(),
+			});
+
+			if (action.kind === 'none') {
+				return;
+			}
+
+			await this.settings.setLastSeenReleaseNotesVersion(currentVersion);
+
+			if (action.kind === 'show') {
+				new WhatsNewModal(this.app, currentVersion, action.notes).open();
+			}
+		} catch (error) {
+			console.warn('Could not show release notes:', error);
+		}
 	}
 
 	private getInitialGenerationOptions(): GenerationOptions {
@@ -181,6 +209,7 @@ export class YTKN extends Plugin {
 				});
 			},
 			hasActiveNote,
+			this.manifest.version,
 		).open();
 	}
 

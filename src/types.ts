@@ -125,10 +125,12 @@ export interface StoredSettings {
 	instructionConfig: InstructionConfig;
 	temperature: number;
 	requestTimeoutMs: number;
+	lastSeenReleaseNotesVersion: string | null;
 }
 
 export interface PluginSettings {
 	loadSettings(): Promise<void>;
+	hasSavedSettings(): boolean;
 	getSelectedModel(): ModelConfig | null;
 	getProviders(): ProviderConfig[];
 	getModels(): ModelConfig[];
@@ -136,6 +138,8 @@ export interface PluginSettings {
 	getOutputDefaults(): OutputDefaults;
 	getTemperature(): number;
 	getRequestTimeoutMs(): number;
+	getLastSeenReleaseNotesVersion(): string | null;
+	setLastSeenReleaseNotesVersion(version: string): Promise<void>;
 	addProvider(provider: ProviderConfig): Promise<void>;
 	addModel(model: ModelConfig): Promise<void>;
 	updateProvider(provider: ProviderConfig, originalName: string): Promise<void>;

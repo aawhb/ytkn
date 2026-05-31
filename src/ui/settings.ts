@@ -23,14 +23,20 @@ import {
 	createSettingsCard,
 	SettingsUIComponents,
 } from './components/SettingsUIComponents';
+import { renderBrandActions } from './components/BrandActions';
 import {
 	DEFAULT_SETTINGS_TAB_ID,
 	SETTINGS_TABS,
 	TabGroup,
 } from './components/Tabs';
 import { ConfirmModal } from './modals/ConfirmModal';
+import { WhatsNewModal } from './modals/WhatsNewModal';
 import { YTKN } from '../main';
 import { ACTIVE_MODEL_SELECT_CLASS } from '../defaults';
+import {
+	SUPPORT_LINKS,
+	getRecentReleaseNotes,
+} from '../release-notes';
 import {
 	buildModelId,
 	getErrorMessage,
@@ -87,20 +93,20 @@ export class SettingsTab extends PluginSettingTab {
 		containerEl.addClass('ytkn-settings');
 
 		const intro = containerEl.createDiv({ cls: 'ytkn-settings__intro' });
-		const headerWrap = intro.createDiv({ cls: 'ytkn-settings__intro-header' });
+		const headerWrap = intro.createDiv({ cls: 'ytkn-settings__intro-header ytkn-brand-header ytkn-brand-header--settings' });
 
 		const introIcon = headerWrap.createDiv({ cls: 'ytkn-brand-mark' });
 		setIcon(introIcon, 'play');
 
-		const introCopy = headerWrap.createDiv({ cls: 'ytkn-settings__intro-copy' });
+		const introCopy = headerWrap.createDiv({ cls: 'ytkn-settings__intro-copy ytkn-brand-copy ytkn-brand-copy--settings' });
 		const introTitle = new Setting(introCopy)
 			.setName(this.plugin.manifest?.name ?? 'YT Knowledge Notes')
 			.setHeading();
 		introTitle.settingEl.addClass('ytkn-settings__intro-title');
-		introCopy.createEl('p', {
-			cls: 'ytkn-settings__intro-desc',
-			text: 'Turn videos into structured notes with AI',
-		});
+		introTitle.settingEl.addClass('ytkn-brand-title-row');
+		introTitle.settingEl.addClass('ytkn-brand-title-row--settings');
+		introTitle.nameEl.addClass('ytkn-brand-title');
+		renderBrandActions(introCopy, this.getBrandActions());
 
 		const tabGroup = new TabGroup(
 			containerEl,
@@ -123,6 +129,35 @@ export class SettingsTab extends PluginSettingTab {
 
 		this.displayResetSetting(containerEl);
 		stampSettingRowClasses(containerEl);
+	}
+
+	private getBrandActions() {
+		return [
+			{
+				id: 'sponsor',
+				label: 'Sponsor',
+				icon: 'heart-handshake',
+				href: SUPPORT_LINKS.githubSponsors,
+			},
+			{
+				id: 'buy-me-a-coffee',
+				label: 'Buy Me a Coffee',
+				icon: 'coffee',
+				href: SUPPORT_LINKS.buyMeACoffee,
+			},
+			{
+				id: 'recent-updates',
+				label: 'Recent updates',
+				icon: 'history',
+				onClick: () => {
+					new WhatsNewModal(
+						this.app,
+						this.plugin.manifest.version,
+						getRecentReleaseNotes(),
+					).open();
+				},
+			},
+		];
 	}
 
 	private displayGeneralTab(containerEl: HTMLElement): void {

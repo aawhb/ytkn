@@ -161,8 +161,10 @@ describe('SettingsService', () => {
 		const manager = new SettingsService(plugin as any);
 		await manager.loadSettings();
 
+		expect(manager.hasSavedSettings()).toBe(false);
 		expect(manager.getProviders()).toEqual([]);
 		expect(manager.getSelectedModel()).toBeNull();
+		expect(manager.getLastSeenReleaseNotesVersion()).toBeNull();
 		expect(manager.getOutputDefaults()).toEqual({
 			useAi: DEFAULT_USE_AI,
 			generateAiSummary: DEFAULT_GENERATE_AI_SUMMARY,
@@ -185,6 +187,56 @@ describe('SettingsService', () => {
 			tldrCalloutAtTop: DEFAULT_TLDR_CALLOUT_AT_TOP,
 		});
 		expect(manager.getRequestTimeoutMs()).toBe(DEFAULT_REQUEST_TIMEOUT_MS);
+	});
+
+	it('tracks existing settings separately from release-note seen state', async () => {
+		const plugin = new FakePlugin();
+		plugin.data = { settings: { providers: [] } };
+		const manager = new SettingsService(plugin as any);
+
+		await manager.loadSettings();
+
+		expect(manager.hasSavedSettings()).toBe(true);
+		expect(manager.getLastSeenReleaseNotesVersion()).toBeNull();
+	});
+
+	it('normalizes and saves the last seen release notes version', async () => {
+		const plugin = new FakePlugin();
+		plugin.data = {
+			settings: {
+				providers: [],
+				lastSeenReleaseNotesVersion: ' 1.6.9 ',
+			},
+		};
+		const manager = new SettingsService(plugin as any);
+
+		await manager.loadSettings();
+
+		expect(manager.hasSavedSettings()).toBe(true);
+		expect(manager.getLastSeenReleaseNotesVersion()).toBe('1.6.9');
+
+		await manager.setLastSeenReleaseNotesVersion('1.7.0');
+
+		expect(manager.getLastSeenReleaseNotesVersion()).toBe('1.7.0');
+		expect(plugin.data?.settings?.lastSeenReleaseNotesVersion).toBe('1.7.0');
+	});
+
+	it('preserves release-note seen state when resetting user settings', async () => {
+		const plugin = new FakePlugin();
+		plugin.data = {
+			settings: {
+				providers: [baseProvider],
+				lastSeenReleaseNotesVersion: '1.7.0',
+			},
+		};
+		const manager = new SettingsService(plugin as any);
+
+		await manager.loadSettings();
+		await manager.resetSettings();
+
+		expect(manager.getProviders()).toEqual([]);
+		expect(manager.getLastSeenReleaseNotesVersion()).toBe('1.7.0');
+		expect(plugin.data?.settings?.lastSeenReleaseNotesVersion).toBe('1.7.0');
 	});
 
 	it('normalizes media embed mode values cleanly', async () => {

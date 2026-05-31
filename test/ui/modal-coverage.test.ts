@@ -6,6 +6,8 @@ vi.mock('obsidian', async () => {
 });
 
 import { GenerationOptionsModal } from '../../src/ui/modals/GenerationOptionsModal';
+import { WhatsNewModal } from '../../src/ui/modals/WhatsNewModal';
+import { SUPPORT_LINKS } from '../../src/release-notes';
 import type { ModelConfig, GenerationOptions } from '../../src/types';
 import { App } from 'obsidian';
 
@@ -77,6 +79,49 @@ describe('GenerationOptionsModal.onOpen', () => {
 
 		expect(modal.contentEl.querySelector('.ytkn-modal__scroll-sentinel')).not.toBeNull();
 		expect(modal.contentEl.querySelector('.ytkn-modal__header-wrap')).not.toBeNull();
+	});
+
+	it('renders icon-only brand actions in the modal header', () => {
+		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit, true, '1.7.0');
+		const openSpy = vi.spyOn(WhatsNewModal.prototype, 'open').mockImplementation(() => undefined);
+		modal.open();
+
+		const headerWrap = modal.contentEl.querySelector('.ytkn-modal__header-wrap');
+		const brand = modal.contentEl.querySelector('.ytkn-modal__brand');
+		const copy = brand?.children.item(1);
+		const brandActions = copy?.querySelector('.ytkn-brand-actions');
+		const actions = Array.from(modal.contentEl.querySelectorAll('.ytkn-brand-action'));
+
+		expect(brand?.classList.contains('ytkn-brand-header')).toBe(true);
+		expect(brand?.classList.contains('ytkn-brand-header--modal')).toBe(true);
+		expect(copy?.classList.contains('ytkn-brand-copy')).toBe(true);
+		expect(copy?.classList.contains('ytkn-brand-copy--modal')).toBe(true);
+		expect(copy?.children.item(0)?.classList.contains('ytkn-brand-title')).toBe(true);
+		expect(copy?.children.item(1)).toBe(brandActions);
+		expect(headerWrap?.querySelector('.ytkn-modal__actions')?.contains(brandActions ?? null)).toBe(false);
+		expect(actions.map((action) => action.getAttribute('aria-label'))).toEqual([
+			'Sponsor',
+			'Buy Me a Coffee',
+			'Recent updates',
+		]);
+		expect(actions.map((action) => action.textContent)).toEqual(['', '', '']);
+		expect(actions.map((action) => action.querySelector('.ytkn-brand-action__icon')?.getAttribute('data-icon'))).toEqual([
+			'heart-handshake',
+			'coffee',
+			'history',
+		]);
+		expect(actions[0].getAttribute('href')).toBe(SUPPORT_LINKS.githubSponsors);
+		expect(actions[1].getAttribute('href')).toBe(SUPPORT_LINKS.buyMeACoffee);
+		expect(actions[0].tagName).toBe('A');
+		expect(actions[0].classList.contains('ytkn-brand-action--link')).toBe(true);
+		expect(actions[1].classList.contains('ytkn-brand-action--link')).toBe(true);
+		expect(actions[2].tagName).toBe('BUTTON');
+		expect(actions[2].classList.contains('ytkn-brand-action--button')).toBe(true);
+		expect(actions[2].classList.contains('ytkn-brand-action--utility')).toBe(true);
+
+		(actions[2] as HTMLButtonElement).click();
+		expect(openSpy).toHaveBeenCalledOnce();
+		openSpy.mockRestore();
 	});
 
 	it('Use AI toggle element has class ytkn-modal__quick-toggle', () => {
