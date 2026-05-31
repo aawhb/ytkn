@@ -21,4 +21,6 @@ Use this guide when you want the shortest path from install to useful notes.
 
 - [README](https://github.com/aawhb/ytkn/blob/main/README.md) - overview and quick path to the plugin.
 - [Contributing](https://github.com/aawhb/ytkn/blob/main/CONTRIBUTING.md) - development and release workflow.
+- [Development conventions](https://github.com/aawhb/ytkn/blob/main/docs/development.md) - module map, maintainer conventions, testing expectations, and safe-refactor checklist.
+- [CSS selector inventory](https://github.com/aawhb/ytkn/blob/main/docs/css-selector-inventory.md) - selector owners and cleanup guardrails.
 - [Security policy](https://github.com/aawhb/ytkn/blob/main/SECURITY.md) - private reporting and privacy notes.

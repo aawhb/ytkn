@@ -16,6 +16,19 @@ Use `npm run dev` for esbuild watch mode during local plugin development. To cop
 
 Use `npm run verify` to run the full local quality gate (lint, typecheck, tests, audit, build) before opening a PR or cutting a release.
 
+Use `npm run test:coverage` when adding tests or evaluating coverage gaps. Coverage thresholds should be introduced only after reviewing the current baseline.
+
+See [Development conventions](docs/development.md) for the module map, naming defaults, UI/CSS conventions, comment policy, safe-refactor checklist, and testing expectations.
+
+## Maintenance conventions
+
+- Keep cleanup behavior-preserving unless the behavior change is intentional and tested.
+- Add or update focused tests before refactoring modules that lack direct coverage.
+- Do not rename persisted settings keys, manifest command IDs, provider/model IDs, CSS selectors, or generated note structures without an explicit migration plan.
+- Keep shared settings/modal labels, descriptions, placeholders, and option labels in `src/ui/settingCopy.ts`.
+- Prefer `build*`, `create*`, `resolve*`, `normalize*`, `render*`, `handle*`, and `validate*` prefixes according to the conventions doc.
+- Keep comments that explain Obsidian quirks, provider limitations, migrations, cancellation semantics, or generated-note invariants; remove comments that only narrate the code.
+
 ## Releases
 
 Releases are published by GitHub Actions from version tags in `x.y.z` format (no `v` prefix).
