@@ -11,6 +11,8 @@ const transcript = {
 	channelUrl: 'https://youtube.com/channel/abc',
 	description: 'Video description.',
 	thumbnailUrl: 'https://img.youtube.com/vi/123/hqdefault.jpg',
+	uploadDate: '2024-03-05',
+	videoCategory: 'Science & Technology',
 	durationSeconds: 42,
 	keywords: ['alpha', 'beta'],
 	lines: [{ text: 'Hello world', offset: 0 }],
@@ -247,6 +249,8 @@ describe('renderVideoNote', () => {
 		);
 
 		expect(content).toContain('videoCount: 2');
+		expect(content).not.toContain('uploadDate:');
+		expect(content).not.toContain('videoCategory:');
 		expect(content).toContain('- Video count: 2');
 		expect(content).toContain('1. [Video A](https://youtube.com/watch?v=123)');
 		expect(content).toContain('2. [Video B](https://youtube.com/watch?v=456)');
@@ -471,6 +475,8 @@ describe('frontmatter and linkback options', () => {
 		expect(block).toContain('videoId: "123"');
 		expect(block).toContain('thumbnailUrl: "https://img.youtube.com/vi/123/hqdefault.jpg"');
 		expect(block).toContain('videoDescription: "Video description."');
+		expect(block).toContain('uploadDate: 2024-03-05');
+		expect(block).toContain('videoCategory: "Science & Technology"');
 		expect(block).toContain('durationSeconds: 42');
 		expect(block).toContain('keywords:\n  - "alpha"\n  - "beta"');
 		expect(block).toContain('generated: ');
@@ -542,6 +548,19 @@ describe('frontmatter and linkback options', () => {
 		);
 
 		expect(content).toContain('videoUrl: "https://youtube.com/watch?v=123"');
+	});
+
+	it('suppresses uploadDate and videoCategory unless they are allowlisted', () => {
+		const { content } = renderVideoNote(
+			transcript as any,
+			'thumb.png',
+			'https://youtube.com/watch?v=123',
+			'Summary',
+			{ transcriptMode: 'none', frontmatterPropertyAllowlist: 'title uploadDate' },
+		);
+
+		expect(content).toContain('uploadDate: 2024-03-05');
+		expect(content).not.toContain('videoCategory:');
 	});
 
 	it('moves the source section to the top when sourceSectionPosition is top', () => {

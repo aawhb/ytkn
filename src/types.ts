@@ -175,6 +175,8 @@ export interface TranscriptResponse {
 	channelUrl: string;
 	description?: string;
 	thumbnailUrl?: string;
+	uploadDate?: string;
+	videoCategory?: string;
 	durationSeconds?: number;
 	keywords?: string[];
 	lines: TranscriptLine[];

@@ -123,7 +123,7 @@ export const SETTING_COPY: SharedSettingCopy = {
 	},
 	frontmatterProperties: {
 		name: 'Frontmatter properties',
-		desc: 'Space- or comma-separated list. Allowed keys: title, aliases, source, channel, channelUrl, channelId, videoUrl, playlistUrl, videoId, playlistId, thumbnailUrl, videoDescription, durationSeconds, keywords, generated, videoCount.',
+		desc: 'Space- or comma-separated list. Allowed keys: title, aliases, source, channel, channelUrl, channelId, videoUrl, playlistUrl, videoId, playlistId, thumbnailUrl, videoDescription, uploadDate, videoCategory, durationSeconds, keywords, generated, videoCount.',
 		placeholder: 'Title channel channelUrl videoId …',
 	},
 	sourceMetadataPosition: {

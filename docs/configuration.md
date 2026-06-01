@@ -82,6 +82,8 @@ Supported keys are:
 - `playlistId`
 - `thumbnailUrl`
 - `videoDescription`
+- `uploadDate`
+- `videoCategory`
 - `durationSeconds`
 - `keywords`
 - `generated`

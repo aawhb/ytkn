@@ -51,7 +51,7 @@ function parseTagList(input: string | undefined): string[] {
 const KNOWN_ALLOWLIST_KEYS: ReadonlySet<string> = new Set([
 	'title', 'aliases', 'source', 'channel', 'channelUrl', 'channelId',
 	'videoUrl', 'playlistUrl', 'videoId', 'playlistId', 'thumbnailUrl',
-	'videoDescription', 'durationSeconds', 'keywords', 'generated', 'videoCount',
+	'videoDescription', 'uploadDate', 'videoCategory', 'durationSeconds', 'keywords', 'generated', 'videoCount',
 ]);
 const DEFAULT_ALLOWLIST_KEYS: ReadonlySet<string> = new Set(DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST.split(/\s+/));
 
@@ -203,6 +203,14 @@ function buildVideoFrontmatter(
 
 	if (transcript.description && allowlist.has('videoDescription')) {
 		lines.push(`videoDescription: ${quoteYamlValue(transcript.description)}`);
+	}
+
+	if (transcript.uploadDate && allowlist.has('uploadDate')) {
+		lines.push(`uploadDate: ${transcript.uploadDate}`);
+	}
+
+	if (transcript.videoCategory && allowlist.has('videoCategory')) {
+		lines.push(`videoCategory: ${quoteYamlValue(transcript.videoCategory)}`);
 	}
 
 	if (typeof transcript.durationSeconds === 'number' && Number.isFinite(transcript.durationSeconds) && allowlist.has('durationSeconds')) {

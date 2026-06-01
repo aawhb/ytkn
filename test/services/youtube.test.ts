@@ -7,6 +7,20 @@ vi.mock('obsidian', async () => {
 	return mod;
 });
 
+function playerClientName(request: { body?: unknown }): string | null {
+	if (typeof request.body !== 'string') {
+		return null;
+	}
+
+	try {
+		const parsed = JSON.parse(request.body) as { context?: { client?: { clientName?: unknown } } };
+		const clientName = parsed.context?.client?.clientName;
+		return typeof clientName === 'string' ? clientName : null;
+	} catch {
+		return null;
+	}
+}
+
 describe('YouTubeService URL parsing', () => {
 	describe('extractPlaylistId', () => {
 		it('reads the list query parameter from playlist and watch urls', () => {
@@ -228,6 +242,24 @@ describe('YouTubeService.fetchTranscript', () => {
 	it('fetches transcript metadata and caption lines from mocked YouTube responses', async () => {
 		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
 			if (request.url.includes('/youtubei/v1/player')) {
+				if (playerClientName(request) === 'WEB') {
+					return {
+						json: {},
+						text: JSON.stringify({
+							playabilityStatus: {
+								status: 'UNPLAYABLE',
+								reason: 'Video unavailable',
+							},
+							microformat: {
+								playerMicroformatRenderer: {
+									uploadDate: '2024-03-05T12:34:56-06:00',
+									category: 'Science &amp; Technology',
+								},
+							},
+						}),
+					};
+				}
+
 				return {
 					json: {},
 					text: JSON.stringify({
@@ -278,12 +310,14 @@ describe('YouTubeService.fetchTranscript', () => {
 				channelUrl: 'https://www.youtube.com/channel/UC123',
 				description: 'A video & description.',
 				thumbnailUrl: 'https://img.example/large.jpg',
+				uploadDate: '2024-03-05',
+				videoCategory: 'Science & Technology',
 				durationSeconds: 123,
 				keywords: ['Topic', 'Another & topic'],
 				lines: [{ text: 'Hello & transcript', offset: 0 }],
 			},
 		});
-		expect(spy).toHaveBeenCalledTimes(2);
+		expect(spy).toHaveBeenCalledTimes(3);
 		spy.mockRestore();
 	});
 
@@ -339,6 +373,20 @@ describe('YouTubeService.fetchVideoMetadata', () => {
 	it('fetches player metadata without requiring caption tracks', async () => {
 		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
 			if (request.url.includes('/youtubei/v1/player')) {
+				if (playerClientName(request) === 'WEB') {
+					return {
+						json: {},
+						text: JSON.stringify({
+							microformat: {
+								playerMicroformatRenderer: {
+									uploadDate: '2023-11-09',
+									category: 'Education',
+								},
+							},
+						}),
+					};
+				}
+
 				return {
 					json: {},
 					text: JSON.stringify({
@@ -375,11 +423,83 @@ describe('YouTubeService.fetchVideoMetadata', () => {
 			channelUrl: 'https://www.youtube.com/channel/UC123',
 			description: 'A metadata & description.',
 			thumbnailUrl: 'https://img.example/large.jpg',
+			uploadDate: '2023-11-09',
+			videoCategory: 'Education',
 			durationSeconds: 456,
 			keywords: ['Topic', 'Manual & notes'],
 			lines: [],
 		});
-		expect(spy).toHaveBeenCalledTimes(1);
+		expect(spy).toHaveBeenCalledTimes(2);
+		spy.mockRestore();
+	});
+
+	it('omits supplemental metadata when the web microformat lookup fails', async () => {
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			if (request.url.includes('/youtubei/v1/player') && playerClientName(request) === 'WEB') {
+				throw new Error('web metadata unavailable');
+			}
+
+			if (request.url.includes('/youtubei/v1/player')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						videoDetails: {
+							title: 'Metadata Only',
+							author: 'Author',
+						},
+					}),
+				};
+			}
+
+			throw new Error(`Unexpected request: ${request.url}`);
+		});
+
+		const svc = new YouTubeService();
+		const result = await svc.fetchVideoMetadata('https://www.youtube.com/watch?v=abcdefghijk');
+
+		expect(result.uploadDate).toBeUndefined();
+		expect(result.videoCategory).toBeUndefined();
+		expect(result.title).toBe('Metadata Only');
+		spy.mockRestore();
+	});
+
+	it('rejects invalid supplemental metadata values without failing metadata fetch', async () => {
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			if (request.url.includes('/youtubei/v1/player') && playerClientName(request) === 'WEB') {
+				return {
+					json: {},
+					text: JSON.stringify({
+						microformat: {
+							playerMicroformatRenderer: {
+								uploadDate: 'November 9, 2023',
+								category: '   ',
+							},
+						},
+					}),
+				};
+			}
+
+			if (request.url.includes('/youtubei/v1/player')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						videoDetails: {
+							title: 'Metadata Only',
+							author: 'Author',
+						},
+					}),
+				};
+			}
+
+			throw new Error(`Unexpected request: ${request.url}`);
+		});
+
+		const svc = new YouTubeService();
+		const result = await svc.fetchVideoMetadata('https://www.youtube.com/watch?v=abcdefghijk');
+
+		expect(result.uploadDate).toBeUndefined();
+		expect(result.videoCategory).toBeUndefined();
+		expect(result.title).toBe('Metadata Only');
 		spy.mockRestore();
 	});
 

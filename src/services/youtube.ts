@@ -24,6 +24,11 @@ type Thumbnail = {
 	height?: number;
 };
 
+type MicroformatRenderer = {
+	uploadDate?: unknown;
+	category?: unknown;
+};
+
 type PlayerEnvelope = {
 	error?: { status?: string };
 	playabilityStatus?: {
@@ -41,11 +46,19 @@ type PlayerEnvelope = {
 			thumbnails?: Thumbnail[];
 		};
 	};
+	microformat?: {
+		playerMicroformatRenderer?: MicroformatRenderer;
+	};
 	captions?: {
 		playerCaptionsTracklistRenderer?: {
 			captionTracks?: CaptionTrack[];
 		};
 	};
+};
+
+type SupplementalVideoMetadata = {
+	uploadDate?: string;
+	videoCategory?: string;
 };
 
 type TextRenderer = {
@@ -83,6 +96,7 @@ const INNERTUBE_BROWSE_ENDPOINT = `https://www.youtube.com/youtubei/v1/browse?ke
 const ANDROID_CLIENT_VERSION = '20.10.38';
 const ANDROID_SDK_VERSION = 30;
 const ANDROID_RELEASE = '11';
+const WEB_CLIENT_VERSION = '2.20240510.00.00';
 const UNKNOWN_VALUE = 'Unknown';
 
 const INNER_TUBE_CONTEXT = {
@@ -90,6 +104,15 @@ const INNER_TUBE_CONTEXT = {
 		clientName: 'ANDROID',
 		clientVersion: ANDROID_CLIENT_VERSION,
 		androidSdkVersion: ANDROID_SDK_VERSION,
+		hl: 'en',
+		gl: 'US',
+	},
+};
+
+const WEB_INNER_TUBE_CONTEXT = {
+	client: {
+		clientName: 'WEB',
+		clientVersion: WEB_CLIENT_VERSION,
 		hl: 'en',
 		gl: 'US',
 	},
@@ -103,6 +126,13 @@ function androidHeaders(): Record<string, string> {
 	return {
 		'Content-Type': 'application/json',
 		'User-Agent': `com.google.android.youtube/${ANDROID_CLIENT_VERSION} (Linux; U; Android ${ANDROID_RELEASE}) gzip`,
+	};
+}
+
+function webPlayerHeaders(): Record<string, string> {
+	return {
+		'Content-Type': 'application/json',
+		'User-Agent': 'Mozilla/5.0',
 	};
 }
 
@@ -322,6 +352,39 @@ function normalizeStringList(value: unknown): string[] | undefined {
 	return items.length ? items : undefined;
 }
 
+function normalizeDateOnly(value: unknown): string | undefined {
+	if (typeof value !== 'string') {
+		return undefined;
+	}
+
+	const match = value.trim().match(/^(\d{4}-\d{2}-\d{2})(?:T.*)?$/);
+	return match?.[1];
+}
+
+function normalizeOptionalText(value: unknown): string | undefined {
+	if (typeof value !== 'string') {
+		return undefined;
+	}
+
+	const normalized = normalizeHtmlText(value);
+	return normalized || undefined;
+}
+
+function microformatMetadata(player: PlayerEnvelope): SupplementalVideoMetadata {
+	const renderer = player.microformat?.playerMicroformatRenderer;
+	if (!renderer) {
+		return {};
+	}
+
+	const uploadDate = normalizeDateOnly(renderer.uploadDate);
+	const videoCategory = normalizeOptionalText(renderer.category);
+
+	return {
+		...(uploadDate ? { uploadDate } : {}),
+		...(videoCategory ? { videoCategory } : {}),
+	};
+}
+
 function bestThumbnailUrl(videoId: string, thumbnails: Thumbnail[] | undefined): string {
 	const best = (thumbnails ?? [])
 		.filter((thumbnail): thumbnail is Required<Pick<Thumbnail, 'url'>> & Thumbnail => typeof thumbnail.url === 'string' && thumbnail.url.length > 0)
@@ -335,6 +398,7 @@ function buildTranscriptResponseFromPlayer(
 	videoId: string,
 	player: PlayerEnvelope,
 	lines: TranscriptLine[],
+	supplementalMetadata: SupplementalVideoMetadata = {},
 ): TranscriptResponse {
 	const details = player.videoDetails;
 	const thumbnailUrl = bestThumbnailUrl(videoId, details?.thumbnail?.thumbnails);
@@ -351,6 +415,7 @@ function buildTranscriptResponseFromPlayer(
 		channelUrl: details?.channelId ? `https://www.youtube.com/channel/${details.channelId}` : '',
 		...(description ? { description } : {}),
 		thumbnailUrl,
+		...supplementalMetadata,
 		...(durationSeconds !== undefined ? { durationSeconds } : {}),
 		...(keywords ? { keywords } : {}),
 		lines,
@@ -480,6 +545,24 @@ async function requestPlayer(videoId: string): Promise<PlayerEnvelope> {
 
 	assertPlayable(envelope.playabilityStatus);
 	return envelope;
+}
+
+async function requestSupplementalVideoMetadata(videoId: string): Promise<SupplementalVideoMetadata> {
+	try {
+		const response = await requestUrl({
+			url: INNERTUBE_PLAYER_ENDPOINT,
+			method: 'POST',
+			headers: webPlayerHeaders(),
+			body: JSON.stringify({
+				context: WEB_INNER_TUBE_CONTEXT,
+				videoId,
+			}),
+		});
+		const envelope = parseJsonResponse<PlayerEnvelope>(response.text, 'YouTube web player data');
+		return microformatMetadata(envelope);
+	} catch {
+		return {};
+	}
 }
 
 async function requestContinuation(continuation: string): Promise<unknown> {
@@ -612,8 +695,11 @@ export class YouTubeService {
 				throw new Error('Invalid YouTube URL');
 			}
 
-			const player = await requestPlayer(videoId);
-			return buildTranscriptResponseFromPlayer(url, videoId, player, []);
+			const [player, supplementalMetadata] = await Promise.all([
+				requestPlayer(videoId),
+				requestSupplementalVideoMetadata(videoId),
+			]);
+			return buildTranscriptResponseFromPlayer(url, videoId, player, [], supplementalMetadata);
 		} catch (error) {
 			throw new Error(`Failed to fetch video metadata: ${getErrorMessage(error)}`);
 		}
@@ -629,7 +715,10 @@ export class YouTubeService {
 				throw new Error('Invalid YouTube URL');
 			}
 
-			const player = await requestPlayer(videoId);
+			const [player, supplementalMetadata] = await Promise.all([
+				requestPlayer(videoId),
+				requestSupplementalVideoMetadata(videoId),
+			]);
 			const tracks = player.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
 			if (tracks.length === 0) {
 				throw new Error('No captions available for this video');
@@ -648,7 +737,7 @@ export class YouTubeService {
 
 			return {
 				languageCode: selectedTrack.languageCode,
-				transcript: buildTranscriptResponseFromPlayer(url, videoId, player, lines),
+				transcript: buildTranscriptResponseFromPlayer(url, videoId, player, lines, supplementalMetadata),
 			};
 		} catch (error) {
 			throw new Error(`Failed to fetch transcript: ${getErrorMessage(error)}`);

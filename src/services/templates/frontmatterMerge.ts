@@ -13,6 +13,8 @@ export const SACRED_FRONTMATTER_KEYS = [
 	'playlistId',
 	'thumbnailUrl',
 	'videoDescription',
+	'uploadDate',
+	'videoCategory',
 	'durationSeconds',
 	'keywords',
 	'generated',

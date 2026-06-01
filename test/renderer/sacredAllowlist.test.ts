@@ -10,6 +10,8 @@ const transcript = {
 	channelUrl: 'https://youtube.com/channel/x',
 	description: 'Description',
 	thumbnailUrl: 'https://img.youtube.com/vi/abc/hqdefault.jpg',
+	uploadDate: '2024-03-05',
+	videoCategory: 'Education',
 	durationSeconds: 60,
 	keywords: ['one', 'two'],
 	lines: [],
@@ -36,6 +38,8 @@ describe('sacred-key allowlist', () => {
 		expect(content).toContain('channelId:');
 		expect(content).toContain('thumbnailUrl:');
 		expect(content).toContain('videoDescription:');
+		expect(content).toContain('uploadDate:');
+		expect(content).toContain('videoCategory:');
 		expect(content).toContain('durationSeconds:');
 		expect(content).toContain('keywords:');
 		expect(content).toContain('generated:');
@@ -53,6 +57,8 @@ describe('sacred-key allowlist', () => {
 		expect(content).not.toContain('videoId:');
 		expect(content).not.toContain('channel:');
 		expect(content).not.toContain('thumbnailUrl:');
+		expect(content).not.toContain('uploadDate:');
+		expect(content).not.toContain('videoCategory:');
 		expect(content).not.toContain('durationSeconds:');
 		expect(content).not.toContain('generated:');
 	});
