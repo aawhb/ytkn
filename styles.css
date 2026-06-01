@@ -17,7 +17,7 @@
 	--ytkn-brand-mark-radius: calc(var(--ytkn-brand-mark-size) * 0.333333);
 	--ytkn-brand-icon-size: calc(var(--ytkn-brand-mark-size) * 0.583333);
 	--ytkn-brand-icon-stroke-width: 1.8;
-	--ytkn-brand-header-gap: var(--size-4-4);
+	--ytkn-brand-header-gap: var(--size-4-2);
 	--ytkn-brand-copy-gap: var(--size-2-1);
 	--ytkn-brand-title-line-height: var(--line-height-tight);
 	--ytkn-brand-title-size-settings: var(--h1-size, 1.8em);
@@ -838,19 +838,33 @@
 .ytkn-brand-mark {
 	width: var(--ytkn-brand-mark-size);
 	height: var(--ytkn-brand-mark-size);
+	min-width: var(--ytkn-brand-mark-size);
+	min-height: var(--ytkn-brand-mark-size);
+	max-width: var(--ytkn-brand-mark-size);
+	max-height: var(--ytkn-brand-mark-size);
+	aspect-ratio: 1 / 1;
 	border-radius: var(--ytkn-brand-mark-radius);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	flex: 0 0 auto;
+	flex: 0 0 var(--ytkn-brand-mark-size);
+	box-sizing: border-box;
+	overflow: hidden;
 	color: white;
 	background: radial-gradient(circle at 30% 20%, #c7a8ff 0, #8b5cf6 42%, #5b21b6 100%);
 	box-shadow: var(--ytkn-brand-shadow);
 }
 
-.ytkn-brand-mark svg {
+.ytkn-brand-mark>svg,
+.ytkn-brand-mark>svg.svg-icon {
 	width: var(--ytkn-brand-icon-size);
 	height: var(--ytkn-brand-icon-size);
+	min-width: var(--ytkn-brand-icon-size);
+	min-height: var(--ytkn-brand-icon-size);
+	max-width: var(--ytkn-brand-icon-size);
+	max-height: var(--ytkn-brand-icon-size);
+	display: block;
+	flex: 0 0 var(--ytkn-brand-icon-size);
 	stroke-width: var(--ytkn-brand-icon-stroke-width);
 	fill: currentColor;
 }
@@ -1496,8 +1510,30 @@
 		align-items: flex-start;
 	}
 
-	.ytkn-brand-mark {
-		--ytkn-brand-mark-size: 40px;
+	.ytkn-brand-mark,
+	.is-phone .ytkn-brand-mark {
+		--ytkn-brand-mark-size: 50px;
+		--ytkn-brand-mark-radius: calc(var(--ytkn-brand-mark-size) * 0.333333);
+		--ytkn-brand-icon-size: calc(var(--ytkn-brand-mark-size) * 0.583333);
+		width: var(--ytkn-brand-mark-size);
+		height: var(--ytkn-brand-mark-size);
+		min-width: var(--ytkn-brand-mark-size);
+		min-height: var(--ytkn-brand-mark-size);
+		max-width: var(--ytkn-brand-mark-size);
+		max-height: var(--ytkn-brand-mark-size);
+		border-radius: var(--ytkn-brand-mark-radius);
+	}
+
+	.ytkn-brand-mark>svg,
+	.ytkn-brand-mark>svg.svg-icon,
+	.is-phone .ytkn-brand-mark>svg,
+	.is-phone .ytkn-brand-mark>svg.svg-icon {
+		width: var(--ytkn-brand-icon-size);
+		height: var(--ytkn-brand-icon-size);
+		min-width: var(--ytkn-brand-icon-size);
+		min-height: var(--ytkn-brand-icon-size);
+		max-width: var(--ytkn-brand-icon-size);
+		max-height: var(--ytkn-brand-icon-size);
 	}
 
 	.ytkn-whats-new-modal__support {
