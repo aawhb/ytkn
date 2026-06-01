@@ -182,12 +182,12 @@ describe('GenerationOptionsModal.onOpen', () => {
 		expect(tldrSetting?.classList.contains('ytkn-modal__quick-full')).toBe(true);
 	});
 
-	it('shows the TL;DR quick setting only when AI summary is enabled', () => {
+	it('shows the TL;DR quick setting when AI is enabled even if AI summary is disabled', () => {
 		const enabledModal = new GenerationOptionsModal(
 			app,
 			'',
 			[sampleModel],
-			{ useAi: true, generateAiSummary: true },
+			{ useAi: true, generateAiSummary: false },
 			onSubmit,
 		);
 		enabledModal.open();
@@ -200,7 +200,7 @@ describe('GenerationOptionsModal.onOpen', () => {
 			app,
 			'',
 			[sampleModel],
-			{ useAi: true, generateAiSummary: false },
+			{ useAi: false, generateAiSummary: false },
 			onSubmit,
 		);
 		disabledModal.open();
@@ -238,6 +238,7 @@ describe('GenerationOptionsModal.onOpen', () => {
 			{
 				useAi: true,
 				generateAiSummary: false,
+				tldrCalloutAtTop: false,
 				includeMindmap: false,
 				includeMemorableQuotes: false,
 				transcriptMode: 'readable',
@@ -255,6 +256,37 @@ describe('GenerationOptionsModal.onOpen', () => {
 		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
 		expect(options.useAi).toBe(false);
 		expect(options.generateAiSummary).toBe(false);
+		expect(options.includeMindmap).toBe(false);
+		expect(options.includeMemorableQuotes).toBe(false);
+	});
+
+	it('keeps AI enabled for TL;DR-only submits', () => {
+		const modal = new GenerationOptionsModal(
+			app,
+			VIDEO_URL,
+			[sampleModel],
+			{
+				useAi: true,
+				generateAiSummary: false,
+				tldrCalloutAtTop: true,
+				includeMindmap: false,
+				includeMemorableQuotes: false,
+				transcriptMode: 'readable',
+				noteDestinationMode: 'folder',
+				noteDestinationFolder: 'Notes',
+			},
+			onSubmit,
+		);
+		modal.open();
+
+		const buttons = Array.from(modal.contentEl.querySelectorAll('button'));
+		buttons.find((button) => button.textContent === 'Generate')?.click();
+
+		expect(onSubmit).toHaveBeenCalledOnce();
+		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
+		expect(options.useAi).toBe(true);
+		expect(options.generateAiSummary).toBe(false);
+		expect(options.tldrCalloutAtTop).toBe(true);
 		expect(options.includeMindmap).toBe(false);
 		expect(options.includeMemorableQuotes).toBe(false);
 	});

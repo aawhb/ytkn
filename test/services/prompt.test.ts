@@ -56,6 +56,22 @@ describe('PromptService', () => {
 		expect(prompt).not.toContain("You transform a YouTube video's transcript into a structured Markdown body for an Obsidian note.");
 	});
 
+	it('omits TL;DR from full-summary prompts when the callout is disabled', () => {
+		const service = new PromptService({
+			mode: 'template',
+			template: 'general',
+			manualInstructions: '',
+			includeMindmap: false,
+			includeMemorableQuotes: false,
+		}, { includeTldr: false });
+
+		const prompt = service.buildPrompt(transcript, transcript.url);
+
+		expect(prompt).toContain('Do not output a `## TL;DR` section.');
+		expect(prompt).not.toContain('1-2 sentences capturing the single most important takeaway.');
+		expect(prompt).not.toContain('`## TL;DR` (required)');
+	});
+
 	it('adapts template instructions for playlist synthesis', () => {
 		const service = new PromptService({ mode: 'template', template: 'study', manualInstructions: '', includeMindmap: false, includeMemorableQuotes: false });
 		const playlistPrompt = service.buildPlaylistSynthesisPrompt(
@@ -181,6 +197,7 @@ describe('PromptService', () => {
 		const synthesisPrompt = service.buildAddonsSynthesisPrompt(transcript, transcript.url, ['Chunk notes']);
 
 		expect(prompt).toContain('only the requested add-on sections');
+		expect(prompt).toContain('## TL;DR');
 		expect(prompt).toContain('## Mindmap');
 		expect(prompt).toContain('## Memorable quotes');
 		expect(prompt).not.toContain('Always start with');
@@ -188,6 +205,50 @@ describe('PromptService', () => {
 		expect(prompt).not.toContain('Use exactly these H2 headings');
 		expect(chunkPrompt).toContain('## Add-on source material');
 		expect(synthesisPrompt).toContain('Use the chunk notes below instead of the raw transcript');
+	});
+
+	it('can request TL;DR as the only add-on section', () => {
+		const service = new PromptService({
+			mode: 'template',
+			template: 'general',
+			manualInstructions: '',
+			includeMindmap: false,
+			includeMemorableQuotes: false,
+		}, { includeTldr: true });
+
+		const prompt = service.buildAddonsPrompt(transcript, transcript.url);
+
+		expect(prompt).toContain('Add a TL;DR section before any other generated section');
+		expect(prompt).toContain('## TL;DR');
+		expect(prompt).not.toContain('## Mindmap');
+		expect(prompt).not.toContain('## Memorable quotes');
+	});
+
+	it('builds combined playlist add-ons synthesis prompts', () => {
+		const service = new PromptService({
+			mode: 'template',
+			template: 'general',
+			manualInstructions: '',
+			includeMindmap: true,
+			includeMemorableQuotes: false,
+		}, { includeTldr: true });
+
+		const prompt = service.buildPlaylistAddonsSynthesisPrompt(
+			{
+				playlistId: 'abc',
+				title: 'Playlist',
+				url: 'https://youtube.com/playlist?list=abc',
+				entries: [{ videoId: '123', url: transcript.url, title: transcript.title, position: 1 }],
+				transcripts: [transcript],
+			},
+			[{ transcript, summary: '## TL;DR\nVideo point.\n\n## Mindmap\n```mermaid\nmindmap\n  root((Video))\n```' }],
+		);
+
+		expect(prompt).toContain('produce the requested add-on sections for the playlist as a whole');
+		expect(prompt).toContain('## TL;DR');
+		expect(prompt).toContain('## Mindmap');
+		expect(prompt).toContain('## Video 1: Video');
+		expect(prompt).toContain('Video point.');
 	});
 
 	it('splits long transcripts into chunks without dropping text', () => {

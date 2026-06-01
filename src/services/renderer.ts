@@ -3,6 +3,7 @@ import type { Template } from '../types';
 import { DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST, DEFAULT_MEDIA_EMBED_MODE } from '../defaults';
 import {
 	buildTldrCallout,
+	extractExplicitTldr,
 	extractTldr,
 	sanitizeModelOutput,
 	shiftMarkdownHeadings,
@@ -68,6 +69,7 @@ function parseAllowlist(input: string | undefined): Set<string> {
 function buildBodyFromTemplate(
 	rawSummary: string,
 	template: Template,
+	includeTldr: boolean,
 ): {
 	body: string;
 	tldr: string | null;
@@ -98,7 +100,9 @@ function buildBodyFromTemplate(
 		body: orderedBody.join('\n\n'),
 		tldr: tldrFromSection,
 		extractedFrontmatter: extracted.frontmatter ?? {},
-		warnings: extracted.warnings,
+		warnings: includeTldr
+			? extracted.warnings
+			: extracted.warnings.filter((warning) => !warning.includes('Required section "TL;DR"')),
 	};
 }
 
@@ -706,8 +710,10 @@ export function renderVideoNote(
 	let tldrCandidate: string | null = null;
 	let extractedFrontmatter: Record<string, unknown> = {};
 
+	const tldrAtTop = options?.tldrCalloutAtTop ?? true;
+
 	if (hasDeclaredSections && template) {
-		const built = buildBodyFromTemplate(summaryText ?? '', template);
+		const built = buildBodyFromTemplate(summaryText ?? '', template, tldrAtTop);
 		body = built.body;
 		tldrCandidate = built.tldr;
 		extractedFrontmatter = built.extractedFrontmatter;
@@ -716,7 +722,6 @@ export function renderVideoNote(
 		body = sanitizeModelOutput(summaryText);
 	}
 
-	const tldrAtTop = options?.tldrCalloutAtTop ?? true;
 	let finalBody = body;
 	let finalTldr: string | null = tldrCandidate;
 
@@ -729,6 +734,9 @@ export function renderVideoNote(
 		finalTldr = fallback.tldr;
 		finalBody = fallback.body;
 	} else if (!tldrAtTop) {
+		if (!hasDeclaredSections) {
+			finalBody = extractExplicitTldr(body).body;
+		}
 		finalTldr = null;
 	}
 
@@ -789,8 +797,10 @@ export function renderPlaylistNote(
 	let tldrCandidate: string | null = null;
 	let extractedFrontmatter: Record<string, unknown> = {};
 
+	const tldrAtTop = options?.tldrCalloutAtTop ?? true;
+
 	if (hasDeclaredSections && template) {
-		const built = buildBodyFromTemplate(summaryText ?? '', template);
+		const built = buildBodyFromTemplate(summaryText ?? '', template, tldrAtTop);
 		body = built.body;
 		tldrCandidate = built.tldr;
 		extractedFrontmatter = built.extractedFrontmatter;
@@ -799,7 +809,6 @@ export function renderPlaylistNote(
 		body = sanitizeModelOutput(summaryText);
 	}
 
-	const tldrAtTop = options?.tldrCalloutAtTop ?? true;
 	let finalBody = body;
 	let finalTldr: string | null = tldrCandidate;
 
@@ -811,6 +820,9 @@ export function renderPlaylistNote(
 		finalTldr = fallback.tldr;
 		finalBody = fallback.body;
 	} else if (!tldrAtTop) {
+		if (!hasDeclaredSections) {
+			finalBody = extractExplicitTldr(body).body;
+		}
 		finalTldr = null;
 	}
 

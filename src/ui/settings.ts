@@ -689,21 +689,22 @@ export class SettingsTab extends PluginSettingTab {
 					);
 			}
 
-			const outputDefaults = this.settings.getOutputDefaults();
-
-			new Setting(containerEl)
-				.setName(SETTING_COPY.tldrCallout.name)
-				.setDesc(SETTING_COPY.tldrCallout.desc!)
-				.addToggle((toggle) =>
-					toggle
-						.setValue(outputDefaults.tldrCalloutAtTop)
-						.onChange(async (value) => {
-							await this.updateOutputDefaults({
-								tldrCalloutAtTop: value,
-							});
-						}),
-				);
 		}
+
+		const outputDefaults = this.settings.getOutputDefaults();
+
+		new Setting(containerEl)
+			.setName(SETTING_COPY.tldrCallout.name)
+			.setDesc(SETTING_COPY.tldrCallout.desc!)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(outputDefaults.tldrCalloutAtTop)
+					.onChange(async (value) => {
+						await this.updateOutputDefaults({
+							tldrCalloutAtTop: value,
+						});
+					}),
+			);
 
 		new Setting(containerEl)
 			.setName(SETTING_COPY.mindmap.name)

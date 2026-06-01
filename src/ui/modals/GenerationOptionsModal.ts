@@ -295,7 +295,7 @@ export class GenerationOptionsModal extends Modal {
 		} else {
 			const isPlaylist = YouTubeService.isPlaylistUrl(trimmed);
 			if (isPlaylist) {
-				hintEl.setText('Playlist detected. Combined mode requires AI summary unless AI and transcript are both off.');
+				hintEl.setText('Playlist detected. Combined mode requires AI generation unless AI and transcript are both off.');
 				hintEl.show();
 			} else if (YouTubeService.isYouTubeUrl(trimmed)) {
 				hintEl.setText('Single video detected.');
@@ -812,7 +812,7 @@ export class GenerationOptionsModal extends Modal {
 
 		this.aiSummarySettingEl?.toggle(this.state.useAi);
 		this.instructionSettingEl?.toggle(showSummaryControls);
-		this.tldrCalloutSettingEl?.toggle(showSummaryControls);
+		this.tldrCalloutSettingEl?.toggle(this.state.useAi);
 		this.mindmapSettingEl?.toggle(this.state.useAi);
 		this.memorableQuotesSettingEl?.toggle(this.state.useAi);
 		this.aiModelSettingEl?.toggle(this.state.useAi);
@@ -871,7 +871,7 @@ export class GenerationOptionsModal extends Modal {
 		const parsedTimeoutSecs = this.state.requestTimeoutSeconds.trim() ? Number(this.state.requestTimeoutSeconds.trim()) : undefined;
 		const trimmedManualInstructions = this.state.manualInstructions.trim();
 		const trimmedFolder = this.state.noteDestinationFolder.trim();
-		const hasAiOutputs = this.state.generateAiSummary || this.state.includeMindmap || this.state.includeMemorableQuotes;
+		const hasAiOutputs = this.state.generateAiSummary || this.state.tldrCalloutAtTop || this.state.includeMindmap || this.state.includeMemorableQuotes;
 		const effectiveUseAi = this.state.useAi && hasAiOutputs;
 		const effectiveGenerateAiSummary = effectiveUseAi && this.state.generateAiSummary;
 		const isMetadataOnly = !effectiveUseAi && this.state.transcriptMode === 'none';
@@ -910,12 +910,12 @@ export class GenerationOptionsModal extends Modal {
 		}
 
 		if (
-			!effectiveGenerateAiSummary &&
+			!effectiveUseAi &&
 			!isMetadataOnly &&
 			this.state.playlistMode === 'combined' &&
 			urls.some((u) => YouTubeService.isPlaylistUrl(u))
 		) {
-			new Notice('Combined playlist notes require AI summary unless AI and transcript are both off. Switch to per-video for transcript-only or AI add-on-only runs.');
+			new Notice('Combined playlist notes require AI generation unless AI and transcript are both off. Switch to per-video for transcript-only runs.');
 			return;
 		}
 

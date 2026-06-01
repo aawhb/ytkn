@@ -46,15 +46,9 @@ export function sanitizeModelOutput(summaryText?: string | null): string {
 }
 
 export function extractTldr(summaryText: string): ExtractedTldr {
-    const match = summaryText.match(/^[ \t]*##[ \t]+TL;DR[ \t]*\n([\s\S]*?)(?=\n##\s|$)/im);
-    if (match) {
-        const tldr = match[1].trim();
-        if (tldr) {
-            const before = summaryText.slice(0, match.index ?? 0).trimEnd();
-            const after = summaryText.slice((match.index ?? 0) + match[0].length).trimStart();
-            const body = [before, after].filter(Boolean).join('\n\n');
-            return { tldr, body };
-        }
+    const explicit = extractExplicitTldr(summaryText);
+    if (explicit.tldr) {
+        return explicit;
     }
 
     const firstParagraphMatch = summaryText.match(/^(?!#).+?(?=\n\n|\n#|$)/sm);
@@ -64,6 +58,21 @@ export function extractTldr(summaryText: string): ExtractedTldr {
         const after = summaryText.slice((firstParagraphMatch.index ?? 0) + firstParagraphMatch[0].length).trimStart();
         const body = [before, after].filter(Boolean).join('\n\n');
         return { tldr, body };
+    }
+
+    return { tldr: null, body: summaryText };
+}
+
+export function extractExplicitTldr(summaryText: string): ExtractedTldr {
+    const match = summaryText.match(/^[ \t]*##[ \t]+TL;DR[ \t]*\n([\s\S]*?)(?=\n##\s|$)/im);
+    if (match) {
+        const tldr = match[1].trim();
+        if (tldr) {
+            const before = summaryText.slice(0, match.index ?? 0).trimEnd();
+            const after = summaryText.slice((match.index ?? 0) + match[0].length).trimStart();
+            const body = [before, after].filter(Boolean).join('\n\n');
+            return { tldr, body };
+        }
     }
 
     return { tldr: null, body: summaryText };

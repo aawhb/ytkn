@@ -1,16 +1,34 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const providerMocks = vi.hoisted(() => ({
+	summarizeVideo: vi.fn(),
+}));
+
 vi.mock('obsidian', async () => {
 	const mod = await import('../mocks/obsidian');
 	return { ...mod, TFile: class TFile { } };
 });
 
+vi.mock('../../src/services/providers/factory', () => ({
+	ProvidersFactory: {
+		createProvider: vi.fn(() => ({
+			summarizeVideo: providerMocks.summarizeVideo,
+		})),
+	},
+}));
+
 import { GenerationService } from '../../src/services/generation';
-import type { GenerationOptions, PlaylistResponse, PluginSettings, TranscriptResponse } from '../../src/types';
+import type { GenerationOptions, ModelConfig, PlaylistResponse, PluginSettings, TranscriptResponse } from '../../src/types';
 import type { QueuedRun } from '../../src/services/runQueue';
 
 const VIDEO_URL = 'https://www.youtube.com/watch?v=abcdefghijk';
 const PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PL123';
+
+const sampleModel: ModelConfig = {
+	name: 'local-model',
+	displayName: 'Local Model',
+	provider: { name: 'Ollama', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1' },
+};
 
 function makeTranscript(url: string, overrides: Partial<TranscriptResponse> = {}): TranscriptResponse {
 	const videoId = overrides.videoId ?? new URL(url).searchParams.get('v') ?? 'abcdefghijk';
@@ -45,6 +63,22 @@ function makeSettings(): PluginSettings {
 	return {
 		getModels: vi.fn(() => []),
 		getOutputDefaults: vi.fn(() => ({ useAi: false, generateAiSummary: false })),
+		getInstructionConfig: vi.fn(() => ({
+			mode: 'template',
+			template: 'general',
+			manualInstructions: '',
+			includeMindmap: false,
+			includeMemorableQuotes: false,
+		})),
+		getTemperature: vi.fn(() => 0.3),
+		getRequestTimeoutMs: vi.fn(() => 300000),
+	} as unknown as PluginSettings;
+}
+
+function makeAiSettings(): PluginSettings {
+	return {
+		getModels: vi.fn(() => [sampleModel]),
+		getOutputDefaults: vi.fn(() => ({ useAi: true, generateAiSummary: false, tldrCalloutAtTop: true })),
 		getInstructionConfig: vi.fn(() => ({
 			mode: 'template',
 			template: 'general',
@@ -138,6 +172,7 @@ describe('GenerationService metadata-only runs', () => {
 
 	beforeEach(() => {
 		consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+		providerMocks.summarizeVideo.mockReset();
 	});
 
 	afterEach(() => {
@@ -232,29 +267,117 @@ describe('GenerationService metadata-only runs', () => {
 		await expect(service.executeRun(
 			makeRun(PLAYLIST_URL, metadataOptions({ transcriptMode: 'readable', playlistMode: 'combined' }), 'playlist'),
 			new AbortController().signal,
-		)).rejects.toThrow('Combined playlist notes require AI summary generation unless AI and transcript are both off');
+		)).rejects.toThrow('Combined playlist notes require AI generation unless AI and transcript are both off');
 		expect(youtubeService.fetchPlaylist).not.toHaveBeenCalled();
 	});
 
-	it('still rejects combined add-ons-only playlist runs', async () => {
-		const { app } = makeApp();
+	it('creates a TL;DR-only single video note with AI summary disabled', async () => {
+		providerMocks.summarizeVideo.mockResolvedValue('## TL;DR\nA short grounded takeaway.');
+		const { app, contents } = makeApp();
 		const youtubeService = {
-			fetchPlaylist: vi.fn(),
 			fetchVideoMetadata: vi.fn(),
-			fetchTranscript: vi.fn(),
+			fetchTranscript: vi.fn(async (url: string) => ({
+				transcript: makeTranscript(url, { title: 'TLDR Video', lines: [{ text: 'Grounded transcript.', offset: 0 }] }),
+				languageCode: 'en',
+			})),
 		};
-		const service = new GenerationService(app, youtubeService as any, makeSettings(), vi.fn());
+		const service = new GenerationService(app, youtubeService as any, makeAiSettings(), vi.fn());
 
-		await expect(service.executeRun(
+		const entry = await service.executeRun(
+			makeRun(VIDEO_URL, metadataOptions({
+				useAi: true,
+				generateAiSummary: false,
+				tldrCalloutAtTop: true,
+				modelId: 'Ollama:local-model',
+			})),
+			new AbortController().signal,
+		);
+
+		expect(entry.kind).toBe('video');
+		expect(providerMocks.summarizeVideo).toHaveBeenCalledOnce();
+		const prompt = providerMocks.summarizeVideo.mock.calls[0]?.[0] as string;
+		expect(prompt).toContain('Add a TL;DR section before any other generated section');
+		expect(prompt).not.toContain('Use exactly these H2 headings');
+		const content = Array.from(contents.values()).join('\n');
+		expect(content).toContain('> [!summary] TL;DR');
+		expect(content).toContain('> A short grounded takeaway.');
+		expect(content).not.toContain('## Summary');
+	});
+
+	it('creates per-video playlist notes with TL;DR-only AI output', async () => {
+		providerMocks.summarizeVideo.mockResolvedValue('## TL;DR\nPlaylist video takeaway.');
+		const { app, contents } = makeApp();
+		const playlist = makePlaylist();
+		const youtubeService = {
+			fetchPlaylist: vi.fn(async () => playlist),
+			fetchVideoMetadata: vi.fn(),
+			fetchTranscript: vi.fn(async (url: string) => ({
+				transcript: makeTranscript(url, { title: `Video ${url.slice(-1)}`, lines: [{ text: 'Grounded transcript.', offset: 0 }] }),
+				languageCode: 'en',
+			})),
+		};
+		const service = new GenerationService(app, youtubeService as any, makeAiSettings(), vi.fn());
+
+		const entry = await service.executeRun(
 			makeRun(PLAYLIST_URL, metadataOptions({
 				useAi: true,
 				generateAiSummary: false,
+				tldrCalloutAtTop: true,
+				modelId: 'Ollama:local-model',
+				playlistMode: 'per-video',
+			}), 'playlist'),
+			new AbortController().signal,
+		);
+
+		expect(entry.kind).toBe('playlist');
+		expect(providerMocks.summarizeVideo).toHaveBeenCalledTimes(2);
+		expect(youtubeService.fetchTranscript).toHaveBeenCalledTimes(2);
+		const content = Array.from(contents.values()).join('\n');
+		expect(content.match(/> \[!summary\] TL;DR/g)).toHaveLength(2);
+		expect(content).toContain('> Playlist video takeaway.');
+	});
+
+	it('creates combined add-ons-only playlist notes', async () => {
+		providerMocks.summarizeVideo.mockImplementation(async (prompt: string) => {
+			if (prompt.includes('Per-video add-on notes')) {
+				return '## TL;DR\nCombined playlist takeaway.\n\n## Mindmap\n```mermaid\nmindmap\n  root((Playlist))\n```';
+			}
+			return '## TL;DR\nPer-video takeaway.\n\n## Mindmap\n```mermaid\nmindmap\n  root((Video))\n```';
+		});
+		const playlist = makePlaylist();
+		const youtubeService = {
+			fetchPlaylist: vi.fn(async () => playlist),
+			fetchVideoMetadata: vi.fn(),
+			fetchTranscript: vi.fn(async (url: string) => ({
+				transcript: makeTranscript(url, { title: `Video ${url.slice(-1)}`, lines: [{ text: 'Grounded transcript.', offset: 0 }] }),
+				languageCode: 'en',
+			})),
+		};
+		const appAndContents = makeApp();
+		const service = new GenerationService(appAndContents.app, youtubeService as any, makeAiSettings(), vi.fn());
+
+		const entry = await service.executeRun(
+			makeRun(PLAYLIST_URL, metadataOptions({
+				useAi: true,
+				generateAiSummary: false,
+				tldrCalloutAtTop: true,
 				includeMindmap: true,
 				transcriptMode: 'none',
 				playlistMode: 'combined',
+				modelId: 'Ollama:local-model',
 			}), 'playlist'),
 			new AbortController().signal,
-		)).rejects.toThrow('Combined playlist notes require AI summary generation unless AI and transcript are both off');
-		expect(youtubeService.fetchPlaylist).not.toHaveBeenCalled();
+		);
+
+		expect(entry.kind).toBe('playlist');
+		expect(entry.outcome).toBe('completed');
+		expect(providerMocks.summarizeVideo).toHaveBeenCalledTimes(3);
+		expect(youtubeService.fetchTranscript).toHaveBeenCalledTimes(2);
+		const finalPrompt = providerMocks.summarizeVideo.mock.calls[2]?.[0] as string;
+		expect(finalPrompt).toContain('produce the requested add-on sections for the playlist as a whole');
+		const content = Array.from(appAndContents.contents.values()).join('\n');
+		expect(content).toContain('> [!summary] TL;DR');
+		expect(content).toContain('> Combined playlist takeaway.');
+		expect(content).toContain('## Mindmap');
 	});
 });

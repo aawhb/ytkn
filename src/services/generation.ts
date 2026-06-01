@@ -223,7 +223,7 @@ export class GenerationService {
 		return {
 			selectedModel,
 			provider,
-			promptService: this.createPromptService(this.createInstructionConfig(effectiveOptions)),
+			promptService: this.createPromptService(this.createInstructionConfig(effectiveOptions), effectiveOptions),
 		};
 	}
 
@@ -231,10 +231,10 @@ export class GenerationService {
 		if (
 			YouTubeService.isPlaylistUrl(url) &&
 			effectiveOptions.playlistMode === 'combined' &&
-			!this.shouldGenerateAiSummary(effectiveOptions) &&
+			!this.shouldUseAi(effectiveOptions) &&
 			!this.isMetadataOnlyRun(effectiveOptions)
 		) {
-			throw new Error('Combined playlist notes require AI summary generation unless AI and transcript are both off. Use per-video mode for transcript-only or AI add-on-only runs.');
+			throw new Error('Combined playlist notes require AI generation unless AI and transcript are both off. Use per-video mode for transcript-only runs.');
 		}
 	}
 
@@ -244,6 +244,10 @@ export class GenerationService {
 
 	private wantsAiSummary(effectiveOptions: GenerationOptions): boolean {
 		return effectiveOptions.generateAiSummary ?? this.settings.getOutputDefaults().generateAiSummary;
+	}
+
+	private wantsTldr(effectiveOptions: GenerationOptions): boolean {
+		return effectiveOptions.tldrCalloutAtTop ?? this.settings.getOutputDefaults().tldrCalloutAtTop;
 	}
 
 	private wantsMindmap(effectiveOptions: GenerationOptions): boolean {
@@ -256,6 +260,7 @@ export class GenerationService {
 
 	private hasAiOutputs(effectiveOptions: GenerationOptions): boolean {
 		return this.wantsAiSummary(effectiveOptions)
+			|| this.wantsTldr(effectiveOptions)
 			|| this.wantsMindmap(effectiveOptions)
 			|| this.wantsMemorableQuotes(effectiveOptions);
 	}
@@ -305,8 +310,10 @@ export class GenerationService {
 		};
 	}
 
-	private createPromptService(instructionConfig: InstructionConfig): PromptService {
-		return new PromptService(instructionConfig);
+	private createPromptService(instructionConfig: InstructionConfig, effectiveOptions: GenerationOptions): PromptService {
+		return new PromptService(instructionConfig, {
+			includeTldr: this.wantsTldr(effectiveOptions),
+		});
 	}
 
 	private async summarizeTranscript(
@@ -808,7 +815,7 @@ export class GenerationService {
 		}
 
 		if (!aiContext) {
-			throw new Error('Combined playlist notes require AI summary generation unless AI and transcript are both off.');
+			throw new Error('Combined playlist notes require AI generation unless AI and transcript are both off.');
 		}
 
 		if ((effectiveOptions.noteDestinationMode === 'current-note' || effectiveOptions.noteDestinationMode === 'append-to-active-note') && !initialTarget) {
@@ -826,6 +833,7 @@ export class GenerationService {
 			? playlist.title
 			: null;
 
+		const generateSummary = this.shouldGenerateAiSummary(effectiveOptions);
 		const transcripts: TranscriptResponse[] = [];
 		const videoSummaries: Array<{ transcript: TranscriptResponse; summary: string }> = [];
 		const reportEntries: PlaylistRunReportEntry[] = [];
@@ -845,10 +853,19 @@ export class GenerationService {
 				const transcript = transcriptResult.transcript;
 
 				if (!isAppendMode) {
-					await this.showProgress(target, entry.url, `Summarizing playlist video ${index + 1}/${playlist.entries.length}...`, progressState);
+					await this.showProgress(
+						target,
+						entry.url,
+						generateSummary
+							? `Summarizing playlist video ${index + 1}/${playlist.entries.length}...`
+							: `Extracting playlist add-ons ${index + 1}/${playlist.entries.length}...`,
+						progressState,
+					);
 				}
-				this.onStatusBar(`Summarizing playlist video ${index + 1}/${playlist.entries.length}...`);
-				const summary = await this.summarizeTranscript(aiContext, transcript, entry.url, target, progressState, signal);
+				this.onStatusBar(generateSummary
+					? `Summarizing playlist video ${index + 1}/${playlist.entries.length}...`
+					: `Extracting playlist add-ons ${index + 1}/${playlist.entries.length}...`);
+				const summary = await this.generateAiText(aiContext, transcript, entry.url, target, progressState, signal, generateSummary);
 
 				transcripts.push(transcript);
 				videoSummaries.push({ transcript, summary });
@@ -884,18 +901,22 @@ export class GenerationService {
 
 		if (videoSummaries.length === 0) {
 			await this.deleteTargetIfDisposable(target);
-			throw new Error('No playlist videos could be summarized.');
+			throw new Error(generateSummary ? 'No playlist videos could be summarized.' : 'No playlist videos could be processed for AI add-ons.');
 		}
 
+		const finalProgress = generateSummary ? 'Generating combined playlist summary...' : 'Generating combined playlist add-ons...';
 		if (!isAppendMode) {
-			await this.showProgress(target, playlist.url, 'Generating combined playlist summary...', progressState);
+			await this.showProgress(target, playlist.url, finalProgress, progressState);
 		}
-		this.onStatusBar('Generating combined playlist summary...');
+		this.onStatusBar(finalProgress);
 
 		let summary: string;
 		try {
+			const playlistWithTranscripts: PlaylistTranscriptResponse = { ...playlist, transcripts };
 			summary = await aiContext.provider.summarizeVideo(
-				aiContext.promptService.buildPlaylistSynthesisPrompt({ ...playlist, transcripts }, videoSummaries),
+				generateSummary
+					? aiContext.promptService.buildPlaylistSynthesisPrompt(playlistWithTranscripts, videoSummaries)
+					: aiContext.promptService.buildPlaylistAddonsSynthesisPrompt(playlistWithTranscripts, videoSummaries),
 				signal,
 			);
 		} catch (error) {
@@ -911,9 +932,9 @@ export class GenerationService {
 
 		const playlistWithTranscripts: PlaylistTranscriptResponse = { ...playlist, transcripts };
 		const thumbnailUrl = transcripts[0] ? YouTubeService.getThumbnailUrl(transcripts[0].videoId) : null;
-		const template = effectiveOptions.instructionMode === 'manual'
-			? null
-			: getTemplate(effectiveOptions.instructionTemplate ?? this.settings.getInstructionConfig().template);
+		const template = generateSummary && effectiveOptions.instructionMode !== 'manual'
+			? getTemplate(effectiveOptions.instructionTemplate ?? this.settings.getInstructionConfig().template)
+			: null;
 		const { content } = renderPlaylistNote(playlistWithTranscripts, thumbnailUrl, summary, effectiveOptions, template, isAppendMode ? 'fragment' : 'standalone');
 		if (isAppendMode) {
 			this.onStatusBar('Rendering note...');

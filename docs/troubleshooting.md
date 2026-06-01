@@ -27,9 +27,9 @@ Behavior to expect:
 
 ## A combined playlist note will not start
 
-Combined playlist notes require AI summary generation unless both AI and transcript inclusion are off.
+Combined playlist notes require at least one AI output unless both AI and transcript inclusion are off.
 
-If you want a transcript-only or AI add-ons-only playlist workflow, switch playlist handling to **Per video** instead. If you want a playlist/source index without captions, turn both AI and transcript inclusion off.
+If you want a transcript-only playlist workflow, switch playlist handling to **Per video** instead. If you want a playlist/source index without captions, turn both AI and transcript inclusion off.
 
 ## My local model or provider will not connect
 

@@ -22,7 +22,6 @@ Hard rules — never break these:
 - Do not output a \`# H1\` heading. Section headings start at \`## H2\`.
 - Do not output a \`## Source\` section, a \`## Transcript\` section, or long verbatim transcript excerpts. Those are added separately.
 - Use Obsidian-flavored Markdown. Prefer \`> [!info]\`, \`> [!warning]\`, \`> [!quote]\`, and \`> [!summary]\` callouts when context fits. Use \`- [ ]\` for tasks.
-- Always start with \`## TL;DR\` containing 1-2 sentences (≤ 240 characters total) capturing the single most important takeaway. The renderer surfaces this in note previews.
 - Omit any section that would be empty. Do not write filler like "no items mentioned" or "n/a".
 - Keep bullets concise, specific, and high-signal. Do not restate the same idea twice.
 - Separate core content from sponsor reads, promotional content, and filler when relevant.
@@ -34,9 +33,21 @@ Hard rules — never break these:
 - Use only information clearly supported by the transcript. If a detail is uncertain, omit it.
 - Do not invent facts, tools, libraries, metrics, thresholds, or performance claims.
 - Do not output a \`# H1\` heading.
-- Do not output a \`## TL;DR\`, \`## Source\`, \`## Transcript\`, or long verbatim transcript excerpts.
+- Do not output a \`## Source\`, \`## Transcript\`, or long verbatim transcript excerpts.
 - Output only the requested add-on sections, using H2 headings.
 - Omit a requested section if the transcript does not contain enough grounded material for it.`;
+
+const TLDR_SECTION_INSTRUCTIONS = `Add a TL;DR section before any other generated section:
+
+## TL;DR
+1-2 sentences (≤ 240 characters total) capturing the single most important takeaway.
+
+TL;DR rules:
+- Section heading must be exactly \`## TL;DR\`.
+- Keep it grounded in the transcript.
+- Do not repeat the title or source metadata.`;
+
+const NO_TLDR_SECTION_INSTRUCTIONS = `Do not output a \`## TL;DR\` section.`;
 
 const MINDMAP_APPENDIX_INSTRUCTIONS = `Add a Mermaid mindmap section for the key concepts. Use exactly this format — the backtick fences are required; do not replace the diagram with prose:
 
@@ -106,8 +117,15 @@ interface ChunkingOptions {
 	model?: ModelConfig | null;
 }
 
+interface PromptRuntimeOptions {
+	includeTldr?: boolean;
+}
+
 export class PromptService {
-	constructor(private instructionConfig: InstructionConfig) { }
+	constructor(
+		private instructionConfig: InstructionConfig,
+		private runtimeOptions: PromptRuntimeOptions = {},
+	) { }
 
 	buildPrompt(transcript: TranscriptResponse, videoUrl: string): string {
 		const transcriptText = this.getTranscriptText(transcript);
@@ -262,6 +280,26 @@ Video summaries:
 ${summaryText}`;
 	}
 
+	buildPlaylistAddonsSynthesisPrompt(
+		playlist: PlaylistTranscriptResponse,
+		videoAddonNotes: Array<{ transcript: TranscriptResponse; summary: string }>,
+	): string {
+		const addonText = videoAddonNotes
+			.map(({ transcript, summary }, index) => `## Video ${index + 1}: ${transcript.title}
+- Channel: ${transcript.author}
+- URL: ${transcript.url}
+
+${summary.trim()}`)
+			.join('\n\n');
+
+		return `${this.buildPlaylistAddonInstructions(playlist)}
+
+Use the per-video add-on notes below instead of raw transcripts to produce the requested add-on sections for the playlist as a whole. Do not mention chunks or per-video processing in the final answer.
+
+Per-video add-on notes:
+${addonText}`;
+	}
+
 	private buildFrontmatterDirective(template: Template): string {
 		const fm = template.frontmatter ?? [];
 		if (!fm.length) {
@@ -329,13 +367,37 @@ ${lines}`;
 		return `User-supplied values — use these verbatim when generating the note:\n\n${lines}`;
 	}
 
+	private shouldIncludeTldr(): boolean {
+		return this.runtimeOptions.includeTldr ?? true;
+	}
+
+	private stripTldrSectionFromBody(body: string): string {
+		return body
+			.replace(/(^|\n)##[ \t]+TL;DR[ \t]*\n[\s\S]*?(?=\n##[ \t]+|$)/i, (match) => match.startsWith('\n') ? '\n' : '')
+			.replace(/\n{3,}/g, '\n\n')
+			.trim();
+	}
+
+	private getPromptTemplate(): Template {
+		const template = getTemplate(this.instructionConfig.template);
+		if (this.shouldIncludeTldr()) {
+			return template;
+		}
+
+		return {
+			...template,
+			body: this.stripTldrSectionFromBody(template.body),
+			sections: template.sections?.filter((section) => section.id !== 'tldr'),
+		};
+	}
+
 	private buildInstructionBlock(context: 'video' | 'playlist', includeAddons = true): string {
 		const addons = includeAddons ? this.buildInstructionAddons() : '';
 		if (this.instructionConfig.mode === 'manual') {
 			return [this.instructionConfig.manualInstructions.trim(), addons].filter(Boolean).join('\n\n');
 		}
 
-		const template = getTemplate(this.instructionConfig.template);
+		const template = this.getPromptTemplate();
 		const playlistPrefix = context === 'playlist'
 			? 'Apply the same template to the playlist as a whole, using the provided per-video summaries instead of a raw transcript.\n\n'
 			: '';
@@ -353,6 +415,8 @@ ${lines}`;
 	private buildInstructionAddons(): string {
 		const blocks: string[] = [];
 
+		blocks.push(this.shouldIncludeTldr() ? TLDR_SECTION_INSTRUCTIONS : NO_TLDR_SECTION_INSTRUCTIONS);
+
 		if (this.instructionConfig.includeMindmap) {
 			blocks.push(MINDMAP_APPENDIX_INSTRUCTIONS);
 		}
@@ -362,6 +426,17 @@ ${lines}`;
 		}
 
 		return blocks.join('\n\n');
+	}
+
+	private buildPlaylistAddonInstructions(playlist: PlaylistTranscriptResponse): string {
+		return `${ADDON_BASE_INSTRUCTIONS}
+
+${this.buildInstructionAddons()}
+
+Playlist metadata (renderer adds this automatically — do not repeat it inside the body):
+- Title: ${playlist.title}
+- Playlist URL: ${playlist.url}
+- Video count: ${playlist.transcripts.length}`;
 	}
 
 	private buildAddonCommonInstructions(transcript: TranscriptResponse, videoUrl: string): string {

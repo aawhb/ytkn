@@ -279,7 +279,7 @@ describe('renderVideoNote', () => {
 		expect(content).not.toContain('## TL;DR\nMost important idea.');
 	});
 
-	it('keeps the TL;DR section in the body when the top callout is disabled', () => {
+	it('suppresses the TL;DR section when the callout is disabled', () => {
 		const { content } = renderVideoNote(
 			transcript as any,
 			'thumb.png',
@@ -289,7 +289,47 @@ describe('renderVideoNote', () => {
 		);
 
 		expect(content).not.toContain('> [!summary] TL;DR');
-		expect(content).toContain('## TL;DR\nMost important idea.');
+		expect(content).not.toContain('## TL;DR\nMost important idea.');
+		expect(content).toContain('## Summary\nRest of note.');
+	});
+
+	it('does not strip the first paragraph when TL;DR is disabled and no explicit TL;DR exists', () => {
+		const { content } = renderVideoNote(
+			transcript as any,
+			'thumb.png',
+			'https://youtube.com/watch?v=123',
+			'Intro paragraph that should stay.\n\n## Mindmap\n```mermaid\nmindmap\n  root((Central idea))\n```',
+			{ transcriptMode: 'none', includeFrontmatter: false, tldrCalloutAtTop: false },
+		);
+
+		expect(content).not.toContain('> [!summary] TL;DR');
+		expect(content).toContain('Intro paragraph that should stay.');
+	});
+
+	it('does not warn about a missing declared TL;DR when the callout is disabled', () => {
+		const template = {
+			id: 'general' as const,
+			label: 'Test template',
+			subtitle: '',
+			body: '',
+			sections: [
+				{ id: 'tldr', heading: 'TL;DR', required: true, description: 'One line.' },
+				{ id: 'summary', heading: 'Summary', required: true, description: 'Body.' },
+			],
+		};
+
+		const { content, warnings } = renderVideoNote(
+			transcript as any,
+			'thumb.png',
+			'https://youtube.com/watch?v=123',
+			'## Summary\nRest of note.',
+			{ transcriptMode: 'none', includeFrontmatter: false, tldrCalloutAtTop: false },
+			template,
+		);
+
+		expect(content).not.toContain('> [!summary] TL;DR');
+		expect(content).toContain('## Summary\nRest of note.');
+		expect(warnings.some((warning) => warning.includes('TL;DR'))).toBe(false);
 	});
 
 	it('decodes HTML entities inside Mermaid blocks so mindmaps render the intended text', () => {
