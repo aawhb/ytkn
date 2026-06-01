@@ -48,10 +48,15 @@ type PlayerEnvelope = {
 	};
 };
 
+type TextRenderer = {
+	simpleText?: string;
+	runs?: Array<{ text?: string }>;
+};
+
 type PlaylistRenderer = {
 	videoId?: string;
-	index?: { simpleText?: string };
-	indexText?: { simpleText?: string; runs?: Array<{ text?: string }> };
+	index?: TextRenderer;
+	indexText?: TextRenderer;
 	title?: unknown;
 };
 
@@ -89,12 +94,6 @@ const INNER_TUBE_CONTEXT = {
 		gl: 'US',
 	},
 };
-
-const INITIAL_DATA_MARKERS = [
-	'var ytInitialData = ',
-	'window["ytInitialData"] = ',
-	'ytInitialData = ',
-];
 
 function browserHeaders(): Record<string, string> {
 	return { 'Accept-Language': 'en-US,en;q=0.9' };
@@ -146,89 +145,6 @@ function extractUrlMatch(text: string, regex: RegExp): string | null {
 	return match ? match[1] : null;
 }
 
-function readJsonAssignment(html: string): unknown {
-	for (const marker of INITIAL_DATA_MARKERS) {
-		const markerIndex = html.indexOf(marker);
-		if (markerIndex === -1) {
-			continue;
-		}
-
-		const objectStart = html.indexOf('{', markerIndex + marker.length);
-		if (objectStart === -1) {
-			continue;
-		}
-
-		const jsonText = readBalancedObjectText(html, objectStart);
-		if (!jsonText) {
-			continue;
-		}
-
-		try {
-			return JSON.parse(jsonText) as unknown;
-		} catch {
-			continue;
-		}
-	}
-
-	throw new Error('Failed to extract playlist metadata from YouTube page');
-}
-
-function readBalancedObjectText(source: string, startIndex: number): string | null {
-	let depth = 0;
-	let insideString = false;
-	let escaped = false;
-
-	for (let index = startIndex; index < source.length; index += 1) {
-		const char = source[index];
-
-		if (insideString) {
-			if (escaped) {
-				escaped = false;
-				continue;
-			}
-
-			if (char === '\\') {
-				escaped = true;
-				continue;
-			}
-
-			if (char === '"') {
-				insideString = false;
-			}
-
-			continue;
-		}
-
-		if (char === '"') {
-			insideString = true;
-			continue;
-		}
-
-		if (char === '{') {
-			depth += 1;
-			continue;
-		}
-
-		if (char === '}') {
-			depth -= 1;
-			if (depth === 0) {
-				return source.slice(startIndex, index + 1);
-			}
-		}
-	}
-
-	return null;
-}
-
-function htmlDocumentTitle(html: string): string | null {
-	const match = html.match(/<title>([^<]+)<\/title>/i);
-	if (!match) {
-		return null;
-	}
-
-	return normalizeHtmlText(match[1]).replace(/\s*-\s*YouTube$/i, '').trim() || null;
-}
-
 function playlistTitleFromPayload(payload: unknown): string | null {
 	let title: string | null = null;
 
@@ -240,6 +156,12 @@ function playlistTitleFromPayload(payload: unknown): string | null {
 		const metadata = node.playlistMetadataRenderer;
 		if (isObject(metadata) && typeof metadata.title === 'string') {
 			title = normalizeHtmlText(metadata.title);
+			return false;
+		}
+
+		const pageHeader = node.pageHeaderRenderer;
+		if (isObject(pageHeader) && typeof pageHeader.pageTitle === 'string') {
+			title = normalizeHtmlText(pageHeader.pageTitle);
 			return false;
 		}
 
@@ -318,10 +240,7 @@ function playlistVideoRenderer(node: JsonObject): PlaylistRenderer | null {
 }
 
 function playlistPosition(renderer: PlaylistRenderer, fallbackPosition: number): number {
-	const raw = renderer.index?.simpleText
-		?? renderer.indexText?.simpleText
-		?? renderer.indexText?.runs?.map((run) => run.text ?? '').join('')
-		?? '';
+	const raw = rendererText(renderer.index) ?? rendererText(renderer.indexText) ?? '';
 	const parsed = Number.parseInt(raw, 10);
 	return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackPosition;
 }
@@ -577,6 +496,20 @@ async function requestContinuation(continuation: string): Promise<unknown> {
 	return parseJsonResponse<unknown>(response.text, 'YouTube playlist continuation');
 }
 
+async function requestPlaylistBrowse(playlistId: string): Promise<unknown> {
+	const response = await requestUrl({
+		url: INNERTUBE_BROWSE_ENDPOINT,
+		method: 'POST',
+		headers: androidHeaders(),
+		body: JSON.stringify({
+			context: INNER_TUBE_CONTEXT,
+			browseId: `VL${playlistId}`,
+		}),
+	});
+
+	return parseJsonResponse<unknown>(response.text, 'YouTube playlist data');
+}
+
 async function requestCaptionLines(captionUrl: string): Promise<TranscriptLine[]> {
 	const response = await requestUrl({
 		url: captionUrl,
@@ -585,16 +518,6 @@ async function requestCaptionLines(captionUrl: string): Promise<TranscriptLine[]
 	});
 
 	return parseCaptionXml(response.text);
-}
-
-async function requestPlaylistHtml(playlistId: string): Promise<string> {
-	const response = await requestUrl({
-		url: `https://www.youtube.com/playlist?list=${playlistId}`,
-		method: 'GET',
-		headers: browserHeaders(),
-	});
-
-	return response.text;
 }
 
 async function requestOEmbedTitle(videoId: string): Promise<string> {
@@ -673,27 +596,13 @@ export class YouTubeService {
 		return parseCaptionXml(xmlContent);
 	}
 
-	static parsePlaylistFromHtml(html: string, playlistId: string): {
-		title: string;
-		entries: PlaylistEntry[];
-		continuationToken: string | null;
-	} {
-		const payload = readJsonAssignment(html);
-		const entries = new Map<string, PlaylistEntry>();
-		const continuationToken = collectPlaylistPage(payload, playlistId, entries);
-		const title = playlistTitleFromPayload(payload) ?? htmlDocumentTitle(html) ?? `Playlist ${playlistId}`;
-
-		return { title, entries: sortedEntries(entries), continuationToken };
-	}
-
 	async fetchVideoTitle(videoId: string): Promise<string> {
 		return requestOEmbedTitle(videoId);
 	}
 
 	async fetchPlaylistTitle(playlistId: string): Promise<string> {
-		const html = await requestPlaylistHtml(playlistId);
-		const payload = readJsonAssignment(html);
-		return playlistTitleFromPayload(payload) ?? htmlDocumentTitle(html) ?? `Playlist ${playlistId}`;
+		const payload = await requestPlaylistBrowse(playlistId);
+		return playlistTitleFromPayload(payload) ?? `Playlist ${playlistId}`;
 	}
 
 	async fetchVideoMetadata(url: string): Promise<TranscriptResponse> {
@@ -753,8 +662,7 @@ export class YouTubeService {
 		}
 
 		try {
-			const html = await requestPlaylistHtml(playlistId);
-			const payload = readJsonAssignment(html);
+			const payload = await requestPlaylistBrowse(playlistId);
 			const entries = await collectPlaylistEntries(payload, playlistId);
 			if (entries.length === 0) {
 				throw new Error('No videos found in this playlist');
@@ -763,7 +671,7 @@ export class YouTubeService {
 			return {
 				url,
 				playlistId,
-				title: playlistTitleFromPayload(payload) ?? htmlDocumentTitle(html) ?? `Playlist ${playlistId}`,
+				title: playlistTitleFromPayload(payload) ?? `Playlist ${playlistId}`,
 				entries,
 			};
 		} catch (error) {

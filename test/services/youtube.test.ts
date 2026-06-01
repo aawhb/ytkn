@@ -80,277 +80,6 @@ describe('YouTubeService URL parsing', () => {
 	});
 });
 
-describe('YouTubeService.parsePlaylistFromHtml', () => {
-	function htmlWithInitialData(payload: unknown, opts: { marker?: string; htmlTitle?: string } = {}): string {
-		const marker = opts.marker ?? 'var ytInitialData = ';
-		const titleTag = opts.htmlTitle !== undefined
-			? `<title>${opts.htmlTitle}</title>`
-			: '';
-		return `<!doctype html><html><head>${titleTag}</head><body><script>${marker}${JSON.stringify(payload)};</script></body></html>`;
-	}
-
-	const videoRenderer = (videoId: string, title: string, indexText?: string) => ({
-		playlistVideoRenderer: {
-			videoId,
-			title: { runs: [{ text: title }] },
-			...(indexText !== undefined ? { indexText: { simpleText: indexText } } : {}),
-		},
-	});
-
-	it('extracts entries, decodes title runs, and builds canonical playlist URLs', () => {
-		const payload = {
-			contents: [
-				videoRenderer('vid000000001', 'First &amp; intro', '1'),
-				videoRenderer('vid000000002', 'Second video', '2'),
-			],
-			metadata: {
-				playlistMetadataRenderer: { title: 'My &quot;Playlist&quot;' },
-			},
-		};
-
-		const result = YouTubeService.parsePlaylistFromHtml(
-			htmlWithInitialData(payload),
-			'PL123',
-		);
-
-		expect(result.title).toBe('My "Playlist"');
-		expect(result.entries).toEqual([
-			{
-				videoId: 'vid000000001',
-				url: 'https://www.youtube.com/watch?v=vid000000001&list=PL123',
-				position: 1,
-				title: 'First & intro',
-			},
-			{
-				videoId: 'vid000000002',
-				url: 'https://www.youtube.com/watch?v=vid000000002&list=PL123',
-				position: 2,
-				title: 'Second video',
-			},
-		]);
-		expect(result.continuationToken).toBeNull();
-	});
-
-	it('deduplicates videos repeated across the tree (e.g. sidebar + main grid)', () => {
-		const payload = {
-			contents: [videoRenderer('dupVideoIdX', 'Original')],
-			sidebar: { items: [videoRenderer('dupVideoIdX', 'Sidebar copy')] },
-		};
-
-		const result = YouTubeService.parsePlaylistFromHtml(htmlWithInitialData(payload), 'PL');
-
-		expect(result.entries).toHaveLength(1);
-		expect(result.entries[0].title).toBe('Original');
-	});
-
-	it('falls back to playlistPanelVideoRenderer when the modern renderer is absent', () => {
-		const payload = {
-			items: [
-				{
-					playlistPanelVideoRenderer: {
-						videoId: 'panelVid001',
-						title: { simpleText: 'Panel Title' },
-						indexText: { runs: [{ text: '7' }] },
-					},
-				},
-			],
-		};
-
-		const { entries } = YouTubeService.parsePlaylistFromHtml(htmlWithInitialData(payload), 'PLp');
-
-		expect(entries).toEqual([
-			{
-				videoId: 'panelVid001',
-				url: 'https://www.youtube.com/watch?v=panelVid001&list=PLp',
-				position: 7,
-				title: 'Panel Title',
-			},
-		]);
-	});
-
-	it('falls back to a sequential position when indexText is missing or unparsable', () => {
-		const payload = {
-			contents: [
-				videoRenderer('vidNoIndexA', 'A'),
-				{
-					playlistVideoRenderer: {
-						videoId: 'vidNoIndexB',
-						title: { runs: [{ text: 'B' }] },
-						indexText: { simpleText: 'not a number' },
-					},
-				},
-			],
-		};
-
-		const { entries } = YouTubeService.parsePlaylistFromHtml(htmlWithInitialData(payload), 'PL');
-
-		expect(entries.map((e) => e.position)).toEqual([1, 2]);
-	});
-
-	it('uses a "Video N" placeholder title when the renderer has no usable title', () => {
-		const payload = {
-			contents: [
-				{
-					playlistVideoRenderer: { videoId: 'noTitleVid1' },
-				},
-			],
-		};
-
-		const { entries } = YouTubeService.parsePlaylistFromHtml(htmlWithInitialData(payload), 'PL');
-
-		expect(entries[0].title).toBe('Video 1');
-	});
-
-	it('extracts the modern continuationItemRenderer token', () => {
-		const payload = {
-			contents: [
-				videoRenderer('vid000000001', 'A', '1'),
-				{
-					continuationItemRenderer: {
-						continuationEndpoint: {
-							continuationCommand: { token: 'NEXT_PAGE_TOKEN_42' },
-						},
-					},
-				},
-			],
-		};
-
-		const { continuationToken } = YouTubeService.parsePlaylistFromHtml(
-			htmlWithInitialData(payload),
-			'PL',
-		);
-
-		expect(continuationToken).toBe('NEXT_PAGE_TOKEN_42');
-	});
-
-	it('falls back to legacy nextContinuationData when continuationItemRenderer is absent', () => {
-		const payload = {
-			contents: [videoRenderer('vid000000001', 'A', '1')],
-			continuations: [
-				{ nextContinuationData: { continuation: 'LEGACY_TOKEN_99' } },
-			],
-		};
-
-		const { continuationToken } = YouTubeService.parsePlaylistFromHtml(
-			htmlWithInitialData(payload),
-			'PL',
-		);
-
-		expect(continuationToken).toBe('LEGACY_TOKEN_99');
-	});
-
-	it('decodes HTML-entity-encoded titles via playlistHeaderRenderer when the metadata renderer is missing', () => {
-		const payload = {
-			header: {
-				playlistHeaderRenderer: {
-					title: { simpleText: 'Header Title &amp; More' },
-				},
-			},
-			contents: [videoRenderer('vid000000001', 'A', '1')],
-		};
-
-		const { title } = YouTubeService.parsePlaylistFromHtml(htmlWithInitialData(payload), 'PL');
-
-		expect(title).toBe('Header Title & More');
-	});
-
-	it('falls back to the <title> tag when no in-payload title is found, stripping the trailing " - YouTube"', () => {
-		const payload = {
-			contents: [videoRenderer('vid000000001', 'A', '1')],
-		};
-		const html = htmlWithInitialData(payload, { htmlTitle: 'My Playlist - YouTube' });
-
-		const { title } = YouTubeService.parsePlaylistFromHtml(html, 'PL');
-
-		expect(title).toBe('My Playlist');
-	});
-
-	it('falls back to a "Playlist <id>" string when no title is available anywhere', () => {
-		const payload = { contents: [videoRenderer('vid000000001', 'A', '1')] };
-
-		const { title } = YouTubeService.parsePlaylistFromHtml(htmlWithInitialData(payload), 'PL999');
-
-		expect(title).toBe('Playlist PL999');
-	});
-
-	it('throws a clear error when ytInitialData cannot be located on the page', () => {
-		expect(() =>
-			YouTubeService.parsePlaylistFromHtml('<html><body>no payload here</body></html>', 'PL'),
-		).toThrow(/Failed to extract playlist metadata/);
-	});
-
-	it('recognizes the alternate window["ytInitialData"] marker variant', () => {
-		const payload = {
-			contents: [videoRenderer('vid000000001', 'A', '1')],
-			metadata: { playlistMetadataRenderer: { title: 'Alt' } },
-		};
-		const html = htmlWithInitialData(payload, { marker: 'window["ytInitialData"] = ' });
-
-		const { title, entries } = YouTubeService.parsePlaylistFromHtml(html, 'PL');
-
-		expect(title).toBe('Alt');
-		expect(entries).toHaveLength(1);
-	});
-
-	it('reads the balanced JSON correctly when the payload contains nested braces and escaped quotes', () => {
-		const payload = {
-			metadata: {
-				playlistMetadataRenderer: {
-					title: 'Curly { brace } and "quote" inside',
-				},
-			},
-			contents: [
-				{
-					playlistVideoRenderer: {
-						videoId: 'tricky00001',
-						title: { runs: [{ text: 'Has { } in title' }] },
-						indexText: { simpleText: '1' },
-					},
-				},
-			],
-		};
-
-		const html = `<script>var ytInitialData = ${JSON.stringify(payload)}; var other = { a: 1 };</script>`;
-
-		const result = YouTubeService.parsePlaylistFromHtml(html, 'PL');
-
-		expect(result.title).toBe('Curly { brace } and "quote" inside');
-		expect(result.entries[0].title).toBe('Has { } in title');
-	});
-
-	it('sorts entries by playlist position even when the tree visits them out of order', () => {
-		const payload = {
-			contents: [
-				videoRenderer('vidThirdItem', 'Third', '3'),
-				videoRenderer('vidFirstItem', 'First', '1'),
-				videoRenderer('vidSecndItem', 'Second', '2'),
-			],
-		};
-
-		const { entries } = YouTubeService.parsePlaylistFromHtml(htmlWithInitialData(payload), 'PL');
-
-		expect(entries.map((e) => e.title)).toEqual(['First', 'Second', 'Third']);
-	});
-
-	it('supports the index.simpleText shape (older grid layout)', () => {
-		const payload = {
-			contents: [
-				{
-					playlistVideoRenderer: {
-						videoId: 'oldShape001',
-						title: { runs: [{ text: 'Old' }] },
-						index: { simpleText: '5' },
-					},
-				},
-			],
-		};
-
-		const { entries } = YouTubeService.parsePlaylistFromHtml(htmlWithInitialData(payload), 'PL');
-
-		expect(entries[0].position).toBe(5);
-	});
-});
-
 describe('YouTubeService.parseTranscriptXml', () => {
 	it('parses paragraph-style captions, decoding entities and stripping inner tags', () => {
 		const xml = `<?xml version="1.0" encoding="utf-8"?>
@@ -682,10 +411,6 @@ describe('YouTubeService.fetchVideoMetadata', () => {
 });
 
 describe('YouTubeService.fetchPlaylist', () => {
-	function htmlWithInitialData(payload: unknown): string {
-		return `<!doctype html><script>var ytInitialData = ${JSON.stringify(payload)};</script>`;
-	}
-
 	function renderer(videoId: string, title: string, index: string): unknown {
 		return {
 			playlistVideoRenderer: {
@@ -696,33 +421,76 @@ describe('YouTubeService.fetchPlaylist', () => {
 		};
 	}
 
-	it('follows playlist continuation tokens and deduplicates paged entries', async () => {
+	function androidRenderer(videoId: string, title: string, index: string): unknown {
+		return {
+			playlistVideoRenderer: {
+				videoId,
+				title: { runs: [{ text: title }] },
+				index: { runs: [{ text: index }] },
+			},
+		};
+	}
+
+	it('fetches the initial playlist page through Browse JSON and follows continuations', async () => {
 		const firstPage = {
-			metadata: { playlistMetadataRenderer: { title: 'Paged Playlist' } },
-			contents: [
-				renderer('firstVideo01', 'First', '1'),
-				{
-					continuationItemRenderer: {
-						continuationEndpoint: {
-							continuationCommand: { token: 'NEXT_TOKEN' },
+			header: {
+				pageHeaderRenderer: { pageTitle: 'Paged Playlist &amp; More' },
+			},
+			contents: {
+				singleColumnBrowseResultsRenderer: {
+					tabs: [
+						{
+							tabRenderer: {
+								content: {
+									sectionListRenderer: {
+										contents: [
+											{
+												playlistVideoListRenderer: {
+													contents: [
+														androidRenderer('firstVideo01', 'First &amp; Android', '1'),
+													],
+													continuations: [
+														{
+															nextContinuationData: {
+																continuation: 'NEXT_TOKEN',
+															},
+														},
+													],
+												},
+											},
+										],
+									},
+								},
+							},
 						},
-					},
+					],
 				},
-			],
+			},
 		};
 		const secondPage = {
 			contents: [
-				renderer('firstVideo01', 'Duplicate', '1'),
-				renderer('secondVideo2', 'Second', '2'),
+				androidRenderer('firstVideo01', 'Duplicate', '1'),
+				androidRenderer('secondVideo2', 'Second', '2'),
 			],
 		};
+		const requestBodies: string[] = [];
 		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
-			if (request.url.includes('/playlist?list=PL123')) {
-				return { json: {}, text: htmlWithInitialData(firstPage) };
+			if (request.url.includes('/playlist?list=')) {
+				throw new Error('The HTML playlist endpoint should not be requested');
 			}
 
 			if (request.url.includes('/youtubei/v1/browse')) {
-				return { json: {}, text: JSON.stringify(secondPage) };
+				const body = request.body ?? '';
+				requestBodies.push(body);
+				if (body.includes('"browseId":"VLPL123"')) {
+					return { json: {}, text: JSON.stringify(firstPage) };
+				}
+
+				if (body.includes('"continuation":"NEXT_TOKEN"')) {
+					return { json: {}, text: JSON.stringify(secondPage) };
+				}
+
+				throw new Error(`Unexpected browse body: ${body}`);
 			}
 
 			throw new Error(`Unexpected request: ${request.url}`);
@@ -734,13 +502,13 @@ describe('YouTubeService.fetchPlaylist', () => {
 		expect(playlist).toEqual({
 			url: 'https://www.youtube.com/playlist?list=PL123',
 			playlistId: 'PL123',
-			title: 'Paged Playlist',
+			title: 'Paged Playlist & More',
 			entries: [
 				{
 					videoId: 'firstVideo01',
 					url: 'https://www.youtube.com/watch?v=firstVideo01&list=PL123',
 					position: 1,
-					title: 'First',
+					title: 'First & Android',
 				},
 				{
 					videoId: 'secondVideo2',
@@ -750,7 +518,39 @@ describe('YouTubeService.fetchPlaylist', () => {
 				},
 			],
 		});
-		expect(spy).toHaveBeenCalledTimes(2);
+		expect(requestBodies).toHaveLength(2);
+		expect(requestBodies[0]).toContain('"browseId":"VLPL123"');
+		expect(requestBodies[0]).not.toContain('/playlist?list=PL123');
+		expect(requestBodies[1]).toContain('"continuation":"NEXT_TOKEN"');
+		spy.mockRestore();
+	});
+
+	it('resolves playlist titles through Browse JSON', async () => {
+		const titlePayload = {
+			header: {
+				pageHeaderRenderer: { pageTitle: 'Browse Title &amp; Details' },
+			},
+		};
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			if (request.url.includes('/playlist?list=')) {
+				throw new Error('The HTML playlist endpoint should not be requested');
+			}
+
+			if (request.url.includes('/youtubei/v1/browse')) {
+				return { json: {}, text: JSON.stringify(titlePayload) };
+			}
+
+			throw new Error(`Unexpected request: ${request.url}`);
+		});
+
+		const svc = new YouTubeService();
+		const title = await svc.fetchPlaylistTitle('PLTITLE');
+
+		expect(title).toBe('Browse Title & Details');
+		expect(spy).toHaveBeenCalledWith(expect.objectContaining({
+			body: expect.stringContaining('"browseId":"VLPLTITLE"'),
+			method: 'POST',
+		}));
 		spy.mockRestore();
 	});
 
@@ -796,13 +596,22 @@ describe('YouTubeService.fetchPlaylist', () => {
 		};
 		const continuationBodies: string[] = [];
 		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
-			if (request.url.includes('/playlist?list=PLLONG')) {
-				return { json: {}, text: htmlWithInitialData(firstPage) };
+			if (request.url.includes('/playlist?list=')) {
+				throw new Error('The HTML playlist endpoint should not be requested');
 			}
 
 			if (request.url.includes('/youtubei/v1/browse')) {
-				continuationBodies.push(request.body ?? '');
-				return { json: {}, text: JSON.stringify(secondPage) };
+				const body = request.body ?? '';
+				if (body.includes('"browseId":"VLPLLONG"')) {
+					return { json: {}, text: JSON.stringify(firstPage) };
+				}
+
+				continuationBodies.push(body);
+				if (body.includes('"continuation":"PLAYLIST_NEXT_TOKEN"')) {
+					return { json: {}, text: JSON.stringify(secondPage) };
+				}
+
+				throw new Error(`Unexpected browse body: ${body}`);
 			}
 
 			throw new Error(`Unexpected request: ${request.url}`);
