@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.7.1 - 2026-06-01
+
+### Fixed
+
+- Playlist generation on mobile devices
+- Mobile branding
+
 ## 1.7.0 - 2026-05-31
 
 ### New

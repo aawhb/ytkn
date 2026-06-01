@@ -28,6 +28,16 @@ export const SUPPORT_LINKS = {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
 	{
+		version: '1.7.1',
+		date: '2026-06-01',
+		showOnUpdate: true,
+		summary: 'Bug fixes',
+		fixed: [
+			'Fix for playlists generation on mobile devices',
+			'Fix mobile branding'
+		],
+	},
+	{
 		version: '1.7.0',
 		date: '2026-05-31',
 		showOnUpdate: true,
