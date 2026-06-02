@@ -342,6 +342,53 @@ function buildMediaEmbed(
 	return `![${escapeMarkdownAltText(title)}](${url})`;
 }
 
+function fallbackVideoThumbnailUrl(videoId: string): string {
+	return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+}
+
+function resolvePlaylistThumbnailUrl(playlist: PlaylistTranscriptResponse, thumbnailUrl: string | null): string | null {
+	if (thumbnailUrl) {
+		return thumbnailUrl;
+	}
+
+	const firstTranscript = playlist.transcripts[0];
+	if (firstTranscript?.thumbnailUrl) {
+		return firstTranscript.thumbnailUrl;
+	}
+
+	const firstEntry = playlist.entries[0];
+	if (firstEntry?.thumbnailUrl) {
+		return firstEntry.thumbnailUrl;
+	}
+
+	const firstVideoId = firstTranscript?.videoId ?? firstEntry?.videoId;
+	return firstVideoId ? fallbackVideoThumbnailUrl(firstVideoId) : null;
+}
+
+function resolvePlaylistVideoEmbedUrl(playlist: PlaylistTranscriptResponse): string | null {
+	return playlist.transcripts[0]?.url ?? playlist.entries[0]?.url ?? null;
+}
+
+function buildPlaylistMediaEmbed(
+	playlist: PlaylistTranscriptResponse,
+	thumbnailUrl: string | null,
+	options?: GenerationOptions,
+): string | null {
+	const mediaEmbedMode = resolveMediaEmbedMode(options);
+
+	if (mediaEmbedMode === 'none') {
+		return null;
+	}
+
+	if (mediaEmbedMode === 'thumbnail') {
+		const resolvedThumbnailUrl = resolvePlaylistThumbnailUrl(playlist, thumbnailUrl);
+		return resolvedThumbnailUrl ? `![Thumbnail](${resolvedThumbnailUrl})` : null;
+	}
+
+	const videoUrl = resolvePlaylistVideoEmbedUrl(playlist);
+	return videoUrl ? `![${escapeMarkdownAltText(playlist.title)}](${videoUrl})` : null;
+}
+
 function buildHeader(transcript: TranscriptResponse, thumbnailUrl: string, url: string, options?: GenerationOptions, headingLevel = 1): string[] {
 	const prefix = '#'.repeat(headingLevel);
 	const header = [`${prefix} ${transcript.title}`];
@@ -847,7 +894,7 @@ export function renderPlaylistNote(
 	}
 
 	parts.push(`${mode === 'fragment' ? '##' : '#'} ${playlist.title}`);
-	const mediaEmbed = buildMediaEmbed(playlist.title, playlist.url, thumbnailUrl, options);
+	const mediaEmbed = buildPlaylistMediaEmbed(playlist, thumbnailUrl, options);
 	if (mediaEmbed) {
 		parts.push(mediaEmbed);
 	}

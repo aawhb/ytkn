@@ -101,7 +101,7 @@ export const SETTING_COPY: SharedSettingCopy = {
 	},
 	mediaEmbed: {
 		name: 'Media embed',
-		desc: 'Embed the YouTube video, thumbnail, or no media near the top of the note.',
+		desc: 'Embed the YouTube video, playlist video, thumbnail, or no media near the top of the note.',
 		options: {
 			video: 'Video',
 			thumbnail: 'Thumbnail',

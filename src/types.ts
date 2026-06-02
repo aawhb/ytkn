@@ -187,6 +187,7 @@ export interface PlaylistEntry {
 	url: string;
 	position: number;
 	title: string;
+	thumbnailUrl?: string;
 }
 
 export interface PlaylistResponse {

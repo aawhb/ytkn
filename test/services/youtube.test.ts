@@ -541,14 +541,25 @@ describe('YouTubeService.fetchPlaylist', () => {
 		};
 	}
 
-	function androidRenderer(videoId: string, title: string, index: string): unknown {
-		return {
+	function androidRenderer(videoId: string, title: string, index: string, thumbnailUrl?: string): unknown {
+		const item: any = {
 			playlistVideoRenderer: {
 				videoId,
 				title: { runs: [{ text: title }] },
 				index: { runs: [{ text: index }] },
 			},
 		};
+
+		if (thumbnailUrl) {
+			item.playlistVideoRenderer.thumbnail = {
+				thumbnails: [
+					{ url: `${thumbnailUrl}/small.jpg`, width: 120, height: 90 },
+					{ url: `${thumbnailUrl}/large.jpg`, width: 640, height: 360 },
+				],
+			};
+		}
+
+		return item;
 	}
 
 	it('fetches the initial playlist page through Browse JSON and follows continuations', async () => {
@@ -567,7 +578,7 @@ describe('YouTubeService.fetchPlaylist', () => {
 											{
 												playlistVideoListRenderer: {
 													contents: [
-														androidRenderer('firstVideo01', 'First &amp; Android', '1'),
+														androidRenderer('firstVideo01', 'First &amp; Android', '1', 'https://img.example/first'),
 													],
 													continuations: [
 														{
@@ -629,6 +640,7 @@ describe('YouTubeService.fetchPlaylist', () => {
 					url: 'https://www.youtube.com/watch?v=firstVideo01&list=PL123',
 					position: 1,
 					title: 'First & Android',
+					thumbnailUrl: 'https://img.example/first/large.jpg',
 				},
 				{
 					videoId: 'secondVideo2',

@@ -250,6 +250,7 @@ describe('GenerationService metadata-only runs', () => {
 		expect(youtubeService.fetchTranscript).not.toHaveBeenCalled();
 		const content = Array.from(contents.values()).join('\n');
 		expect(content).toContain('# Metadata Playlist');
+		expect(content).toContain('![Metadata Playlist](https://www.youtube.com/watch?v=video000001&list=PL123)');
 		expect(content).toContain('videoCount: 2');
 		expect(content).toContain('1. [Playlist Video 1](https://www.youtube.com/watch?v=video000001&list=PL123)');
 		expect(content).not.toContain('Playlist transcripts');

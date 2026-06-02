@@ -244,10 +244,11 @@ describe('renderVideoNote', () => {
 			metadataOnlyPlaylist as any,
 			null,
 			null,
-			{ transcriptMode: 'none' },
+			{ transcriptMode: 'none', mediaEmbedMode: 'thumbnail' },
 			null,
 		);
 
+		expect(content).toContain('![Thumbnail](https://img.youtube.com/vi/123/hqdefault.jpg)');
 		expect(content).toContain('videoCount: 2');
 		expect(content).not.toContain('uploadDate:');
 		expect(content).not.toContain('videoCategory:');
@@ -257,7 +258,7 @@ describe('renderVideoNote', () => {
 		expect(content).not.toContain('Playlist transcripts');
 	});
 
-	it('uses the playlist URL for default media embed when no thumbnail URL is provided', () => {
+	it('renders the first playlist video with the same Markdown embed pattern as video notes', () => {
 		const { content } = renderPlaylistNote(
 			playlist as any,
 			null,
@@ -266,8 +267,22 @@ describe('renderVideoNote', () => {
 		);
 
 		expect(content).not.toContain('![Thumbnail]');
-		expect(content).toContain('![Playlist](https://www.youtube.com/playlist?list=PL123)');
+		expect(content).not.toContain('![Playlist](https://www.youtube.com/playlist?list=PL123)');
+		expect(content).not.toContain('<iframe');
+		expect(content).toContain('![Playlist](https://youtube.com/watch?v=123)');
 		expect(content).toContain('# Playlist');
+	});
+
+	it('renders a playlist thumbnail from the first transcript when media embed is thumbnail', () => {
+		const { content } = renderPlaylistNote(
+			playlist as any,
+			null,
+			'## Summary\nPlaylist summary',
+			{ transcriptMode: 'none', mediaEmbedMode: 'thumbnail' },
+		);
+
+		expect(content).toContain('![Thumbnail](https://img.youtube.com/vi/123/hqdefault.jpg)');
+		expect(content).not.toContain('<iframe');
 	});
 
 	it('TL;DR section in a summary callout', () => {

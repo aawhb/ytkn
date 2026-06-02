@@ -71,6 +71,9 @@ type PlaylistRenderer = {
 	index?: TextRenderer;
 	indexText?: TextRenderer;
 	title?: unknown;
+	thumbnail?: {
+		thumbnails?: Thumbnail[];
+	};
 };
 
 type ThumbnailQuality = 'default' | 'medium' | 'high' | 'standard' | 'maxres';
@@ -239,11 +242,13 @@ function collectPlaylistPage(payload: unknown, playlistId: string, entries: Map<
 		if (renderer?.videoId && !entries.has(renderer.videoId)) {
 			const fallbackIndex = entries.size + 1;
 			const title = rendererText(renderer.title) ?? `Video ${fallbackIndex}`;
+			const thumbnailUrl = bestProvidedThumbnailUrl(renderer.thumbnail?.thumbnails);
 			entries.set(renderer.videoId, {
 				videoId: renderer.videoId,
 				url: `https://www.youtube.com/watch?v=${renderer.videoId}&list=${playlistId}`,
 				position: playlistPosition(renderer, fallbackIndex),
 				title: normalizeHtmlText(title),
+				...(thumbnailUrl ? { thumbnailUrl } : {}),
 			});
 		}
 
@@ -386,11 +391,15 @@ function microformatMetadata(player: PlayerEnvelope): SupplementalVideoMetadata 
 }
 
 function bestThumbnailUrl(videoId: string, thumbnails: Thumbnail[] | undefined): string {
+	return bestProvidedThumbnailUrl(thumbnails) ?? `https://img.youtube.com/vi/${videoId}/${THUMBNAIL_SLUGS.high}.jpg`;
+}
+
+function bestProvidedThumbnailUrl(thumbnails: Thumbnail[] | undefined): string | undefined {
 	const best = (thumbnails ?? [])
 		.filter((thumbnail): thumbnail is Required<Pick<Thumbnail, 'url'>> & Thumbnail => typeof thumbnail.url === 'string' && thumbnail.url.length > 0)
 		.sort((left, right) => ((right.width ?? 0) * (right.height ?? 0)) - ((left.width ?? 0) * (left.height ?? 0)))[0];
 
-	return best?.url ?? `https://img.youtube.com/vi/${videoId}/${THUMBNAIL_SLUGS.high}.jpg`;
+	return best?.url;
 }
 
 function buildTranscriptResponseFromPlayer(

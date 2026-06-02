@@ -62,6 +62,8 @@ Structure options include:
 - source metadata position at the top or bottom of the note
 - timestamp linking inside timestamped transcripts
 
+For combined playlist notes, video media mode embeds the first playlist video using the same Markdown embed pattern as video notes. Thumbnail mode uses the first video thumbnail when available.
+
 The plugin owns source identity fields, so model output cannot overwrite them.
 
 ### Frontmatter properties
