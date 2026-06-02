@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.7.2 - 2026-06-02
+
+### New
+
+- TL;DR callouts can now be generated independently from the full AI summary, including TL;DR-only notes.
+- Combined playlist mode now supports transcript-only notes without AI.
+- Video frontmatter can include `uploadDate` and `videoCategory` when available from YouTube metadata.
+
+### Improved
+
+- Combined playlist source lists now link video channel names when YouTube provides channel metadata.
+
+### Fixed
+
+- Combined playlist video embeds now use the first playlist video instead of rendering a broken playlist URL embed.
+- Combined playlist thumbnail mode now uses the first video thumbnail instead of omitting media.
+- Transcript text is now escaped before Markdown rendering so caption tokens like `<unk>` no longer break transcript callouts.
+
 ## 1.7.1 - 2026-06-01
 
 ### Fixed

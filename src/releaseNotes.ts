@@ -28,6 +28,25 @@ export const SUPPORT_LINKS = {
 
 export const RELEASE_NOTES: ReleaseNote[] = [
 	{
+		version: '1.7.2',
+		date: '2026-06-02',
+		showOnUpdate: true,
+		summary: 'Independent TL;DR generation, richer video metadata, and better combined playlist handling.',
+		new: [
+			'TL;DR callouts can now be generated independently from the full AI summary, including TL;DR-only notes.',
+			'Combined playlist mode now supports transcript-only notes without AI.',
+			'Video frontmatter can include `uploadDate` and `videoCategory` when available from YouTube metadata.',
+		],
+		improved: [
+			'Combined playlist source lists now link video channel names when YouTube provides channel metadata.',
+		],
+		fixed: [
+			'Combined playlist video embeds now use the first playlist video instead of rendering a broken playlist URL embed.',
+			'Combined playlist thumbnail mode now uses the first video thumbnail instead of omitting media.',
+			'Transcript text is now escaped before Markdown rendering so caption tokens like `<unk>` no longer break transcript callouts.',
+		],
+	},
+	{
 		version: '1.7.1',
 		date: '2026-06-01',
 		showOnUpdate: true,
