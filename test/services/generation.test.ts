@@ -226,7 +226,17 @@ describe('GenerationService metadata-only runs', () => {
 
 	it('creates combined metadata-only playlist notes without per-video caption or metadata fetches', async () => {
 		const { app, contents } = makeApp();
-		const playlist = makePlaylist();
+		const playlist = makePlaylist([
+			{
+				videoId: 'video000001',
+				url: 'https://www.youtube.com/watch?v=video000001&list=PL123',
+				position: 1,
+				title: 'Playlist Video 1',
+				author: 'Playlist Channel',
+				channelUrl: 'https://www.youtube.com/@playlist-channel',
+			},
+			{ videoId: 'video000002', url: 'https://www.youtube.com/watch?v=video000002&list=PL123', position: 2, title: 'Playlist Video 2' },
+		]);
 		const youtubeService = {
 			fetchPlaylist: vi.fn(async () => playlist),
 			fetchVideoMetadata: vi.fn(),
@@ -252,7 +262,9 @@ describe('GenerationService metadata-only runs', () => {
 		expect(content).toContain('# Metadata Playlist');
 		expect(content).toContain('![Metadata Playlist](https://www.youtube.com/watch?v=video000001&list=PL123)');
 		expect(content).toContain('videoCount: 2');
-		expect(content).toContain('1. [Playlist Video 1](https://www.youtube.com/watch?v=video000001&list=PL123)');
+		expect(content).toContain('1. [Playlist Video 1](https://www.youtube.com/watch?v=video000001&list=PL123) - [Playlist Channel](https://www.youtube.com/@playlist-channel)');
+		expect(content).toContain('2. [Playlist Video 2](https://www.youtube.com/watch?v=video000002&list=PL123)');
+		expect(content).not.toContain(' - Playlist Channel');
 		expect(content).not.toContain('Playlist transcripts');
 	});
 

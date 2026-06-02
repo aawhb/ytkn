@@ -61,9 +61,19 @@ type SupplementalVideoMetadata = {
 	videoCategory?: string;
 };
 
+type TextRun = {
+	text?: string;
+	navigationEndpoint?: {
+		browseEndpoint?: {
+			browseId?: unknown;
+			canonicalBaseUrl?: unknown;
+		};
+	};
+};
+
 type TextRenderer = {
 	simpleText?: string;
-	runs?: Array<{ text?: string }>;
+	runs?: TextRun[];
 };
 
 type PlaylistRenderer = {
@@ -71,6 +81,10 @@ type PlaylistRenderer = {
 	index?: TextRenderer;
 	indexText?: TextRenderer;
 	title?: unknown;
+	shortBylineText?: TextRenderer;
+	longBylineText?: TextRenderer;
+	ownerText?: TextRenderer;
+	bylineText?: TextRenderer;
 	thumbnail?: {
 		thumbnails?: Thumbnail[];
 	};
@@ -178,6 +192,53 @@ function extractUrlMatch(text: string, regex: RegExp): string | null {
 	return match ? match[1] : null;
 }
 
+function youtubeUrlFromPath(path: string): string {
+	if (/^https?:\/\//i.test(path)) {
+		return path;
+	}
+
+	return `https://www.youtube.com${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+function channelMetadataFromTextRenderer(value: unknown): Pick<PlaylistEntry, 'author' | 'channelUrl' | 'channelId'> {
+	const author = rendererText(value);
+	if (!author || !isObject(value) || !Array.isArray(value.runs)) {
+		return author ? { author: normalizeHtmlText(author) } : {};
+	}
+
+	for (const run of value.runs) {
+		if (!isObject(run) || !isObject(run.navigationEndpoint) || !isObject(run.navigationEndpoint.browseEndpoint)) {
+			continue;
+		}
+
+		const endpoint = run.navigationEndpoint.browseEndpoint;
+		const browseId = typeof endpoint.browseId === 'string' && endpoint.browseId ? endpoint.browseId : undefined;
+		const canonicalBaseUrl = typeof endpoint.canonicalBaseUrl === 'string' && endpoint.canonicalBaseUrl ? endpoint.canonicalBaseUrl : undefined;
+		const channelUrl = canonicalBaseUrl
+			? youtubeUrlFromPath(canonicalBaseUrl)
+			: browseId ? `https://www.youtube.com/channel/${browseId}` : undefined;
+
+		return {
+			author: normalizeHtmlText(author),
+			...(channelUrl ? { channelUrl } : {}),
+			...(browseId?.startsWith('UC') ? { channelId: browseId } : {}),
+		};
+	}
+
+	return { author: normalizeHtmlText(author) };
+}
+
+function playlistEntryChannelMetadata(renderer: PlaylistRenderer): Pick<PlaylistEntry, 'author' | 'channelUrl' | 'channelId'> {
+	for (const byline of [renderer.shortBylineText, renderer.longBylineText, renderer.ownerText, renderer.bylineText]) {
+		const metadata = channelMetadataFromTextRenderer(byline);
+		if (metadata.author) {
+			return metadata;
+		}
+	}
+
+	return {};
+}
+
 function playlistTitleFromPayload(payload: unknown): string | null {
 	let title: string | null = null;
 
@@ -243,11 +304,13 @@ function collectPlaylistPage(payload: unknown, playlistId: string, entries: Map<
 			const fallbackIndex = entries.size + 1;
 			const title = rendererText(renderer.title) ?? `Video ${fallbackIndex}`;
 			const thumbnailUrl = bestProvidedThumbnailUrl(renderer.thumbnail?.thumbnails);
+			const channelMetadata = playlistEntryChannelMetadata(renderer);
 			entries.set(renderer.videoId, {
 				videoId: renderer.videoId,
 				url: `https://www.youtube.com/watch?v=${renderer.videoId}&list=${playlistId}`,
 				position: playlistPosition(renderer, fallbackIndex),
 				title: normalizeHtmlText(title),
+				...channelMetadata,
 				...(thumbnailUrl ? { thumbnailUrl } : {}),
 			});
 		}

@@ -262,7 +262,8 @@ describe('renderVideoNote', () => {
 		expect(content).toContain('# Playlist');
 		expect(content).toContain('## Source');
 		expect(content).toContain('- Playlist: [Playlist](https://www.youtube.com/playlist?list=PL123)');
-		expect(content).toContain('1. [Video](https://youtube.com/watch?v=123) - Author');
+		expect(content).toContain('1. [Video](https://youtube.com/watch?v=123) - [Author](https://youtube.com/channel/abc)');
+		expect(content).not.toContain('1. [Video](https://youtube.com/watch?v=123) - Author');
 		expect(content).toContain('> [!note]- Playlist transcripts');
 		expect(content).toContain('> **1. Video**');
 		expect(content).not.toContain('<summary>Playlist transcripts</summary>');
@@ -321,8 +322,8 @@ describe('renderVideoNote', () => {
 		const metadataOnlyPlaylist = {
 			...playlist,
 			entries: [
-				{ videoId: '123', url: 'https://youtube.com/watch?v=123', position: 1, title: 'Video A' },
-				{ videoId: '456', url: 'https://youtube.com/watch?v=456', position: 2, title: 'Video B' },
+				{ videoId: '123', url: 'https://youtube.com/watch?v=123', position: 1, title: 'Video A', author: 'Channel A', channelUrl: 'https://www.youtube.com/@channel-a' },
+				{ videoId: '456', url: 'https://youtube.com/watch?v=456', position: 2, title: 'Video B', author: 'Channel B' },
 			],
 			transcripts: [],
 		};
@@ -340,8 +341,9 @@ describe('renderVideoNote', () => {
 		expect(content).not.toContain('uploadDate:');
 		expect(content).not.toContain('videoCategory:');
 		expect(content).toContain('- Video count: 2');
-		expect(content).toContain('1. [Video A](https://youtube.com/watch?v=123)');
+		expect(content).toContain('1. [Video A](https://youtube.com/watch?v=123) - [Channel A](https://www.youtube.com/@channel-a)');
 		expect(content).toContain('2. [Video B](https://youtube.com/watch?v=456)');
+		expect(content).not.toContain('2. [Video B](https://youtube.com/watch?v=456) - Channel B');
 		expect(content).not.toContain('Playlist transcripts');
 	});
 

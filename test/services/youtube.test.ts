@@ -541,7 +541,13 @@ describe('YouTubeService.fetchPlaylist', () => {
 		};
 	}
 
-	function androidRenderer(videoId: string, title: string, index: string, thumbnailUrl?: string): unknown {
+	function androidRenderer(
+		videoId: string,
+		title: string,
+		index: string,
+		thumbnailUrl?: string,
+		byline?: { author: string; channelId?: string; canonicalBaseUrl?: string },
+	): unknown {
 		const item: any = {
 			playlistVideoRenderer: {
 				videoId,
@@ -556,6 +562,20 @@ describe('YouTubeService.fetchPlaylist', () => {
 					{ url: `${thumbnailUrl}/small.jpg`, width: 120, height: 90 },
 					{ url: `${thumbnailUrl}/large.jpg`, width: 640, height: 360 },
 				],
+			};
+		}
+
+		if (byline) {
+			item.playlistVideoRenderer.shortBylineText = {
+				runs: [{
+					text: byline.author,
+					navigationEndpoint: {
+						browseEndpoint: {
+							...(byline.channelId ? { browseId: byline.channelId } : {}),
+							...(byline.canonicalBaseUrl ? { canonicalBaseUrl: byline.canonicalBaseUrl } : {}),
+						},
+					},
+				}],
 			};
 		}
 
@@ -578,7 +598,11 @@ describe('YouTubeService.fetchPlaylist', () => {
 											{
 												playlistVideoListRenderer: {
 													contents: [
-														androidRenderer('firstVideo01', 'First &amp; Android', '1', 'https://img.example/first'),
+														androidRenderer('firstVideo01', 'First &amp; Android', '1', 'https://img.example/first', {
+															author: 'Author &amp; Channel',
+															channelId: 'UC123',
+															canonicalBaseUrl: '/@author-channel',
+														}),
 													],
 													continuations: [
 														{
@@ -640,6 +664,9 @@ describe('YouTubeService.fetchPlaylist', () => {
 					url: 'https://www.youtube.com/watch?v=firstVideo01&list=PL123',
 					position: 1,
 					title: 'First & Android',
+					author: 'Author & Channel',
+					channelUrl: 'https://www.youtube.com/@author-channel',
+					channelId: 'UC123',
 					thumbnailUrl: 'https://img.example/first/large.jpg',
 				},
 				{

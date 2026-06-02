@@ -187,6 +187,9 @@ export interface PlaylistEntry {
 	url: string;
 	position: number;
 	title: string;
+	author?: string;
+	channelUrl?: string;
+	channelId?: string;
 	thumbnailUrl?: string;
 }
 
