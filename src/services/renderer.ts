@@ -499,6 +499,14 @@ function buildTranscriptParagraphs(lines: TranscriptLine[]): Array<{ offset: num
 	return paragraphs;
 }
 
+function escapeTranscriptMarkdownText(text: string): string {
+	return text
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/([\\`*_[\](){}#+!|])/g, '\\$1');
+}
+
 function buildTimestampDisplay(
 	offsetMs: number,
 	videoId: string | null,
@@ -523,11 +531,11 @@ function buildTranscriptBody(
 	if (transcriptMode === 'timestamped') {
 		const linkTimestamps = options?.linkTimestamps ?? false;
 		return paragraphs
-			.map((paragraph) => `${buildTimestampDisplay(paragraph.offset, transcript.videoId, linkTimestamps)} ${paragraph.text}`)
+			.map((paragraph) => `${buildTimestampDisplay(paragraph.offset, transcript.videoId, linkTimestamps)} ${escapeTranscriptMarkdownText(paragraph.text)}`)
 			.join('\n\n');
 	}
 
-	return paragraphs.map((paragraph) => paragraph.text).join('\n\n');
+	return paragraphs.map((paragraph) => escapeTranscriptMarkdownText(paragraph.text)).join('\n\n');
 }
 
 function buildTranscriptDetails(
@@ -571,7 +579,7 @@ function buildPlaylistTranscriptDetails(
 	transcriptMode: GenerationOptions['transcriptMode'],
 	options: GenerationOptions | undefined,
 ): string {
-	const sections = playlist.transcripts.map((transcript, index) => `### ${index + 1}. ${transcript.title}
+	const sections = playlist.transcripts.map((transcript, index) => `**${index + 1}. ${normalizeReportInline(transcript.title)}**
 
 ${buildTranscriptBody(transcript, transcriptMode, options)}`);
 

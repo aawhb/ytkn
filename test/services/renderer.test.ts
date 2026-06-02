@@ -98,6 +98,26 @@ describe('renderVideoNote', () => {
 		expect(content).not.toContain('The first paper is from Pan\n>\n> and team');
 	});
 
+	it('escapes transcript text that looks like Markdown or HTML', () => {
+		const riskyTranscript = {
+			...transcript,
+			lines: [
+				{ text: 'K is <unk>10 and * [Music] with [label](target), #tag, C++ and A | B!', offset: 0 },
+			],
+		};
+
+		const { content } = renderVideoNote(riskyTranscript as any, 'thumb.png', 'https://youtube.com/watch?v=123', null, { transcriptMode: 'readable' });
+
+		expect(content).toContain('&lt;unk&gt;10');
+		expect(content).toContain('\\* \\[Music\\]');
+		expect(content).toContain('\\[label\\]\\(target\\)');
+		expect(content).toContain('\\#tag');
+		expect(content).toContain('C\\+\\+');
+		expect(content).toContain('A \\| B\\!');
+		expect(content).not.toContain('<unk>');
+		expect(content).not.toContain('* [Music]');
+	});
+
 	it('keeps mid-sentence caption continuations in the same paragraph', () => {
 		const readableTranscript = {
 			...transcript,
@@ -147,6 +167,25 @@ describe('renderVideoNote', () => {
 
 		expect(content).toContain('**[0:00](https://youtu.be/123?t=0s)** Hello world.');
 		expect(content).toContain('**[1:15](https://youtu.be/123?t=75s)** Next point.');
+	});
+
+	it('keeps timestamp links intact while escaping timestamped transcript text', () => {
+		const timestampedTranscript = {
+			...transcript,
+			lines: [
+				{ text: 'Hello <unk>* [Music].', offset: 0 },
+			],
+		};
+		const { content } = renderVideoNote(
+			timestampedTranscript as any,
+			'thumb.png',
+			'https://youtube.com/watch?v=123',
+			null,
+			{ transcriptMode: 'timestamped', linkTimestamps: true },
+		);
+
+		expect(content).toContain('**[0:00](https://youtu.be/123?t=0s)** Hello &lt;unk&gt;\\* \\[Music\\].');
+		expect(content).not.toContain('Hello <unk>* [Music].');
 	});
 
 	it('excludes collapsed transcript when disabled', () => {
@@ -225,9 +264,57 @@ describe('renderVideoNote', () => {
 		expect(content).toContain('- Playlist: [Playlist](https://www.youtube.com/playlist?list=PL123)');
 		expect(content).toContain('1. [Video](https://youtube.com/watch?v=123) - Author');
 		expect(content).toContain('> [!note]- Playlist transcripts');
+		expect(content).toContain('> **1. Video**');
 		expect(content).not.toContain('<summary>Playlist transcripts</summary>');
 		expect(content).not.toContain('```text');
 		expect(content).not.toContain('Ignore me');
+	});
+
+	it('renders combined playlist transcripts in one playlist callout', () => {
+		const multiTranscriptPlaylist = {
+			...playlist,
+			entries: [
+				{ videoId: '123', url: 'https://youtube.com/watch?v=123', position: 1, title: 'Video' },
+				{ videoId: '456', url: 'https://youtube.com/watch?v=456', position: 2, title: 'Second Video' },
+			],
+			transcripts: [
+				{
+					...transcript,
+					title: 'Video',
+					lines: [
+						{ text: 'First paragraph.', offset: 0 },
+						{ text: 'Second paragraph.', offset: 10000 },
+					],
+				},
+				{
+					...transcript,
+					url: 'https://youtube.com/watch?v=456',
+					videoId: '456',
+					title: 'Second Video',
+					lines: [
+						{ text: 'Another transcript paragraph.', offset: 0 },
+					],
+				},
+			],
+		};
+
+		const { content } = renderPlaylistNote(
+			multiTranscriptPlaylist as any,
+			'thumb.png',
+			null,
+			{ transcriptMode: 'readable' },
+		);
+
+		expect(content).toContain('> [!note]- Playlist transcripts');
+		expect(content).toContain('> **1. Video**');
+		expect(content).toContain('> First paragraph.');
+		expect(content).toContain('> Second paragraph.');
+		expect(content).toContain('> **2. Second Video**');
+		expect(content).toContain('> Another transcript paragraph.');
+		expect(content).not.toContain('## Playlist transcripts');
+		expect(content).not.toContain('> [!note]- 1. Video');
+		expect(content).not.toContain('> ###');
+		expect(content).not.toContain('\n### 2. Second Video');
 	});
 
 	it('renders metadata-only playlist notes from playlist entries', () => {

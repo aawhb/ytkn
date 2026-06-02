@@ -28,6 +28,27 @@ describe('output normalizer', () => {
         expect(sanitized).not.toContain('Model source');
     });
 
+    it('decodes common HTML entities inside Mermaid blocks only', () => {
+        const input = [
+            '## Summary',
+            'Body &quot;outside Mermaid&quot; stays encoded.',
+            '',
+            '## Mindmap',
+            '```mermaid',
+            'mindmap',
+            '  root((&quot;Quoted&quot; &lt;Topic&gt; &amp; &#65;))',
+            '```',
+        ].join('\n');
+
+        const sanitized = sanitizeModelOutput(input);
+
+        expect(sanitized).toContain('Body &quot;outside Mermaid&quot; stays encoded.');
+        expect(sanitized).toContain('root(("Quoted" <Topic> & A))');
+        expect(sanitized).not.toContain('&quot;Quoted&quot;');
+        expect(sanitized).not.toContain('&lt;Topic&gt;');
+        expect(sanitized).not.toContain('&amp; &#65;');
+    });
+
     it('normalizes adjacent memorable quote callouts', () => {
         const sanitized = sanitizeModelOutput([
             '## Summary',
