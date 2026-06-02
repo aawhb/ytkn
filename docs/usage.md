@@ -44,9 +44,9 @@ If a multi-URL batch includes a playlist and playlist handling is set to **Per v
 Playlist URLs support two modes:
 
 - **Per video** - create one note per video in the playlist
-- **Combined** - create one note that synthesizes the whole playlist
+- **Combined** - create one note for the whole playlist
 
-Combined playlist notes require at least one AI output unless both AI and transcript inclusion are off. In that metadata-only case, the combined note is a playlist/source index. Per-video playlist notes work with AI-assisted, transcript-only, or metadata-only output.
+Both playlist modes support AI-assisted, transcript-only, and metadata-only output. Metadata-only output is used when both AI and transcript inclusion are off.
 
 Important playlist rules:
 

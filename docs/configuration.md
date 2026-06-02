@@ -129,7 +129,7 @@ AI-related settings cover:
 
 When **Use AI** is off, the plugin generates renderer-owned metadata and does not apply template tags or AI frontmatter. If transcript inclusion is also off, the result is a metadata/source-only note and captions are not required. When **Use AI** is on but **AI summary** is off, AI can still generate enabled outputs such as the TL;DR summary callout, mindmaps, or memorable quotes without applying the selected content template.
 
-Combined playlist notes require at least one AI output unless both **Use AI** and transcript inclusion are off. In that metadata-only case, the combined playlist note is a playlist/source index without per-video transcript fetching.
+Combined playlist mode creates one playlist note. It supports AI-assisted output, transcript-only output, and metadata/source-only output when both **Use AI** and transcript inclusion are off.
 
 Template-specific runtime controls show up only when they apply to the selected template. For the decision guide, see [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md).
 

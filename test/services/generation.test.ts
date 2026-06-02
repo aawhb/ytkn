@@ -268,20 +268,87 @@ describe('GenerationService metadata-only runs', () => {
 		expect(content).not.toContain('Playlist transcripts');
 	});
 
-	it('still rejects combined transcript-only playlist runs', async () => {
-		const { app } = makeApp();
+	it('creates combined transcript-only playlist notes without AI', async () => {
+		const { app, contents } = makeApp();
+		const playlist = makePlaylist();
 		const youtubeService = {
-			fetchPlaylist: vi.fn(),
+			fetchPlaylist: vi.fn(async () => playlist),
 			fetchVideoMetadata: vi.fn(),
-			fetchTranscript: vi.fn(),
+			fetchTranscript: vi.fn(async (url: string) => ({
+				transcript: makeTranscript(url, {
+					title: `Transcript ${new URL(url).searchParams.get('v')}`,
+					lines: [{ text: `Transcript text for ${new URL(url).searchParams.get('v')} with <unk>* [Music].`, offset: 0 }],
+				}),
+				languageCode: 'en',
+			})),
 		};
 		const service = new GenerationService(app, youtubeService as any, makeSettings(), vi.fn());
 
-		await expect(service.executeRun(
+		const entry = await service.executeRun(
 			makeRun(PLAYLIST_URL, metadataOptions({ transcriptMode: 'readable', playlistMode: 'combined' }), 'playlist'),
 			new AbortController().signal,
-		)).rejects.toThrow('Combined playlist notes require AI generation unless AI and transcript are both off');
-		expect(youtubeService.fetchPlaylist).not.toHaveBeenCalled();
+		);
+
+		expect(entry.kind).toBe('playlist');
+		if (entry.kind !== 'playlist') throw new Error('Expected playlist report entry');
+		expect(entry.outcome).toBe('completed');
+		expect(entry.notePath).toBeDefined();
+		expect(entry.entries).toHaveLength(2);
+		expect(entry.entries.every((item) => item.outcome === 'completed')).toBe(true);
+		expect(entry.entries.every((item) => item.notePath === entry.notePath)).toBe(true);
+		expect(youtubeService.fetchTranscript).toHaveBeenCalledTimes(2);
+		expect(youtubeService.fetchVideoMetadata).not.toHaveBeenCalled();
+		expect(providerMocks.summarizeVideo).not.toHaveBeenCalled();
+		const content = Array.from(contents.values()).join('\n');
+		expect(content).toContain('# Metadata Playlist');
+		expect(content).toContain('1. [Transcript video000001](https://www.youtube.com/watch?v=video000001&list=PL123) - [Metadata Channel](https://www.youtube.com/channel/UC123)');
+		expect(content).toContain('> [!note]- Playlist transcripts');
+		expect(content).toContain('> **1. Transcript video000001**');
+		expect(content).toContain('> Transcript text for video000001 with &lt;unk&gt;\\* \\[Music\\].');
+		expect(content).toContain('> **2. Transcript video000002**');
+		expect(content).toContain('> Transcript text for video000002 with &lt;unk&gt;\\* \\[Music\\].');
+		expect(content).not.toContain('<unk>* [Music]');
+		expect(content).not.toContain('## Summary');
+	});
+
+	it('skips missing transcripts in combined transcript-only playlist notes', async () => {
+		const { app, contents } = makeApp();
+		const playlist = makePlaylist();
+		const youtubeService = {
+			fetchPlaylist: vi.fn(async () => playlist),
+			fetchVideoMetadata: vi.fn(),
+			fetchTranscript: vi.fn(async (url: string) => {
+				if (url.includes('video000001')) {
+					throw new Error('Failed to fetch transcript: unavailable');
+				}
+				return {
+					transcript: makeTranscript(url, {
+						title: 'Transcript video000002',
+						lines: [{ text: 'Second transcript text.', offset: 0 }],
+					}),
+					languageCode: 'en',
+				};
+			}),
+		};
+		const service = new GenerationService(app, youtubeService as any, makeSettings(), vi.fn());
+
+		const entry = await service.executeRun(
+			makeRun(PLAYLIST_URL, metadataOptions({ transcriptMode: 'readable', playlistMode: 'combined' }), 'playlist'),
+			new AbortController().signal,
+		);
+
+		expect(entry.kind).toBe('playlist');
+		if (entry.kind !== 'playlist') throw new Error('Expected playlist report entry');
+		expect(entry.outcome).toBe('completed');
+		expect(entry.entries.map((item) => item.outcome)).toEqual(['skipped', 'completed']);
+		expect(entry.entries[0].notePath).toBeUndefined();
+		expect(entry.entries[1].notePath).toBe(entry.notePath);
+		expect(providerMocks.summarizeVideo).not.toHaveBeenCalled();
+		const content = Array.from(contents.values()).join('\n');
+		expect(content).toContain('> [!note]- Playlist transcripts');
+		expect(content).toContain('> **1. Transcript video000002**');
+		expect(content).toContain('> Second transcript text.');
+		expect(content).not.toContain('video000001');
 	});
 
 	it('creates a TL;DR-only single video note with AI summary disabled', async () => {

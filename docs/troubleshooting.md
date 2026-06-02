@@ -25,11 +25,9 @@ Behavior to expect:
 - single-video runs fail with a clear message
 - playlist runs either skip or stop, depending on your setting
 
-## A combined playlist note will not start
+## A combined playlist note is hard to navigate
 
-Combined playlist notes require at least one AI output unless both AI and transcript inclusion are off.
-
-If you want a transcript-only playlist workflow, switch playlist handling to **Per video** instead. If you want a playlist/source index without captions, turn both AI and transcript inclusion off.
+Combined playlist mode puts playlist output into one note. For a smaller note per source video, switch playlist handling to **Per video**.
 
 ## My local model or provider will not connect
 

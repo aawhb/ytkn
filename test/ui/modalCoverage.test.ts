@@ -494,7 +494,7 @@ describe('GenerationOptionsModal submit — multi-URL', () => {
 		expect(options.transcriptMode).toBe('none');
 	});
 
-	it('blocks combined playlist transcript-only output', () => {
+	it('allows combined playlist transcript-only output', () => {
 		const modal = openWithUrl(PLAYLIST_URL, {
 			useAi: false,
 			generateAiSummary: false,
@@ -504,7 +504,20 @@ describe('GenerationOptionsModal submit — multi-URL', () => {
 			playlistMode: 'combined',
 		});
 		clickSubmit(modal);
-		expect(onSubmit).not.toHaveBeenCalled();
+		expect(onSubmit).toHaveBeenCalledOnce();
+		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
+		expect(options.playlistMode).toBe('combined');
+		expect(options.useAi).toBe(false);
+		expect(options.transcriptMode).toBe('readable');
+	});
+
+	it('uses a neutral hint for playlist URLs', () => {
+		const modal = openWithUrl(PLAYLIST_URL);
+		const text = modal.contentEl.textContent ?? '';
+
+		expect(text).toContain('Playlist detected.');
+		expect(text).not.toContain('requires AI');
+		expect(text).not.toContain('transcript-only');
 	});
 
 	it('multi-URL valid paste passes all URLs to onSubmit', () => {

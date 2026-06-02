@@ -83,7 +83,6 @@ export class GenerationService {
 
 		try {
 			let effectiveOptions = run.options;
-			this.validateGenerationOptions(run.url, effectiveOptions);
 			const aiContext = this.buildAiExecutionContext(effectiveOptions);
 
 			const initialTarget = await this.resolveInitialTarget(run);
@@ -225,17 +224,6 @@ export class GenerationService {
 			provider,
 			promptService: this.createPromptService(this.createInstructionConfig(effectiveOptions), effectiveOptions),
 		};
-	}
-
-	private validateGenerationOptions(url: string, effectiveOptions: GenerationOptions): void {
-		if (
-			YouTubeService.isPlaylistUrl(url) &&
-			effectiveOptions.playlistMode === 'combined' &&
-			!this.shouldUseAi(effectiveOptions) &&
-			!this.isMetadataOnlyRun(effectiveOptions)
-		) {
-			throw new Error('Combined playlist notes require AI generation unless AI and transcript are both off. Use per-video mode for transcript-only runs.');
-		}
 	}
 
 	private wantsUseAi(effectiveOptions: GenerationOptions): boolean {
@@ -802,6 +790,112 @@ export class GenerationService {
 		return { notePath, entries };
 	}
 
+	private async generateCombinedTranscriptPlaylistNote(
+		playlist: PlaylistResponse,
+		initialTarget: NoteInsertionTarget | null,
+		effectiveOptions: GenerationOptions,
+		progressState: ProgressState,
+		signal: AbortSignal,
+	): Promise<{ notePath: string | null; entries: PlaylistRunReportEntry[] }> {
+		if ((effectiveOptions.noteDestinationMode === 'current-note' || effectiveOptions.noteDestinationMode === 'append-to-active-note') && !initialTarget) {
+			throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
+		}
+
+		if (signal.aborted) {
+			throw signal.reason;
+		}
+
+		const isAppendMode = effectiveOptions.noteDestinationMode === 'append-to-active-note';
+		const target: NoteInsertionTarget = effectiveOptions.noteDestinationMode === 'folder'
+			? await this.createFolderTarget(
+				effectiveOptions.noteDestinationFolder ?? '',
+				this.buildCombinedPlaylistBaseName(playlist, effectiveOptions),
+			)
+			: initialTarget!;
+
+		const titleToRenameTo = effectiveOptions.noteDestinationMode === 'current-note' && effectiveOptions.useVideoTitleAsNoteName
+			? playlist.title
+			: null;
+
+		const transcripts: TranscriptResponse[] = [];
+		const reportEntries: PlaylistRunReportEntry[] = [];
+
+		for (const [index, entry] of playlist.entries.entries()) {
+			if (signal.aborted) {
+				this.appendCanceledEntries(playlist.entries, reportEntries, index);
+				break;
+			}
+
+			try {
+				if (!isAppendMode) {
+					await this.showProgress(target, entry.url, `Fetching transcript ${index + 1}/${playlist.entries.length}...`, progressState);
+				}
+				this.onStatusBar(`Fetching playlist transcript ${index + 1}/${playlist.entries.length}...`);
+				const transcriptResult = await this.fetchTranscriptForUrl(entry.url, effectiveOptions, signal);
+				const transcript = transcriptResult.transcript;
+
+				transcripts.push(transcript);
+				reportEntries.push(this.buildPlaylistReportEntry(entry, 'completed', {
+					title: transcript.title,
+					transcriptLanguageCode: transcriptResult.languageCode,
+				}));
+			} catch (error) {
+				const classified = this.classifyPlaylistEntryError(error, effectiveOptions, signal);
+				if (classified.kind === 'cancel') {
+					reportEntries.push(this.buildPlaylistReportEntry(entry, 'canceled', { reason: classified.message }));
+					this.appendCanceledEntries(playlist.entries, reportEntries, index + 1);
+					break;
+				}
+				if (classified.kind === 'transcript-fail') {
+					throw error;
+				}
+				reportEntries.push(this.buildPlaylistReportEntry(
+					entry,
+					classified.kind === 'transcript-skip' ? 'skipped' : 'failed',
+					{ reason: classified.message },
+				));
+			}
+		}
+
+		if (signal.aborted) {
+			await this.deleteTargetIfDisposable(target);
+			const completed = reportEntries.filter((e) => e.outcome === 'completed').length;
+			const canceled = reportEntries.filter((e) => e.outcome === 'canceled').length;
+			new Notice(`Playlist generation canceled (${completed} completed, ${canceled} canceled).`);
+			return { notePath: null, entries: reportEntries };
+		}
+
+		if (transcripts.length === 0) {
+			await this.deleteTargetIfDisposable(target);
+			throw new Error('No playlist transcripts could be fetched.');
+		}
+
+		if (!isAppendMode) {
+			await this.showProgress(target, playlist.url, 'Rendering playlist transcripts...', progressState);
+		}
+		this.onStatusBar('Rendering playlist transcripts...');
+
+		const playlistWithTranscripts: PlaylistTranscriptResponse = { ...playlist, transcripts };
+		const thumbnailUrl = transcripts[0] ? YouTubeService.getThumbnailUrl(transcripts[0].videoId) : null;
+		const { content } = renderPlaylistNote(playlistWithTranscripts, thumbnailUrl, null, effectiveOptions, null, isAppendMode ? 'fragment' : 'standalone');
+
+		if (isAppendMode) {
+			this.onStatusBar('Rendering note...');
+			await this.appendContentToTarget(target, content);
+			target.finalized = true;
+		} else {
+			await this.finalizeTargetNote(target, content, titleToRenameTo, progressState);
+		}
+
+		const notePath = target.file.path;
+		const finalEntries = reportEntries.map((e) => (e.outcome === 'completed' ? { ...e, notePath } : e));
+		const completed = finalEntries.filter((e) => e.outcome === 'completed').length;
+		const skipped = finalEntries.filter((e) => e.outcome === 'skipped').length;
+		const failed = finalEntries.filter((e) => e.outcome === 'failed').length;
+		new Notice(`Playlist transcript note generated (${completed} completed, ${skipped} skipped, ${failed} failed).`);
+		return { notePath, entries: finalEntries };
+	}
+
 	private async generateCombinedPlaylistNote(
 		playlist: PlaylistResponse,
 		initialTarget: NoteInsertionTarget | null,
@@ -815,7 +909,7 @@ export class GenerationService {
 		}
 
 		if (!aiContext) {
-			throw new Error('Combined playlist notes require AI generation unless AI and transcript are both off.');
+			return this.generateCombinedTranscriptPlaylistNote(playlist, initialTarget, effectiveOptions, progressState, signal);
 		}
 
 		if ((effectiveOptions.noteDestinationMode === 'current-note' || effectiveOptions.noteDestinationMode === 'append-to-active-note') && !initialTarget) {
