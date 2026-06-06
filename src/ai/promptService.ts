@@ -7,7 +7,7 @@ import {
 } from '../types';
 import {
 	getTemplate,
-} from './templates';
+} from './templates/registry';
 import { FALLBACK_CONTEXT_WINDOW_TOKENS } from '../defaults';
 
 const ESTIMATED_CHARS_PER_TOKEN = 4;

@@ -6,3 +6,7 @@ export function normalizeRequestTimeoutMs(timeoutMs?: number): number {
 	}
 	return Math.round(timeoutMs as number);
 }
+
+export function assertNever(value: never): never {
+	throw new Error(`Unsupported provider type: ${String(value)}`);
+}

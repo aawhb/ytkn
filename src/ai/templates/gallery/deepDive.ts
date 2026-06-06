@@ -1,4 +1,4 @@
-import type { Template } from '../../types';
+import type { Template } from '../../../types';
 
 export const deepDiveTemplate: Template = {
 	id: 'deep-dive',

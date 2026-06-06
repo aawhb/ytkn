@@ -1,10 +1,10 @@
 import type { ControlDeclaration, InstructionTemplate, Template } from '../../types';
-import { generalTemplate } from './general';
-import { studyTemplate } from './study';
-import { fullExtractTemplate } from './fullExtract';
-import { deepDiveTemplate } from './deepDive';
-import { researchTemplate } from './research';
-import { implementationTemplate } from './implementation';
+import { generalTemplate } from './gallery/general';
+import { studyTemplate } from './gallery/study';
+import { fullExtractTemplate } from './gallery/fullExtract';
+import { deepDiveTemplate } from './gallery/deepDive';
+import { researchTemplate } from './gallery/research';
+import { implementationTemplate } from './gallery/implementation';
 
 export const TEMPLATES: Template[] = [
 	generalTemplate,

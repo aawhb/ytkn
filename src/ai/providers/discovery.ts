@@ -3,6 +3,7 @@ import { requestUrl } from 'obsidian';
 import { DEFAULT_OPENAI_COMPATIBLE_URL } from '../../defaults';
 import { DiscoveredModel, ProviderConfig } from '../../types';
 import { fetchFn, getErrorMessage } from '../../utils';
+import { assertNever } from './shared';
 
 const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -146,8 +147,4 @@ export async function discoverProviderModels(provider: ProviderConfig): Promise<
 		default:
 			return assertNever(provider.type);
 	}
-}
-
-function assertNever(value: never): never {
-	throw new Error(`Unsupported provider type: ${String(value)}`);
 }

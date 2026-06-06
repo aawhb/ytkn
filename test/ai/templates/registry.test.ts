@@ -5,8 +5,8 @@ import {
 	getTemplate,
 	isInstructionTemplate,
 	listTemplateChoices,
-} from '../../src/services/templates';
-import type { InstructionTemplate } from '../../src/types';
+} from '../../../src/ai/templates/registry';
+import type { InstructionTemplate } from '../../../src/types';
 
 const ALL_IDS: InstructionTemplate[] = [
 	'general',

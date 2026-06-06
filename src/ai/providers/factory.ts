@@ -2,6 +2,7 @@ import { AIModelProvider, ModelConfig } from '../../types';
 import { AnthropicProvider } from './anthropic';
 import { GeminiProvider } from './gemini';
 import { OpenAIProvider } from './openai';
+import { assertNever } from './shared';
 
 export class ProvidersFactory {
 	static createProvider(
@@ -28,8 +29,4 @@ export class ProvidersFactory {
 				return assertNever(type);
 		}
 	}
-}
-
-function assertNever(value: never): never {
-	throw new Error(`Unsupported provider type: ${String(value)}`);
 }

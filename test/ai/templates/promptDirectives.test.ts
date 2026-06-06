@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { PromptService } from '../../src/services/prompt';
-import * as templates from '../../src/services/templates';
-import type { Template, TranscriptResponse } from '../../src/types';
+import { PromptService } from '../../../src/ai/promptService';
+import * as templates from '../../../src/ai/templates/registry';
+import type { Template, TranscriptResponse } from '../../../src/types';
 
 const transcript: TranscriptResponse = {
 	url: 'https://youtube.com/watch?v=abc',
