@@ -84,17 +84,17 @@ vi.mock('obsidian', () => {
     return { Editor: class { }, MarkdownView, Notice, Plugin, TFile, setIcon: mocks.setIcon };
 });
 
-vi.mock('../src/ui/settings', () => ({
+vi.mock('../src/ui/settings/settingsTab', () => ({
     SettingsTab: class {
         constructor(public app: unknown, public plugin: unknown) { }
     },
 }));
 
-vi.mock('../src/ui/notifications', () => ({
+vi.mock('../src/ui/shared/notifications', () => ({
     notifyError: mocks.notifyError,
 }));
 
-vi.mock('../src/services/settings', () => ({
+vi.mock('../src/settings/settingsService', () => ({
     SettingsService: class {
         loadSettings = vi.fn(async () => undefined);
         hasSavedSettings = vi.fn(() => true);
@@ -140,14 +140,14 @@ vi.mock('../src/services/settings', () => ({
     },
 }));
 
-vi.mock('../src/services/youtube', () => ({
+vi.mock('../src/youtube/youtubeService', () => ({
     YouTubeService: class {
         static isYouTubeUrl = vi.fn(() => false);
         static classifyUrls = vi.fn((urls: string[]) => urls.map(() => 'video'));
     },
 }));
 
-vi.mock('../src/services/generation', () => ({
+vi.mock('../src/generation/generationService', () => ({
     INSERT_AT_CARET_REQUIRES_NOTE: 'Open a note before inserting at the caret.',
     GenerationService: class {
         executeRun = vi.fn();
@@ -156,7 +156,7 @@ vi.mock('../src/services/generation', () => ({
     },
 }));
 
-vi.mock('../src/services/runQueue', () => ({
+vi.mock('../src/queue/runQueueService', () => ({
     RunQueueService: class {
         private listener?: (event: unknown) => void;
         cancelAll = vi.fn();
@@ -176,7 +176,7 @@ vi.mock('../src/services/runQueue', () => ({
     buildFolderTargetPolicy: vi.fn(() => ({ kind: 'folder' })),
 }));
 
-vi.mock('../src/ui/modals/GenerationOptionsModal', () => ({
+vi.mock('../src/ui/generation/generationOptionsModal', () => ({
     GenerationOptionsModal: class {
         constructor(...args: unknown[]) {
             mocks.modalOpenEvents.push({ kind: 'generation-created', args });
@@ -187,7 +187,7 @@ vi.mock('../src/ui/modals/GenerationOptionsModal', () => ({
     },
 }));
 
-vi.mock('../src/ui/modals/QueueModal', () => ({
+vi.mock('../src/ui/queue/queueModal', () => ({
     QueueModal: class {
         constructor(...args: unknown[]) {
             mocks.modalOpenEvents.push({ kind: 'queue-created', args });
@@ -198,7 +198,7 @@ vi.mock('../src/ui/modals/QueueModal', () => ({
     },
 }));
 
-vi.mock('../src/ui/modals/WhatsNewModal', () => ({
+vi.mock('../src/ui/releaseNotes/whatsNewModal', () => ({
     WhatsNewModal: class {
         constructor(...args: unknown[]) {
             mocks.modalOpenEvents.push({ kind: 'whats-new-created', args });

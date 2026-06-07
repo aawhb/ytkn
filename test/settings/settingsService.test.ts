@@ -1,0 +1,324 @@
+import { describe, expect, it, vi } from 'vitest';
+import { App } from 'obsidian';
+import { SettingsService } from '../../src/settings/settingsService';
+import {
+	DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST,
+	DEFAULT_GENERATE_AI_SUMMARY,
+	DEFAULT_INCLUDE_MEMORABLE_QUOTES,
+	DEFAULT_INCLUDE_MINDMAP,
+	DEFAULT_INSTRUCTION_MODE,
+	DEFAULT_INSTRUCTION_TEMPLATE,
+	DEFAULT_MANUAL_INSTRUCTIONS,
+	DEFAULT_MEDIA_EMBED_MODE,
+	DEFAULT_NOTE_DESTINATION_FOLDER,
+	DEFAULT_NOTE_DESTINATION_MODE,
+	DEFAULT_OUTPUT_TRANSCRIPT_MODE,
+	DEFAULT_REQUEST_TIMEOUT_MS,
+	DEFAULT_TLDR_CALLOUT_AT_TOP,
+	DEFAULT_USE_AI,
+} from '../../src/defaults';
+
+vi.mock('obsidian', async () => {
+	const mod = await import('../mocks/obsidian');
+	return mod;
+});
+
+type DataStore = { settings?: any };
+
+class FakePlugin {
+	app = new App();
+	data: DataStore | null = null;
+	saveData = vi.fn(async (data: DataStore) => {
+		this.data = data;
+	});
+	loadData = vi.fn(async () => this.data);
+
+	constructor() {
+		this.app.secretStorage.setSecret('gemini-secret', 'test-key');
+		this.app.secretStorage.setSecret('openai-secret', 'openai-key');
+		this.app.secretStorage.setSecret('anthropic-secret', 'anthropic-key');
+	}
+}
+
+const geminiProvider = {
+	name: 'Gemini',
+	type: 'gemini' as const,
+	apiKeySecretId: 'gemini-secret',
+	models: [{ name: 'gemini-1.5-flash', displayName: 'Gemini Flash' }],
+};
+
+function makeManager(data?: DataStore | null): { plugin: FakePlugin; manager: SettingsService } {
+	const plugin = new FakePlugin();
+	plugin.data = data ?? null;
+	return { plugin, manager: new SettingsService(plugin as any) };
+}
+
+describe('SettingsService current contracts', () => {
+	it('starts empty with the current defaults', async () => {
+		const { manager } = makeManager();
+
+		await manager.loadSettings();
+
+		expect(manager.hasSavedSettings()).toBe(false);
+		expect(manager.getProviders()).toEqual([]);
+		expect(manager.getSelectedModel()).toBeNull();
+		expect(manager.getOutputDefaults()).toMatchObject({
+			useAi: DEFAULT_USE_AI,
+			generateAiSummary: DEFAULT_GENERATE_AI_SUMMARY,
+			transcriptMode: DEFAULT_OUTPUT_TRANSCRIPT_MODE,
+			mediaEmbedMode: DEFAULT_MEDIA_EMBED_MODE,
+			noteDestinationMode: DEFAULT_NOTE_DESTINATION_MODE,
+			noteDestinationFolder: DEFAULT_NOTE_DESTINATION_FOLDER,
+			frontmatterPropertyAllowlist: DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST,
+			tldrCalloutAtTop: DEFAULT_TLDR_CALLOUT_AT_TOP,
+		});
+		expect(manager.getInstructionConfig()).toEqual({
+			mode: DEFAULT_INSTRUCTION_MODE,
+			template: DEFAULT_INSTRUCTION_TEMPLATE,
+			manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
+			includeMindmap: DEFAULT_INCLUDE_MINDMAP,
+			includeMemorableQuotes: DEFAULT_INCLUDE_MEMORABLE_QUOTES,
+		});
+		expect(manager.getRequestTimeoutMs()).toBe(DEFAULT_REQUEST_TIMEOUT_MS);
+	});
+
+	it('manages providers, models, active selection, and discovered model merges', async () => {
+		const { manager } = makeManager();
+		await manager.loadSettings();
+
+		await manager.addProvider({ name: 'Local', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1', models: [] });
+		await manager.addModel({
+			name: 'qwen3.5:4b',
+			displayName: 'Qwen 3.5 4B',
+			provider: { name: 'Local', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1' },
+		});
+		await manager.updateActiveModel('Local:qwen3.5:4b');
+
+		expect(manager.validateModelId('Local:qwen3.5:4b')).toBe(true);
+		expect(manager.getSelectedModel()?.name).toBe('qwen3.5:4b');
+
+		const added = await manager.mergeProviderModels('Local', [
+			{ name: 'qwen3.5:4b', displayName: 'Qwen updated', contextWindow: 262144 },
+			{ name: 'llama3.2', displayName: 'Llama 3.2', contextWindow: 131072 },
+		]);
+
+		expect(added).toBe(1);
+		expect(manager.getProviders()[0].models?.map((model) => ({ name: model.name, contextWindow: model.contextWindow }))).toEqual([
+			{ name: 'qwen3.5:4b', contextWindow: 262144 },
+			{ name: 'llama3.2', contextWindow: 131072 },
+		]);
+
+		await manager.deleteModel('Local', 'qwen3.5:4b');
+		expect(manager.validateModelId('Local:qwen3.5:4b')).toBe(false);
+	});
+
+	it('rejects invalid provider and model identifiers', async () => {
+		const { manager } = makeManager();
+		await manager.loadSettings();
+
+		await expect(manager.addProvider({ name: 'Ollama', type: 'openai-compatible', apiKey: '', url: '', models: [] })).rejects.toThrow(
+			'OpenAI-compatible providers require a URL.',
+		);
+		await expect(manager.addProvider({ name: 'Open:AI', type: 'openai', apiKey: '', apiKeySecretId: 'openai-secret', url: '', models: [] })).rejects.toThrow(/colon/i);
+		await expect(manager.addProvider({ name: 'Gemini', type: 'gemini', apiKey: '', models: [] })).rejects.toThrow(/Gemini providers require an API key/);
+
+		expect(manager.validateModelId('')).toBe(false);
+		expect(manager.validateModelId('NoColon')).toBe(false);
+		expect(manager.validateModelId(':missing-provider')).toBe(false);
+		expect(manager.validateModelId('missing-model:')).toBe(false);
+	});
+
+	it('clears stale selected models while preserving valid saved selections', async () => {
+		const stale = makeManager({ settings: { providers: [geminiProvider], selectedModelId: 'Missing:Model' } });
+		await stale.manager.loadSettings();
+
+		expect(stale.manager.getSelectedModel()).toBeNull();
+		expect(stale.plugin.saveData).toHaveBeenCalled();
+
+		const valid = makeManager({ settings: { providers: [geminiProvider], selectedModelId: 'Gemini:gemini-1.5-flash' } });
+		await valid.manager.loadSettings();
+
+		expect(valid.manager.getSelectedModel()?.name).toBe('gemini-1.5-flash');
+		expect(valid.manager.getSelectedModel()?.provider.apiKey).toBe('test-key');
+	});
+
+	it('normalizes persisted output defaults without overwriting explicit current choices', async () => {
+		const { plugin, manager } = makeManager({
+			settings: {
+				outputDefaults: {
+					useAi: true,
+					generateAiSummary: false,
+					transcriptMode: 'timestamped',
+					playlistMode: 'combined',
+					transcriptLanguageMode: 'preferred',
+					preferredTranscriptLanguage: ' fr ',
+					transcriptFailureMode: 'fail',
+					mediaEmbedMode: 'thumbnail',
+					includeRunReport: false,
+					runReportLocation: 'separate-note',
+					useVideoTitleAsNoteName: false,
+					noteDestinationMode: 'folder',
+					noteDestinationFolder: ' Videos ',
+					includeFrontmatter: false,
+					frontmatterTags: ' #youtube ',
+					frontmatterPropertyAllowlist: 'title channel videoUrl',
+					sourceSectionPosition: 'top',
+					linkTimestamps: false,
+					tldrCalloutAtTop: false,
+				},
+				temperature: 9,
+				requestTimeoutMs: 123456,
+			},
+		});
+
+		await manager.loadSettings();
+
+		expect(manager.getOutputDefaults()).toMatchObject({
+			useAi: true,
+			generateAiSummary: false,
+			transcriptMode: 'timestamped',
+			playlistMode: 'combined',
+			transcriptLanguageMode: 'preferred',
+			preferredTranscriptLanguage: 'fr',
+			transcriptFailureMode: 'fail',
+			mediaEmbedMode: 'thumbnail',
+			includeRunReport: false,
+			runReportLocation: 'separate-note',
+			useVideoTitleAsNoteName: false,
+			noteDestinationMode: 'folder',
+			noteDestinationFolder: 'Videos',
+			includeFrontmatter: false,
+			frontmatterTags: '#youtube',
+			frontmatterPropertyAllowlist: 'title channel videoUrl',
+			sourceSectionPosition: 'top',
+			linkTimestamps: false,
+			tldrCalloutAtTop: false,
+		});
+		expect(manager.getTemperature()).toBe(2);
+		expect(manager.getRequestTimeoutMs()).toBe(123456);
+		expect(plugin.saveData).toHaveBeenCalled();
+	});
+
+	it('keeps compact saved-config compatibility for still-implemented normalization paths', async () => {
+		const sparse = makeManager({
+			settings: {
+				outputDefaults: {
+					generateAiSummary: false,
+					includeThumbnail: false,
+					addAlias: false,
+					frontmatterPropertyAllowlist: 'title aliases channel',
+				},
+				requestTimeoutMs: 0,
+			},
+		});
+
+		await sparse.manager.loadSettings();
+
+		expect(sparse.manager.getOutputDefaults()).toMatchObject({
+			useAi: false,
+			generateAiSummary: false,
+			mediaEmbedMode: 'none',
+			frontmatterPropertyAllowlist: 'title channel',
+			tldrCalloutAtTop: DEFAULT_TLDR_CALLOUT_AT_TOP,
+		});
+		expect(sparse.manager.getRequestTimeoutMs()).toBe(DEFAULT_REQUEST_TIMEOUT_MS);
+
+		const invalidMedia = makeManager({ settings: { outputDefaults: { mediaEmbedMode: 'poster' } } });
+		await invalidMedia.manager.loadSettings();
+		expect(invalidMedia.manager.getOutputDefaults().mediaEmbedMode).toBe(DEFAULT_MEDIA_EMBED_MODE);
+	});
+
+	it('normalizes instruction config to current templates and usable control values', async () => {
+		const invalidTemplate = makeManager({
+			settings: {
+				instructionConfig: {
+					mode: 'template',
+					template: 'talk',
+					manualInstructions: 'prompt',
+					includeMindmap: false,
+					includeMemorableQuotes: false,
+				},
+			},
+		});
+
+		await invalidTemplate.manager.loadSettings();
+
+		expect(invalidTemplate.manager.getInstructionConfig().template).toBe(DEFAULT_INSTRUCTION_TEMPLATE);
+		expect(invalidTemplate.plugin.saveData).toHaveBeenCalled();
+
+		const controls = makeManager({
+			settings: {
+				instructionConfig: {
+					mode: 'template',
+					template: 'research',
+					manualInstructions: 'prompt',
+					includeMindmap: false,
+					includeMemorableQuotes: false,
+					controlValues: {
+						inquiry: '  How does retrieval practice scale?  ',
+						strictness: 'strict',
+						empty: '   ',
+						notString: 42,
+					},
+				},
+			},
+		});
+
+		await controls.manager.loadSettings();
+
+		expect(controls.manager.getInstructionConfig().controlValues).toEqual({
+			inquiry: 'How does retrieval practice scale?',
+			strictness: 'strict',
+		});
+	});
+
+	it('tracks release-note state independently from reset settings', async () => {
+		const { plugin, manager } = makeManager({
+			settings: {
+				providers: [geminiProvider],
+				lastSeenReleaseNotesVersion: ' 1.7.0 ',
+			},
+		});
+
+		await manager.loadSettings();
+		expect(manager.hasSavedSettings()).toBe(true);
+		expect(manager.getLastSeenReleaseNotesVersion()).toBe('1.7.0');
+
+		await manager.setLastSeenReleaseNotesVersion('1.7.2');
+		await manager.resetSettings();
+
+		expect(manager.getProviders()).toEqual([]);
+		expect(manager.getLastSeenReleaseNotesVersion()).toBe('1.7.2');
+		expect(plugin.data?.settings?.lastSeenReleaseNotesVersion).toBe('1.7.2');
+	});
+
+	it('stores provider secrets by secret id and never persists plaintext API keys', async () => {
+		const { plugin, manager } = makeManager({ settings: { providers: [geminiProvider] } });
+		await manager.loadSettings();
+
+		plugin.app.secretStorage.setSecret('replacement-secret', 'new-key');
+		await manager.saveProviderSecretId('Gemini', 'replacement-secret');
+
+		expect(manager.getProviders()[0].apiKey).toBe('new-key');
+		expect(plugin.data?.settings?.providers?.[0].apiKey).toBeUndefined();
+		expect(plugin.data?.settings?.providers?.[0].apiKeySecretId).toBe('replacement-secret');
+		await expect(manager.saveProviderSecretId('Missing', 'replacement-secret')).rejects.toThrow(/Provider "Missing" not found/);
+
+		const plaintextProvider = makeManager({
+			settings: {
+				providers: [{
+					name: 'Gemini',
+					type: 'gemini',
+					apiKey: 'plaintext-key',
+					models: [{ name: 'gemini-1.5-flash', displayName: 'Gemini Flash' }],
+				}],
+			},
+		});
+
+		await plaintextProvider.manager.loadSettings();
+
+		expect(plaintextProvider.manager.getProviders()[0].apiKey).toBe('');
+		expect(plaintextProvider.plugin.data?.settings?.providers?.[0].apiKey).toBeUndefined();
+		expect(plaintextProvider.plugin.data?.settings?.providers?.[0].apiKeySecretId).toBeUndefined();
+	});
+});

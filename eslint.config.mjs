@@ -46,6 +46,7 @@ export default defineConfig([
 		rules: {
 			'@typescript-eslint/ban-ts-comment': 'off',
 			'@typescript-eslint/no-empty-function': 'off',
+			'@typescript-eslint/no-unused-private-class-members': 'error',
 			'@typescript-eslint/no-unused-vars': ['error', { args: 'none', varsIgnorePattern: '^_' }],
 			'obsidianmd/ui/sentence-case': ['error', {
 				acronyms: ['AI', 'API', 'BRAT', 'HTTP', 'HTTPS', 'ID', 'IDs', 'TL;DR', 'URL', 'URLs', 'YAML'],
@@ -75,9 +76,9 @@ export default defineConfig([
 	},
 	{
 		files: [
-			'src/ui/modals/ConfirmModal.ts',
-			'src/ui/modals/QueueModal.ts',
-			'src/ui/settings.ts',
+			'src/ui/settings/confirmModal.ts',
+			'src/ui/queue/queueModal.ts',
+			'src/ui/settings/settingsTab.ts',
 		],
 		rules: {
 			// These files intentionally use Obsidian APIs deprecated in newer typings

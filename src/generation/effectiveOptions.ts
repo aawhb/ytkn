@@ -1,0 +1,83 @@
+import type {
+	GenerationOptions,
+	InstructionMode,
+	InstructionTemplate,
+	MediaEmbedMode,
+	NoteDestinationMode,
+	PlaylistMode,
+	PluginSettings,
+	RunReportLocation,
+	SourceSectionPosition,
+	TranscriptFailureMode,
+	TranscriptLanguageMode,
+	TranscriptMode,
+} from '../types';
+
+export interface EffectiveGenerationOptions extends GenerationOptions {
+	useAi: boolean;
+	generateAiSummary: boolean;
+	instructionMode: InstructionMode;
+	instructionTemplate: InstructionTemplate;
+	manualInstructions: string;
+	includeMindmap: boolean;
+	includeMemorableQuotes: boolean;
+	controlValues: Record<string, string>;
+	transcriptMode: TranscriptMode;
+	playlistMode: PlaylistMode;
+	transcriptLanguageMode: TranscriptLanguageMode;
+	preferredTranscriptLanguage: string;
+	transcriptFailureMode: TranscriptFailureMode;
+	mediaEmbedMode: MediaEmbedMode;
+	includeRunReport: boolean;
+	runReportLocation: RunReportLocation;
+	useVideoTitleAsNoteName: boolean;
+	noteDestinationMode: NoteDestinationMode;
+	noteDestinationFolder: string;
+	temperature: number;
+	requestTimeoutMs: number;
+	includeFrontmatter: boolean;
+	frontmatterTags: string;
+	frontmatterPropertyAllowlist: string;
+	sourceSectionPosition: SourceSectionPosition;
+	linkTimestamps: boolean;
+	tldrCalloutAtTop: boolean;
+}
+
+export function resolveEffectiveGenerationOptions(
+	options: GenerationOptions,
+	settings: PluginSettings,
+): EffectiveGenerationOptions {
+	const outputDefaults = settings.getOutputDefaults();
+	const instructionConfig = settings.getInstructionConfig();
+
+	return {
+		...options,
+		useAi: options.useAi ?? options.generateAiSummary ?? outputDefaults.useAi,
+		generateAiSummary: options.generateAiSummary ?? outputDefaults.generateAiSummary,
+		instructionMode: options.instructionMode ?? instructionConfig.mode,
+		instructionTemplate: options.instructionTemplate ?? instructionConfig.template,
+		manualInstructions: options.manualInstructions ?? instructionConfig.manualInstructions,
+		includeMindmap: options.includeMindmap ?? instructionConfig.includeMindmap,
+		includeMemorableQuotes: options.includeMemorableQuotes ?? instructionConfig.includeMemorableQuotes,
+		controlValues: options.controlValues ?? instructionConfig.controlValues ?? {},
+		transcriptMode: options.transcriptMode ?? outputDefaults.transcriptMode,
+		playlistMode: options.playlistMode ?? outputDefaults.playlistMode,
+		transcriptLanguageMode: options.transcriptLanguageMode ?? outputDefaults.transcriptLanguageMode,
+		preferredTranscriptLanguage: options.preferredTranscriptLanguage ?? outputDefaults.preferredTranscriptLanguage,
+		transcriptFailureMode: options.transcriptFailureMode ?? outputDefaults.transcriptFailureMode,
+		mediaEmbedMode: options.mediaEmbedMode ?? outputDefaults.mediaEmbedMode,
+		includeRunReport: options.includeRunReport ?? outputDefaults.includeRunReport,
+		runReportLocation: options.runReportLocation ?? outputDefaults.runReportLocation,
+		useVideoTitleAsNoteName: options.useVideoTitleAsNoteName ?? outputDefaults.useVideoTitleAsNoteName,
+		noteDestinationMode: options.noteDestinationMode ?? outputDefaults.noteDestinationMode,
+		noteDestinationFolder: options.noteDestinationFolder ?? outputDefaults.noteDestinationFolder,
+		temperature: options.temperature ?? settings.getTemperature(),
+		requestTimeoutMs: options.requestTimeoutMs ?? settings.getRequestTimeoutMs(),
+		includeFrontmatter: options.includeFrontmatter ?? outputDefaults.includeFrontmatter,
+		frontmatterTags: options.frontmatterTags ?? outputDefaults.frontmatterTags,
+		frontmatterPropertyAllowlist: options.frontmatterPropertyAllowlist ?? outputDefaults.frontmatterPropertyAllowlist,
+		sourceSectionPosition: options.sourceSectionPosition ?? outputDefaults.sourceSectionPosition,
+		linkTimestamps: options.linkTimestamps ?? outputDefaults.linkTimestamps,
+		tldrCalloutAtTop: options.tldrCalloutAtTop ?? outputDefaults.tldrCalloutAtTop,
+	};
+}

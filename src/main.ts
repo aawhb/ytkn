@@ -4,18 +4,18 @@ import {
 	PluginSettings,
 } from './types';
 
-import { SettingsTab } from './ui/settings';
-import { notifyError } from './ui/notifications';
-import { YouTubeService } from './services/youtube';
-import { SettingsService } from './services/settings';
+import { SettingsTab } from './ui/settings/settingsTab';
+import { notifyError } from './ui/shared/notifications';
+import { YouTubeService } from './youtube/youtubeService';
+import { SettingsService } from './settings/settingsService';
 import {
 	GenerationService,
 	INSERT_AT_CARET_REQUIRES_NOTE,
 	NoteInsertionTarget,
-} from './services/generation';
-import { GenerationOptionsModal } from './ui/modals/GenerationOptionsModal';
-import { QueueModal } from './ui/modals/QueueModal';
-import { WhatsNewModal } from './ui/modals/WhatsNewModal';
+} from './generation/generationService';
+import { GenerationOptionsModal } from './ui/generation/generationOptionsModal';
+import { QueueModal } from './ui/queue/queueModal';
+import { WhatsNewModal } from './ui/releaseNotes/whatsNewModal';
 import { resolveReleaseNotesStartupAction } from './releaseNotes';
 import {
 	buildModelId,
@@ -29,7 +29,7 @@ import {
 	buildEditorAppendSequentialPolicy,
 	buildEditorReplaceRangeFirstPolicy,
 	buildFolderTargetPolicy,
-} from './services/runQueue';
+} from './queue/runQueueService';
 export class YTKN extends Plugin {
 	settings!: PluginSettings;
 	private youtubeService!: YouTubeService;
