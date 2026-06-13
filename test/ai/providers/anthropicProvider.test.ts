@@ -1,6 +1,7 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AnthropicProvider } from '../../../src/ai/providers/anthropic';
-import { TRUNCATION_NOTICE } from '../../../src/defaults';
+import { DEFAULT_ANTHROPIC_MAX_TOKENS, TRUNCATION_NOTICE } from '../../../src/defaults';
 
 const mockCreate = vi.fn();
 
@@ -24,15 +25,19 @@ describe('AnthropicProvider', () => {
 		vi.clearAllMocks();
 	});
 
-	it('sends standard message requests without deprecated sampling or thinking fields', async () => {
+	it('uses the minimal request shape and the official Anthropic endpoint', async () => {
 		mockCreate.mockResolvedValue(makeResponse('summary'));
 
 		const provider = new AnthropicProvider('key', 'claude-3', 0.5, 300000);
 		await provider.summarizeVideo('prompt');
 
 		const [request] = mockCreate.mock.calls[0];
-		expect(request).not.toHaveProperty('temperature');
-		expect(request).not.toHaveProperty('thinking');
+		expect(request).toEqual({
+			model: 'claude-3',
+			max_tokens: DEFAULT_ANTHROPIC_MAX_TOKENS,
+			messages: [{ role: 'user', content: 'prompt' }],
+		});
+		expect(Anthropic).toHaveBeenCalledWith(expect.not.objectContaining({ baseURL: expect.anything() }));
 	});
 
 	it('appends TRUNCATION_NOTICE when stop_reason is max_tokens', async () => {

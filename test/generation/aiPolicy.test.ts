@@ -6,7 +6,7 @@ const providerFactoryMocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../../src/ai/providers/factory', () => ({
-	ProvidersFactory: providerFactoryMocks,
+	createProvider: providerFactoryMocks.createProvider,
 }));
 
 import {
@@ -39,7 +39,7 @@ function makeOptions(overrides: Partial<EffectiveGenerationOptions> = {}): Effec
 		controlValues: {},
 		transcriptMode: 'readable',
 		playlistMode: 'combined',
-		transcriptLanguageMode: 'default',
+		transcriptLanguageMode: 'auto',
 		preferredTranscriptLanguage: '',
 		transcriptFailureMode: 'skip',
 		mediaEmbedMode: 'thumbnail',

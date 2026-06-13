@@ -1,53 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { requestUrl } from 'obsidian';
 import { DEFAULT_OPENAI_COMPATIBLE_URL } from '../../defaults';
-import { DiscoveredModel, ProviderConfig } from '../../types';
-import { fetchFn, getErrorMessage } from '../../utils';
+import type { DiscoveredModel, ProviderConfig } from '../../types';
 import { assertNever } from './shared';
+import { requestUrlJson } from './requestUrlJson';
 
 const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-
-type RequestMethod = 'GET' | 'POST';
-type JsonHeaders = Record<string, string>;
-
-function requireFetch(): typeof fetch {
-	if (!fetchFn) {
-		throw new Error('Fetch is unavailable in this environment.');
-	}
-
-	return fetchFn;
-}
-
-async function requestJson<T>(url: string, method: RequestMethod, headers?: JsonHeaders, body?: unknown): Promise<T> {
-	try {
-		const response = await requestUrl({
-			url,
-			method,
-			headers,
-			body: body === undefined ? undefined : JSON.stringify(body),
-		});
-
-		return JSON.parse(response.text) as T;
-	} catch (requestError) {
-		const fetchImpl = requireFetch();
-		const response = await fetchImpl(url, {
-			method,
-			headers,
-			body: body === undefined ? undefined : JSON.stringify(body),
-		});
-
-		if (!response.ok) {
-			const responseText = await response.text();
-			throw new Error(`Request failed: ${response.status} ${responseText || response.statusText}`);
-		}
-
-		try {
-			return (await response.json()) as T;
-		} catch (parseError) {
-			throw new Error(`Failed to parse JSON response after requestUrl error (${getErrorMessage(requestError)}): ${getErrorMessage(parseError)}`);
-		}
-	}
-}
 
 function sortModels(models: DiscoveredModel[]): DiscoveredModel[] {
 	return models.sort((left, right) => left.displayName.localeCompare(right.displayName));
@@ -58,10 +15,12 @@ async function fetchCloudOpenAIModels(provider: ProviderConfig): Promise<Discove
 		throw new Error('OpenAI providers require an API key secret to fetch models.');
 	}
 
-	const payload = await requestJson<{ data?: Array<{ id: string }> }>(
+	const payload = await requestUrlJson<{ data?: Array<{ id: string }> }>(
 		'https://api.openai.com/v1/models',
-		'GET',
-		{ Authorization: `Bearer ${provider.apiKey}` },
+		{
+			headers: { Authorization: `Bearer ${provider.apiKey}` },
+			fallbackToFetch: true,
+		},
 	);
 	const modelIds = (payload.data ?? []).map((model) => model.id);
 	return sortModels(
@@ -75,10 +34,12 @@ async function fetchCloudOpenAIModels(provider: ProviderConfig): Promise<Discove
 
 async function fetchOpenAICompatibleModels(provider: ProviderConfig): Promise<DiscoveredModel[]> {
 	const baseUrl = (provider.url || DEFAULT_OPENAI_COMPATIBLE_URL).replace(/\/$/, '');
-	const payload = await requestJson<{ data?: Array<{ id: string }> }>(
+	const payload = await requestUrlJson<{ data?: Array<{ id: string }> }>(
 		`${baseUrl}/models`,
-		'GET',
-		provider.apiKey ? { Authorization: `Bearer ${provider.apiKey}` } : undefined,
+		{
+			headers: provider.apiKey ? { Authorization: `Bearer ${provider.apiKey}` } : undefined,
+			fallbackToFetch: true,
+		},
 	);
 	const modelIds = (payload.data ?? []).map((model) => model.id);
 
@@ -99,7 +60,6 @@ async function fetchAnthropicModels(provider: ProviderConfig): Promise<Discovere
 	const client = new Anthropic({
 		apiKey: provider.apiKey,
 		dangerouslyAllowBrowser: true,
-		baseURL: provider.url,
 	});
 
 	const models: DiscoveredModel[] = [];
@@ -119,9 +79,9 @@ async function fetchGeminiModels(provider: ProviderConfig): Promise<DiscoveredMo
 		throw new Error('Gemini providers require an API key secret to fetch models.');
 	}
 
-	const payload = await requestJson<{
+	const payload = await requestUrlJson<{
 		models?: Array<{ name: string; displayName?: string; supportedGenerationMethods?: string[] }>;
-	}>(`${GEMINI_MODELS_URL}?key=${encodeURIComponent(provider.apiKey)}`, 'GET');
+	}>(`${GEMINI_MODELS_URL}?key=${encodeURIComponent(provider.apiKey)}`, { fallbackToFetch: true });
 
 	return sortModels(
 		(payload.models ?? [])

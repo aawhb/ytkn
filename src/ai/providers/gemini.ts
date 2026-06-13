@@ -15,10 +15,8 @@ export class GeminiProvider extends AbstractProvider {
 		this.client = new GoogleGenerativeAI(apiKey);
 	}
 
-	// NOTE: the official @google/generative-ai SDK does not accept an AbortSignal
-	// for generateContent, so cancellation is best-effort: a request that has
-	// already started will run to completion. The `signal` parameter is accepted
-	// to satisfy the interface and for future SDK changes.
+	// The Gemini SDK does not accept AbortSignal for generateContent; cancellation
+	// is best-effort and in-flight requests run to completion.
 	protected async requestCompletion(prompt: string, _signal?: AbortSignal): Promise<{ text: string; truncated: boolean }> {
 		const model = this.client.getGenerativeModel(
 			{

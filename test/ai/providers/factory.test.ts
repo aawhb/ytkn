@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ProvidersFactory } from '../../../src/ai/providers/factory';
+import { createProvider } from '../../../src/ai/providers/factory';
 import { AnthropicProvider } from '../../../src/ai/providers/anthropic';
 import { GeminiProvider } from '../../../src/ai/providers/gemini';
 import { OpenAIProvider } from '../../../src/ai/providers/openai';
@@ -21,19 +21,19 @@ function makeConfig(type: string, url?: string): ModelConfig {
 	};
 }
 
-describe('ProvidersFactory', () => {
+describe('createProvider', () => {
 	it('creates AnthropicProvider for type anthropic', () => {
-		const provider = ProvidersFactory.createProvider(makeConfig('anthropic'), 0.3, 300000);
+		const provider = createProvider(makeConfig('anthropic'), 0.3, 300000);
 		expect(provider).toBeInstanceOf(AnthropicProvider);
 	});
 
 	it('creates OpenAIProvider for type openai', () => {
-		const provider = ProvidersFactory.createProvider(makeConfig('openai'), 0.3, 300000);
+		const provider = createProvider(makeConfig('openai'), 0.3, 300000);
 		expect(provider).toBeInstanceOf(OpenAIProvider);
 	});
 
 	it('creates OpenAIProvider for type openai-compatible', () => {
-		const provider = ProvidersFactory.createProvider(
+		const provider = createProvider(
 			makeConfig('openai-compatible', 'http://localhost:11434/v1'),
 			0.3,
 			300000,
@@ -42,13 +42,13 @@ describe('ProvidersFactory', () => {
 	});
 
 	it('creates GeminiProvider for type gemini', () => {
-		const provider = ProvidersFactory.createProvider(makeConfig('gemini'), 0.3, 300000);
+		const provider = createProvider(makeConfig('gemini'), 0.3, 300000);
 		expect(provider).toBeInstanceOf(GeminiProvider);
 	});
 
 	it('throws for unknown provider type', () => {
 		expect(() =>
-			ProvidersFactory.createProvider(makeConfig('unknown-provider'), 0.3, 300000),
+			createProvider(makeConfig('unknown-provider'), 0.3, 300000),
 		).toThrow('Unsupported provider type: unknown-provider');
 	});
 });

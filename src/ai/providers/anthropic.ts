@@ -12,7 +12,6 @@ export class AnthropicProvider extends AbstractProvider {
 		model: string,
 		temperature: number,
 		requestTimeoutMs: number,
-		baseUrl?: string,
 	) {
 		super(model, temperature, requestTimeoutMs);
 		// dangerouslyAllowBrowser is required because Obsidian runs in an Electron
@@ -20,7 +19,6 @@ export class AnthropicProvider extends AbstractProvider {
 		this.client = new Anthropic({
 			apiKey,
 			dangerouslyAllowBrowser: true,
-			baseURL: baseUrl,
 			timeout: this.requestTimeoutMs,
 		});
 	}
