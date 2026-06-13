@@ -1,12 +1,9 @@
-import type { QueueBatchReport } from '../types';
+import type { QueueBatchReport, QueueRunOutcome } from '../types';
+import { normalizeWhitespace } from '../utils';
 import { renderCollapsedCallout } from './callouts';
 
-function formatRunReportOutcomeLabel(outcome: string): string {
+function formatRunReportOutcomeLabel(outcome: QueueRunOutcome): string {
 	return outcome.charAt(0).toUpperCase() + outcome.slice(1);
-}
-
-function normalizeReportInline(value: string): string {
-	return value.replace(/\s+/g, ' ').trim();
 }
 
 function stripRunOrdinalPrefix(displayTitle: string, ordinal: number): string {
@@ -15,7 +12,7 @@ function stripRunOrdinalPrefix(displayTitle: string, ordinal: number): string {
 }
 
 function formatReportNotePath(notePath: string): string {
-	return `\`${normalizeReportInline(notePath)}\``;
+	return `\`${normalizeWhitespace(notePath)}\``;
 }
 
 function renderCollapsedRunReportCallout(body: string): string {
@@ -34,51 +31,38 @@ function buildRunReportSummary(total: number, completed: number, skipped: number
 	].join('\n');
 }
 
-interface RunReportCounts {
-	total: number;
-	completed: number;
-	skipped: number;
-	failed: number;
-	canceled: number;
-}
+type RunReportCounts = Record<QueueRunOutcome, number> & { total: number };
 
 function emptyRunReportCounts(): RunReportCounts {
 	return { total: 0, completed: 0, skipped: 0, failed: 0, canceled: 0 };
 }
 
-function addOutcomeToCounts(counts: RunReportCounts, outcome: string): void {
+function addOutcomeToCounts(counts: RunReportCounts, outcome: QueueRunOutcome): void {
 	counts.total += 1;
-	if (outcome === 'completed') counts.completed += 1;
-	if (outcome === 'skipped') counts.skipped += 1;
-	if (outcome === 'failed') counts.failed += 1;
-	if (outcome === 'canceled') counts.canceled += 1;
+	counts[outcome] += 1;
 }
 
 function countPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][number], { kind: 'playlist' }>): RunReportCounts {
 	const counts = emptyRunReportCounts();
-	if (entry.entries.length === 0) {
-		addOutcomeToCounts(counts, entry.outcome);
-		return counts;
-	}
-	for (const playlistEntry of entry.entries) {
-		addOutcomeToCounts(counts, playlistEntry.outcome);
-	}
+	addRunReportEntryToCounts(counts, entry);
 	return counts;
+}
+
+function addRunReportEntryToCounts(counts: RunReportCounts, entry: QueueBatchReport['entries'][number]): void {
+	if (entry.kind === 'playlist' && entry.entries.length > 0) {
+		for (const playlistEntry of entry.entries) {
+			addOutcomeToCounts(counts, playlistEntry.outcome);
+		}
+		return;
+	}
+
+	addOutcomeToCounts(counts, entry.outcome);
 }
 
 function countQueueBatchReportEntries(entries: QueueBatchReport['entries']): RunReportCounts {
 	const counts = emptyRunReportCounts();
 	for (const entry of entries) {
-		if (entry.kind === 'video') {
-			addOutcomeToCounts(counts, entry.outcome);
-			continue;
-		}
-		const playlistCounts = countPlaylistRunReportEntry(entry);
-		counts.total += playlistCounts.total;
-		counts.completed += playlistCounts.completed;
-		counts.skipped += playlistCounts.skipped;
-		counts.failed += playlistCounts.failed;
-		counts.canceled += playlistCounts.canceled;
+		addRunReportEntryToCounts(counts, entry);
 	}
 	return counts;
 }
@@ -94,14 +78,14 @@ function appendRunReportWarnings(lines: string[], warnings: string[] | undefined
 
 	lines.push(`${indent}- Warnings:`);
 	for (const warning of warnings) {
-		lines.push(`${indent}  - ${normalizeReportInline(warning)}`);
+		lines.push(`${indent}  - ${normalizeWhitespace(warning)}`);
 	}
 }
 
 function buildVideoRunReportEntry(entry: Extract<QueueBatchReport['entries'][number], { kind: 'video' }>, index: number): string {
 	const label = formatRunReportOutcomeLabel(entry.outcome);
 	const title = stripRunOrdinalPrefix(entry.displayTitle, entry.ordinal);
-	const lines = [`${index + 1}. **${label}** · ${normalizeReportInline(title)}`];
+	const lines = [`${index + 1}. **${label}** · ${normalizeWhitespace(title)}`];
 
 	lines.push(`   - Run: #${entry.ordinal}`);
 	if (entry.transcriptLanguageCode) {
@@ -111,7 +95,7 @@ function buildVideoRunReportEntry(entry: Extract<QueueBatchReport['entries'][num
 		lines.push(`   - Note: ${formatReportNotePath(entry.notePath)}`);
 	}
 	if (entry.reason) {
-		lines.push(`   - Reason: ${normalizeReportInline(entry.reason)}`);
+		lines.push(`   - Reason: ${normalizeWhitespace(entry.reason)}`);
 	}
 	appendRunReportWarnings(lines, entry.warnings, '   ');
 
@@ -120,7 +104,7 @@ function buildVideoRunReportEntry(entry: Extract<QueueBatchReport['entries'][num
 
 function buildPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][number], { kind: 'playlist' }>, index: number): string {
 	const label = formatRunReportOutcomeLabel(entry.outcome);
-	const title = normalizeReportInline(entry.playlistTitle || stripRunOrdinalPrefix(entry.displayTitle, entry.ordinal));
+	const title = normalizeWhitespace(entry.playlistTitle || stripRunOrdinalPrefix(entry.displayTitle, entry.ordinal));
 	const lines = [`${index + 1}. **${label}** · ${title}`];
 
 	lines.push(`   - Run: #${entry.ordinal}`);
@@ -128,7 +112,7 @@ function buildPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][
 		lines.push(`   - Note: ${formatReportNotePath(entry.notePath)}`);
 	}
 	if (entry.reason) {
-		lines.push(`   - Reason: ${normalizeReportInline(entry.reason)}`);
+		lines.push(`   - Reason: ${normalizeWhitespace(entry.reason)}`);
 	}
 	appendRunReportWarnings(lines, entry.warnings, '   ');
 	lines.push(`   - Counts: ${formatRunReportCounts(countPlaylistRunReportEntry(entry))}`);
@@ -136,7 +120,7 @@ function buildPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][
 		lines.push('   - Videos:');
 		entry.entries.forEach((playlistEntry, playlistIndex) => {
 			const playlistEntryLabel = formatRunReportOutcomeLabel(playlistEntry.outcome);
-			lines.push(`      ${playlistIndex + 1}. **${playlistEntryLabel}** · ${normalizeReportInline(playlistEntry.title)}`);
+			lines.push(`      ${playlistIndex + 1}. **${playlistEntryLabel}** · ${normalizeWhitespace(playlistEntry.title)}`);
 			if (playlistEntry.transcriptLanguageCode) {
 				lines.push(`         - Language: \`${playlistEntry.transcriptLanguageCode}\``);
 			}
@@ -144,7 +128,7 @@ function buildPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][
 				lines.push(`         - Note: ${formatReportNotePath(playlistEntry.notePath)}`);
 			}
 			if (playlistEntry.reason) {
-				lines.push(`         - Reason: ${normalizeReportInline(playlistEntry.reason)}`);
+				lines.push(`         - Reason: ${normalizeWhitespace(playlistEntry.reason)}`);
 			}
 			appendRunReportWarnings(lines, playlistEntry.warnings, '         ');
 		});

@@ -67,9 +67,8 @@ describe('PromptService', () => {
 
 		const prompt = service.buildPrompt(transcript, transcript.url);
 
-		expect(prompt).toContain('Do not output a `## TL;DR` section.');
-		expect(prompt).not.toContain('1-2 sentences capturing the single most important takeaway.');
-		expect(prompt).not.toContain('`## TL;DR` (required)');
+		expect(prompt).not.toContain('## TL;DR');
+		expect(prompt).not.toContain('Add a TL;DR section');
 	});
 
 	it('adapts template instructions for playlist synthesis', () => {
@@ -139,9 +138,12 @@ describe('PromptService', () => {
 		const chunkPrompt = mindmapService.buildChunkPrompt(transcript, transcript.url, 'Chunk text', 1, 2);
 
 		expect(templatePrompt).toContain('## Mindmap');
-		expect(templatePrompt).toContain('```mermaid');
-		expect(templatePrompt).toContain('mindmap');
+		expect(templatePrompt).toContain('nested bullet list');
+		expect(templatePrompt).not.toContain('```mermaid');
 		expect(templatePrompt).toContain('Section heading must be exactly `## Mindmap`.');
+		expect(templatePrompt).toContain('indented to show hierarchy');
+		expect(templatePrompt).toContain('Do not use LaTeX');
+		expect(templatePrompt).toContain('compact readable notation');
 		expect(manualPrompt).toContain('Write a concise note.');
 		expect(manualPrompt).toContain('## Mindmap');
 		expect(chunkPrompt).not.toContain('## Mindmap');
@@ -218,7 +220,7 @@ describe('PromptService', () => {
 
 		const prompt = service.buildAddonsPrompt(transcript, transcript.url);
 
-		expect(prompt).toContain('Add a TL;DR section before any other generated section');
+		expect(prompt).toContain('Add a TL;DR section');
 		expect(prompt).toContain('## TL;DR');
 		expect(prompt).not.toContain('## Mindmap');
 		expect(prompt).not.toContain('## Memorable quotes');

@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-	buildModelId,
+	decodeHtmlEntities,
+	decodeHtmlEntitiesDeep,
 	formatSequenceName,
 	getErrorMessage,
+	normalizeWhitespace,
 	normalizeVaultFolderPath,
 	resolveUniqueNotePath,
 	sanitizeNoteFileName,
 } from '../src/utils';
-import type { ModelConfig } from '../src/types';
 
 describe('getErrorMessage', () => {
 	it('returns the message of an Error', () => {
@@ -18,6 +19,60 @@ describe('getErrorMessage', () => {
 		expect(getErrorMessage('failed')).toBe('failed');
 		expect(getErrorMessage(42)).toBe('42');
 		expect(getErrorMessage(undefined)).toBe('undefined');
+	});
+});
+
+describe('normalizeWhitespace', () => {
+	it('collapses repeated whitespace and trims the result', () => {
+		expect(normalizeWhitespace('  a\n\t b  ')).toBe('a b');
+	});
+});
+
+describe('decodeHtmlEntities', () => {
+	it('decodes named and numeric HTML entities used by YouTube and model output', () => {
+		expect(decodeHtmlEntities('Tom &amp; Jerry &#39;x&#39; &quot;y&quot; &apos;z&apos; &lt;tag&gt; &#65;')).toBe('Tom & Jerry \'x\' "y" \'z\' <tag> A');
+	});
+
+	it('decodes broader HTML5 named and hex numeric entities', () => {
+		expect(decodeHtmlEntities('Rock&rsquo;n&rsquo;roll &copy; &#x27;quoted&#x27; &nbsp;')).toBe('Rock\u2019n\u2019roll \u00A9 \'quoted\' \u00A0');
+	});
+
+	it('requires semicolons for named entities so metadata text is not corrupted', () => {
+		expect(decodeHtmlEntities('Copyright &copy 2026')).toBe('Copyright &copy 2026');
+		expect(decodeHtmlEntities('Terms&timesheets')).toBe('Terms&timesheets');
+		expect(decodeHtmlEntities('Do this&nothing else')).toBe('Do this&nothing else');
+		expect(decodeHtmlEntities('?a=1&region=US')).toBe('?a=1&region=US');
+	});
+
+	it('leaves unknown entities unchanged', () => {
+		expect(decodeHtmlEntities('Unknown &bogus; stays')).toBe('Unknown &bogus; stays');
+	});
+
+	it('decodes one layer only', () => {
+		expect(decodeHtmlEntities('&amp;lt;div&amp;gt;')).toBe('&lt;div&gt;');
+	});
+});
+
+describe('decodeHtmlEntitiesDeep', () => {
+	it('decodes double-encoded entities all the way down', () => {
+		expect(decodeHtmlEntitiesDeep('&amp;lt;div&amp;gt;')).toBe('<div>');
+	});
+
+	it('decodes triple-encoded entities all the way down', () => {
+		expect(decodeHtmlEntitiesDeep('&amp;amp;amp;')).toBe('&');
+	});
+
+	it('decodes single-encoded entities like one pass would', () => {
+		expect(decodeHtmlEntitiesDeep('Tom &amp; Jerry &lt;tag&gt;')).toBe('Tom & Jerry <tag>');
+	});
+
+	it('does not create a semicolonless entity while decoding nested metadata', () => {
+		expect(decodeHtmlEntitiesDeep('Terms&amp;timesheets')).toBe('Terms&timesheets');
+		expect(decodeHtmlEntitiesDeep('?a=1&amp;region=US')).toBe('?a=1&region=US');
+	});
+
+	it('leaves unknown entities unchanged without looping forever', () => {
+		expect(decodeHtmlEntitiesDeep('Unknown &bogus; stays')).toBe('Unknown &bogus; stays');
 	});
 });
 
@@ -101,26 +156,5 @@ describe('formatSequenceName', () => {
 	it('uses the wider of total or index when computing pad width', () => {
 		expect(formatSequenceName('Playlist Name', 5, 100)).toBe('Playlist Name 005');
 		expect(formatSequenceName('Playlist Name', 250, 5)).toBe('Playlist Name 250');
-	});
-});
-
-describe('buildModelId', () => {
-	const sample = (providerName: string, modelName: string): ModelConfig => ({
-		name: modelName,
-		provider: { name: providerName, type: 'openai', apiKey: '' },
-	});
-
-	it('joins the provider and model with a colon, in that order', () => {
-		expect(buildModelId(sample('OpenAI', 'gpt-4'))).toBe('OpenAI:gpt-4');
-	});
-
-	it('preserves embedded colons inside the model name (so it can round-trip uniquely)', () => {
-		expect(buildModelId(sample('Ollama', 'qwen3:4b'))).toBe('Ollama:qwen3:4b');
-	});
-
-	it('produces stable ids regardless of optional displayName/contextWindow', () => {
-		const a = buildModelId({ ...sample('OpenAI', 'gpt-4'), displayName: 'GPT-4' });
-		const b = buildModelId({ ...sample('OpenAI', 'gpt-4'), contextWindow: 64000 });
-		expect(a).toBe(b);
 	});
 });

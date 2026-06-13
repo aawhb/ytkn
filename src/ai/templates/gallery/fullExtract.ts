@@ -6,9 +6,6 @@ export const fullExtractTemplate: Template = {
 	subtitle: 'Extract every claim, tool, person, source, and quote worth keeping.',
 	body: `Produce an exhaustive extraction note. The reader will use this note as a ctrl-F-friendly archive and never re-watch the video. Optimize for density, not narrative.
 
-## TL;DR
-1-2 sentences naming the through-line of the video.
-
 ## All claims and assertions
 Every distinct claim or assertion the speaker makes, one per bullet, with a short support phrase. Do not compress. If unsure whether a fact is worth keeping, keep it.
 
@@ -31,7 +28,6 @@ Style:
 - Density first. Do not summarize. Do not collapse three specifics into one.
 - Skip empty sections rather than write filler like "no examples".`,
 	sections: [
-		{ id: 'tldr', heading: 'TL;DR', required: true, description: '1-2 sentences naming the through-line.' },
 		{ id: 'claims', heading: 'All claims and assertions', required: false, description: 'Every distinct claim with brief support.' },
 		{ id: 'examples', heading: 'Examples and anecdotes', required: false, description: 'Every example or story.' },
 		{ id: 'tools', heading: 'Tools, products, libraries', required: false, description: 'Every product/library/service mentioned.' },

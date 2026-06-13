@@ -1,5 +1,5 @@
+import { decode } from 'html-entities';
 import { normalizePath } from 'obsidian';
-import { ModelConfig } from './types';
 
 const INVALID_NOTE_NAME_CHARS = new Set(['\\', '/', ':', '*', '?', '"', '<', '>', '|']);
 const TRAILING_NOTE_NAME_CHARS_REGEX = /[. ]+$/;
@@ -14,14 +14,30 @@ export function getErrorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-export function buildModelId(model: ModelConfig): string {
-	return `${model.provider.name}:${model.name}`;
+export function normalizeWhitespace(value: string): string {
+	return value.replace(/\s+/g, ' ').trim();
+}
+
+export function decodeHtmlEntities(text: string): string {
+	return decode(text, { level: 'html5', scope: 'strict' });
+}
+
+const MAX_ENTITY_DECODE_PASSES = 5;
+
+export function decodeHtmlEntitiesDeep(text: string): string {
+	let current = text;
+	for (let pass = 0; pass < MAX_ENTITY_DECODE_PASSES; pass += 1) {
+		const next = decodeHtmlEntities(current);
+		if (next === current) {
+			return current;
+		}
+		current = next;
+	}
+	return current;
 }
 
 export function sanitizeNoteFileName(title: string): string {
-	const cleaned = replaceInvalidNoteNameChars(title)
-		.replace(/\s+/g, ' ')
-		.trim()
+	const cleaned = normalizeWhitespace(replaceInvalidNoteNameChars(title))
 		.replace(TRAILING_NOTE_NAME_CHARS_REGEX, '')
 		.trim();
 

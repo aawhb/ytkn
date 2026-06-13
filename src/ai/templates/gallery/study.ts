@@ -6,9 +6,6 @@ export const studyTemplate: Template = {
 	subtitle: 'Notes for learning a topic: concepts, self-test, things to remember.',
 	body: `Produce study notes optimized for re-reading and recall.
 
-## TL;DR
-1-2 sentences naming what the learner should walk away knowing.
-
 ## Prerequisites
 3-6 bullets listing concepts or skills the reader should already know to follow this material. Omit if the source is genuinely beginner-friendly.
 
@@ -37,7 +34,6 @@ Style:
 - Concept names and questions should match the source's vocabulary.
 - Do not invent examples that were not in the transcript.`,
 	sections: [
-		{ id: 'tldr', heading: 'TL;DR', required: true, description: '1-2 sentences naming what the learner walks away knowing.' },
 		{ id: 'prerequisites', heading: 'Prerequisites', required: false, description: 'Concepts or skills the reader needs first.' },
 		{ id: 'concepts', heading: 'Concepts', required: false, description: '4-8 named concepts with one-sentence definitions.' },
 		{ id: 'how-it-works', heading: 'How it works', required: false, description: 'Numbered walkthrough of the mental model.' },

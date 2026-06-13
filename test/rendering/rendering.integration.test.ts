@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { getTemplate } from '../../src/ai/templates/registry';
 import { renderPlaylistNote } from '../../src/rendering/playlistNote';
 import { renderQueueBatchReport } from '../../src/rendering/runReport';
 import { renderVideoNote } from '../../src/rendering/videoNote';
@@ -29,6 +28,19 @@ const playlist = {
 };
 
 describe('renderVideoNote', () => {
+	it('preserves free-form manual summary content without H2 headings', () => {
+		const summary = '- First insight\n- Second insight\n- Third insight';
+		const { content } = renderVideoNote(
+			transcript as any,
+			'thumb.png',
+			'https://youtube.com/watch?v=123',
+			summary,
+			{ transcriptMode: 'none', includeFrontmatter: false, tldrCalloutAtTop: false },
+		);
+
+		expect(content).toContain(summary);
+	});
+
 	it('renders readable transcripts as a folded Obsidian callout', () => {
 		const { content } = renderVideoNote(transcript as any, 'thumb.png', 'https://youtube.com/watch?v=123', 'Summary', { transcriptMode: 'readable' });
 		expect(content).toContain('> [!note]- Transcript');
@@ -307,7 +319,7 @@ describe('renderVideoNote', () => {
 		expect(content).not.toContain('## TL;DR\nMost important idea.');
 	});
 
-	it('suppresses the TL;DR section when the callout is disabled', () => {
+	it('preserves the TL;DR section as body content when the callout is disabled', () => {
 		const { content } = renderVideoNote(
 			transcript as any,
 			'thumb.png',
@@ -317,21 +329,67 @@ describe('renderVideoNote', () => {
 		);
 
 		expect(content).not.toContain('> [!summary] TL;DR');
-		expect(content).not.toContain('## TL;DR\nMost important idea.');
+		expect(content).toContain('## TL;DR\nMost important idea.');
 		expect(content).toContain('## Summary\nRest of note.');
 	});
 
-	it('decodes HTML entities inside Mermaid blocks so mindmaps render the intended text', () => {
+	it('renders a Mindmap outline into a clean mermaid block in the final note', () => {
 		const { content } = renderVideoNote(
 			transcript as any,
 			'thumb.png',
 			'https://youtube.com/watch?v=123',
-			'## Summary\nBody\n\n## Mindmap\n```mermaid\nmindmap\n  root((Central idea))\n    Discovery -&gt; Planning -&gt; Execution\n```',
+			'## Summary\nBody\n\n## Mindmap\n- Central idea\n  - Discovery -> Planning -> Execution\n  - Time O(sqrt(n))\n  - Design &amp;amp; Architecture',
+			{ transcriptMode: 'none', includeFrontmatter: false, includeMindmap: true },
+		);
+
+		expect(content).toContain('```mermaid');
+		expect(content).toContain('root(("Central idea"))');
+		expect(content).toContain('node1["Discovery to Planning to Execution"]');
+		expect(content).toContain('node2["Time O(sqrt(n))"]');
+		expect(content).toContain('node3["Design and Architecture"]');
+		expect(content).not.toContain('-&gt;');
+		expect(content).not.toContain('&amp;');
+	});
+
+	it('preserves unmatched summary sections in addons-only mode', () => {
+		const leaked = [
+			'## Solution Approach',
+			'Preserve this unmatched section even when the summary is off.',
+			'',
+			'## Mindmap',
+			'- Central idea',
+			'  - Branch',
+			'',
+			'## Memorable quotes',
+			'> [!quote] Keep me.',
+		].join('\n');
+
+		const { content, warnings } = renderVideoNote(
+			transcript as any,
+			'thumb.png',
+			'https://youtube.com/watch?v=123',
+			leaked,
+			{ transcriptMode: 'none', includeFrontmatter: false, generateAiSummary: false, includeMindmap: true, includeMemorableQuotes: true },
+		);
+
+		expect(content).toContain('## Mindmap');
+		expect(content).toContain('## Memorable quotes');
+		expect(content).toContain('## Solution Approach');
+		expect(content).toContain('Preserve this unmatched section even when the summary is off.');
+		expect(warnings.some((warning) => warning.includes('preserved'))).toBe(true);
+	});
+
+	it('does not filter the body when generateAiSummary is not explicitly false', () => {
+		const { content } = renderVideoNote(
+			transcript as any,
+			'thumb.png',
+			'https://youtube.com/watch?v=123',
+			'## Solution Approach\nKeep this prose.',
 			{ transcriptMode: 'none', includeFrontmatter: false },
 		);
 
-		expect(content).toContain('Discovery -> Planning -> Execution');
-		expect(content).not.toContain('Discovery -&gt; Planning -&gt; Execution');
+		expect(content).toContain('## Solution Approach');
+		expect(content).toContain('Keep this prose.');
 	});
 
 	it('fixes memorable quotes where only the first quote has the > prefix', () => {
@@ -350,7 +408,7 @@ describe('renderVideoNote', () => {
 			'thumb.png',
 			'https://youtube.com/watch?v=123',
 			summary,
-			{ transcriptMode: 'none', includeFrontmatter: false },
+			{ transcriptMode: 'none', includeFrontmatter: false, includeMemorableQuotes: true },
 		);
 
 		expect(content).toContain('> [!quote] "First quote." (0:36)');
@@ -375,7 +433,7 @@ describe('renderVideoNote', () => {
 			'thumb.png',
 			'https://youtube.com/watch?v=123',
 			summary,
-			{ transcriptMode: 'none', includeFrontmatter: false },
+			{ transcriptMode: 'none', includeFrontmatter: false, includeMemorableQuotes: true },
 		);
 
 		const lines = content.split('\n');
@@ -429,18 +487,26 @@ describe('frontmatter and linkback options', () => {
 		expect(warnings.some((warning) => warning.includes('TL;DR'))).toBe(false);
 	});
 
-	it('still warns when a declared template is used without required sections', () => {
+	it('warns when a declared template is missing a required section', () => {
+		const requiredTemplate = {
+			id: 'general',
+			label: 'X',
+			subtitle: 'X',
+			body: '',
+			tags: ['ytkn/general'],
+			sections: [{ id: 'evidence', heading: 'Evidence', required: true, description: '' }],
+		} as any;
 		const { content, warnings } = renderVideoNote(
 			transcript as any,
 			'thumb.png',
 			'https://youtube.com/watch?v=123',
-			null,
+			'## Other notes\nstuff',
 			{ transcriptMode: 'readable' },
-			getTemplate('general'),
+			requiredTemplate,
 		);
 
 		expect(content).toContain('ytkn/general');
-		expect(warnings.some((warning) => warning.includes('TL;DR'))).toBe(true);
+		expect(warnings.some((warning) => warning.includes('Evidence'))).toBe(true);
 	});
 
 	it('omits frontmatter when includeFrontmatter is false', () => {
@@ -615,6 +681,40 @@ describe('renderQueueBatchReport', () => {
 		expect(result).toContain('> - Failed: 1');
 		expect(result).toContain('- Reason: Failed to fetch playlist');
 		expect(result).toContain('- Counts: 1 total, 0 completed, 0 skipped, 1 failed, 0 canceled');
+	});
+
+	it('aggregates video and nested playlist outcomes through the same counting path', () => {
+		const report = {
+			batchId,
+			entries: [
+				{
+					kind: 'video' as const, runId: 'r1', batchId, ordinal: 1,
+					url: 'https://yt/a', displayTitle: 'Video A', outcome: 'completed' as const,
+				},
+				{
+					kind: 'playlist' as const, runId: 'r2', batchId, ordinal: 2,
+					url: 'https://yt/pl', displayTitle: 'Playlist', playlistTitle: 'Playlist',
+					playlistUrl: 'https://yt/pl', outcome: 'failed' as const,
+					entries: [
+						{ title: 'Vid B', url: 'https://yt/b', position: 1, outcome: 'skipped' as const },
+						{ title: 'Vid C', url: 'https://yt/c', position: 2, outcome: 'canceled' as const },
+					],
+				},
+				{
+					kind: 'playlist' as const, runId: 'r3', batchId, ordinal: 3,
+					url: 'https://yt/broken', displayTitle: 'Broken Playlist', playlistTitle: 'Broken Playlist',
+					playlistUrl: 'https://yt/broken', outcome: 'failed' as const, entries: [],
+				},
+			],
+		};
+
+		const result = renderQueueBatchReport(report);
+
+		expect(result).toContain('> - Total: 4');
+		expect(result).toContain('> - Completed: 1');
+		expect(result).toContain('> - Skipped: 1');
+		expect(result).toContain('> - Failed: 1');
+		expect(result).toContain('> - Canceled: 1');
 	});
 
 	it('renders video entry warnings as sub-lines', () => {

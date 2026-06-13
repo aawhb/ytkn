@@ -1,4 +1,5 @@
 import type { GenerationOptions, PlaylistTranscriptResponse, TranscriptLine, TranscriptResponse } from '../types';
+import { normalizeWhitespace } from '../utils';
 import { renderCollapsedCallout } from './callouts';
 
 const TRANSCRIPT_PARAGRAPH_GAP_MS = 8000;
@@ -20,10 +21,6 @@ function formatTimestamp(seconds: number): string {
 	return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
 }
 
-function normalizeTranscriptText(text: string): string {
-	return text.replace(/\s+/g, ' ').trim();
-}
-
 function endsSentence(text: string): boolean {
 	return /[.!?]["')\]]*$/.test(text);
 }
@@ -31,7 +28,7 @@ function endsSentence(text: string): boolean {
 function splitTranscriptTextIntoChunks(text: string): string[] {
 	const matches = text.match(/.+?(?:[.!?]["')\]]*(?=\s|$)|$)/g) ?? [];
 	const chunks = matches
-		.map((chunk) => normalizeTranscriptText(chunk))
+		.map((chunk) => normalizeWhitespace(chunk))
 		.filter((chunk) => chunk.length > 0);
 
 	return chunks.length ? chunks : [text];
@@ -62,7 +59,7 @@ function buildTranscriptParagraphs(lines: TranscriptLine[]): Array<{ offset: num
 	};
 
 	for (const line of lines) {
-		const text = normalizeTranscriptText(line.text);
+		const text = normalizeWhitespace(line.text);
 		if (!text) {
 			continue;
 		}
@@ -152,16 +149,12 @@ export function buildTranscriptDetails(
 	return renderCollapsedCallout('note', 'Transcript', buildTranscriptBody(transcript, transcriptMode, options));
 }
 
-function normalizeInline(value: string): string {
-	return value.replace(/\s+/g, ' ').trim();
-}
-
 export function buildPlaylistTranscriptDetails(
 	playlist: PlaylistTranscriptResponse,
 	transcriptMode: GenerationOptions['transcriptMode'],
 	options: GenerationOptions | undefined,
 ): string {
-	const sections = playlist.transcripts.map((transcript, index) => `**${index + 1}. ${normalizeInline(transcript.title)}**
+	const sections = playlist.transcripts.map((transcript, index) => `**${index + 1}. ${normalizeWhitespace(transcript.title)}**
 
 ${buildTranscriptBody(transcript, transcriptMode, options)}`);
 

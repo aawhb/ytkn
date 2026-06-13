@@ -1,98 +1,134 @@
-export interface ExtractedTldr {
-    tldr: string | null;
-    body: string;
+import { decodeHtmlEntitiesDeep } from '../utils';
+import {
+	assertValidMindmapMermaid,
+	parseConceptOutline,
+	renderMindmapList,
+	renderMindmapMermaid,
+	type ConceptNode,
+} from './conceptTree';
+import { scanMarkdownLines, unwrapWholeMarkdownFence } from './markdownScanner';
+
+const MERMAID_FENCE = /```mermaid\s*\n([\s\S]*?)```/i;
+
+function normalizeMermaidBlocks(summaryText: string): string {
+	let decodingMermaid = false;
+	return scanMarkdownLines(summaryText).map((line) => {
+		if (
+			line.fenceBoundary === 'open'
+			&& /^ {0,3}`{3,}mermaid[ \t]*$/i.test(line.text)
+		) {
+			decodingMermaid = true;
+			return line.text;
+		}
+		if (decodingMermaid && line.fenceBoundary === 'close') {
+			decodingMermaid = false;
+			return line.text;
+		}
+		return decodingMermaid ? decodeHtmlEntitiesDeep(line.text) : line.text;
+	}).join('\n');
 }
 
-export function decodeHtmlEntities(text: string): string {
-    return text
-        .replace(/&#39;/g, "'")
-        .replace(/&amp;/g, '&')
-        .replace(/&quot;/g, '"')
-        .replace(/&apos;/g, "'")
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&#(\d+);/g, (_match: string, code: string) => String.fromCharCode(Number.parseInt(code, 10)));
+export function normalizeMindmapContent(body: string): string {
+	if (MERMAID_FENCE.test(body)) {
+		return body;
+	}
+
+	const tree: ConceptNode | null = parseConceptOutline(body);
+	if (!tree) {
+		return body;
+	}
+
+	const mermaid = renderMindmapMermaid(tree);
+	if (!assertValidMindmapMermaid(mermaid)) {
+		return renderMindmapList(tree);
+	}
+	return ['```mermaid', mermaid, '```'].join('\n');
 }
 
-export function normalizeMermaidBlocks(summaryText: string): string {
-    return summaryText.replace(/```mermaid\s*\n([\s\S]*?)```/gi, (block, mermaidBody: string) => {
-        const normalizedBody = decodeHtmlEntities(mermaidBody);
-        return block.replace(mermaidBody, normalizedBody);
-    });
+export function normalizeMemorableQuotesContent(content: string): string {
+	const normalizedContent: string[] = [];
+	let previousWasQuote = false;
+	for (const line of scanMarkdownLines(content)) {
+		const quoteMatch = !line.insideFence
+			? line.text.match(/^\s*>?\s*\[!quote\]\s*(.+?)\s*$/i)
+			: null;
+		if (!quoteMatch) {
+			normalizedContent.push(line.text);
+			previousWasQuote = false;
+			continue;
+		}
+		if (previousWasQuote) {
+			normalizedContent.push('');
+		}
+		normalizedContent.push(`> [!quote] ${quoteMatch[1].trim()}`);
+		previousWasQuote = true;
+	}
+	return normalizedContent.join('\n');
 }
 
-export function normalizeMemorableQuotesSection(body: string): string {
-    return body.replace(
-        /(##\s+Memorable quotes\s*\n)([\s\S]*?)(?=\n##\s|$)/i,
-        (_match, heading: string, content: string) => {
-            const quoteRegex = /(?:>?\s*)\[!quote\]\s*(.+?)\s*$/gm;
-            const matches = Array.from(content.matchAll(quoteRegex));
-            if (matches.length === 0) return `${heading}${content}`;
-            const rebuilt = matches.map((m) => `> [!quote] ${m[1].trim()}`).join('\n\n');
-            return `${heading}${rebuilt}`;
-        },
-    );
+function removeModelOwnedSections(text: string): string {
+	const lines = scanMarkdownLines(text);
+	const kept: string[] = [];
+	let removing = false;
+	for (const line of lines) {
+		if (!line.insideFence && /^##[ \t]+(?:Source|(?:Full[ \t]+)?Transcript)[ \t]*$/i.test(line.text)) {
+			removing = true;
+			continue;
+		}
+		if (!line.insideFence && /^##[ \t]/.test(line.text)) {
+			removing = false;
+		}
+		if (!removing) {
+			kept.push(line.text);
+		}
+	}
+	return kept.join('\n').trim();
+}
+
+function removeModelOwnedDetails(text: string): string {
+	const lines = scanMarkdownLines(text);
+	const kept: string[] = [];
+	for (let index = 0; index < lines.length; index += 1) {
+		const line = lines[index];
+		const openingCandidate = lines
+			.slice(index, index + 3)
+			.map((candidate) => candidate.text)
+			.join('\n');
+		const isModelOwnedDetails = !line.insideFence
+			&& /^\s*<details>\s*<summary>\s*(?:Transcript|Playlist transcripts)\s*<\/summary>/i.test(openingCandidate);
+		if (!isModelOwnedDetails) {
+			kept.push(line.text);
+			continue;
+		}
+
+		const closingOffset = lines.slice(index).findIndex((candidate) => (
+			!candidate.insideFence && /<\/details>/i.test(candidate.text)
+		));
+		if (closingOffset === -1) {
+			kept.push(line.text);
+			continue;
+		}
+		index += closingOffset;
+	}
+	return kept.join('\n');
 }
 
 export function sanitizeModelOutput(summaryText?: string | null): string {
-    return normalizeMemorableQuotesSection(
-        normalizeMermaidBlocks(summaryText ?? '')
-            .replace(/\n## Source\b[\s\S]*$/i, '')
-            .replace(/\n##\s*(?:Full\s+)?Transcript\b[\s\S]*$/i, '')
-            .replace(/\n?<details>\s*<summary>\s*Transcript\s*<\/summary>[\s\S]*?<\/details>/gi, '')
-            .replace(/\n?<details>\s*<summary>\s*Playlist transcripts\s*<\/summary>[\s\S]*?<\/details>/gi, '')
-            .trim(),
-    );
-}
-
-export function extractTldr(summaryText: string): ExtractedTldr {
-    const explicit = extractExplicitTldr(summaryText);
-    if (explicit.tldr) {
-        return explicit;
-    }
-
-    const firstParagraphMatch = summaryText.match(/^(?!#).+?(?=\n\n|\n#|$)/sm);
-    if (firstParagraphMatch && firstParagraphMatch[0].trim()) {
-        const tldr = firstParagraphMatch[0].trim();
-        const before = summaryText.slice(0, firstParagraphMatch.index ?? 0).trimEnd();
-        const after = summaryText.slice((firstParagraphMatch.index ?? 0) + firstParagraphMatch[0].length).trimStart();
-        const body = [before, after].filter(Boolean).join('\n\n');
-        return { tldr, body };
-    }
-
-    return { tldr: null, body: summaryText };
-}
-
-export function extractExplicitTldr(summaryText: string): ExtractedTldr {
-    const match = summaryText.match(/^[ \t]*##[ \t]+TL;DR[ \t]*\n([\s\S]*?)(?=\n##\s|$)/im);
-    if (match) {
-        const tldr = match[1].trim();
-        if (tldr) {
-            const before = summaryText.slice(0, match.index ?? 0).trimEnd();
-            const after = summaryText.slice((match.index ?? 0) + match[0].length).trimStart();
-            const body = [before, after].filter(Boolean).join('\n\n');
-            return { tldr, body };
-        }
-    }
-
-    return { tldr: null, body: summaryText };
+	const unwrapped = unwrapWholeMarkdownFence(summaryText ?? '');
+	return removeModelOwnedDetails(removeModelOwnedSections(normalizeMermaidBlocks(unwrapped))).trim();
 }
 
 export function buildTldrCallout(tldr: string): string {
-    const lines = tldr.split('\n').map((line) => `> ${line}`.trimEnd());
-    return ['> [!summary] TL;DR', ...lines].join('\n');
+	const lines = tldr.split('\n').map((line) => `> ${line}`.trimEnd());
+	return ['> [!summary] TL;DR', ...lines].join('\n');
 }
 
 export function shiftMarkdownHeadings(text: string, levels: number): string {
-    const extra = '#'.repeat(levels);
-    let inCodeBlock = false;
-    return text.split('\n').map((line) => {
-        if (line.startsWith('```')) {
-            inCodeBlock = !inCodeBlock;
-        }
-        if (!inCodeBlock && /^#{1,6} /.test(line)) {
-            return extra + line;
-        }
-        return line;
-    }).join('\n');
+	const extra = '#'.repeat(levels);
+	return scanMarkdownLines(text).map((line) => {
+		if (!line.insideFence && /^#{1,6} /.test(line.text)) {
+			return extra + line.text;
+		}
+		return line.text;
+	}).join('\n');
 }

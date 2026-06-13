@@ -2,7 +2,7 @@ import type { FrontmatterDeclaration, FrontmatterFieldType, GenerationOptions, P
 import type { Template } from '../types';
 import { DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST } from '../defaults';
 
-export const SACRED_FRONTMATTER_KEYS = [
+const SACRED_FRONTMATTER_KEYS = [
 	'title',
 	'aliases',
 	'source',
@@ -23,14 +23,14 @@ export const SACRED_FRONTMATTER_KEYS = [
 	'videoCount',
 ];
 
-export interface MergeFrontmatterInput {
+interface MergeFrontmatterInput {
 	globalTags: string[];
 	templateTags: string[];
 	declared: FrontmatterDeclaration[];
 	extracted: Record<string, unknown>;
 }
 
-export interface MergeFrontmatterResult {
+interface MergeFrontmatterResult {
 	merged: Record<string, unknown>;
 	warnings: string[];
 }
@@ -43,7 +43,7 @@ export interface RenderedFrontmatter {
 const KNOWN_ALLOWLIST_KEYS: ReadonlySet<string> = new Set(SACRED_FRONTMATTER_KEYS);
 const DEFAULT_ALLOWLIST_KEYS: ReadonlySet<string> = new Set(DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST.split(/\s+/));
 
-export function mergeFrontmatter(input: MergeFrontmatterInput): MergeFrontmatterResult {
+function mergeFrontmatter(input: MergeFrontmatterInput): MergeFrontmatterResult {
 	const merged: Record<string, unknown> = {};
 	const warnings: string[] = [];
 
@@ -85,7 +85,7 @@ export function mergeFrontmatter(input: MergeFrontmatterInput): MergeFrontmatter
 		if (declaredByKey.has(key)) {
 			continue;
 		}
-		warnings.push(`Frontmatter key "${key}" is not declared by this template; dropping. (value: ${truncate(safeStringify(value), 60)})`);
+		warnings.push(`Frontmatter key "${key}" is not declared by this template; dropping. (value: ${truncate(formatYamlScalar(value), 60)})`);
 	}
 
 	return { merged, warnings };
@@ -98,100 +98,55 @@ export function buildVideoFrontmatter(
 	template: Template | null,
 	extractedFrontmatter: Record<string, unknown>,
 ): RenderedFrontmatter {
-	if (!(options?.includeFrontmatter ?? true)) {
-		return { content: null, warnings: [] };
-	}
+	return buildFrontmatter(transcript.title, options, template, extractedFrontmatter, (lines, allowlist) => {
+		if (allowlist.has('source')) {
+			lines.push('source: youtube');
+		}
 
-	const allowlist = parseAllowlist(options?.frontmatterPropertyAllowlist);
-	const lines: string[] = ['---'];
+		if (transcript.author && allowlist.has('channel')) {
+			lines.push(`channel: ${quoteYamlValue(transcript.author)}`);
+		}
 
-	if (allowlist.has('title')) {
-		lines.push(`title: ${quoteYamlValue(transcript.title)}`);
-	}
+		if (transcript.channelUrl && allowlist.has('channelUrl')) {
+			lines.push(`channelUrl: ${quoteYamlValue(transcript.channelUrl)}`);
+		}
 
-	if (allowlist.has('aliases')) {
-		lines.push('aliases:');
-		lines.push(`  - ${quoteYamlValue(transcript.title)}`);
-	}
+		if (transcript.channelId && allowlist.has('channelId')) {
+			lines.push(`channelId: ${quoteYamlValue(transcript.channelId)}`);
+		}
 
-	const globalTags = parseTagList(options?.frontmatterTags);
-	const mergeResult = mergeFrontmatter({
-		globalTags,
-		templateTags: template?.tags ?? [],
-		declared: template?.frontmatter ?? [],
-		extracted: extractedFrontmatter,
+		if (allowlist.has('videoUrl')) {
+			lines.push(`videoUrl: ${quoteYamlValue(url)}`);
+		}
+
+		if (allowlist.has('videoId')) {
+			lines.push(`videoId: ${quoteYamlValue(transcript.videoId)}`);
+		}
+
+		if (transcript.thumbnailUrl && allowlist.has('thumbnailUrl')) {
+			lines.push(`thumbnailUrl: ${quoteYamlValue(transcript.thumbnailUrl)}`);
+		}
+
+		if (transcript.description && allowlist.has('videoDescription')) {
+			lines.push(`videoDescription: ${quoteYamlValue(transcript.description)}`);
+		}
+
+		if (transcript.uploadDate && allowlist.has('uploadDate')) {
+			lines.push(`uploadDate: ${transcript.uploadDate}`);
+		}
+
+		if (transcript.videoCategory && allowlist.has('videoCategory')) {
+			lines.push(`videoCategory: ${quoteYamlValue(transcript.videoCategory)}`);
+		}
+
+		if (typeof transcript.durationSeconds === 'number' && Number.isFinite(transcript.durationSeconds) && allowlist.has('durationSeconds')) {
+			lines.push(`durationSeconds: ${transcript.durationSeconds}`);
+		}
+
+		if (Array.isArray(transcript.keywords) && transcript.keywords.length > 0 && allowlist.has('keywords')) {
+			lines.push(formatYamlEntry('keywords', transcript.keywords));
+		}
 	});
-
-	const merged = mergeResult.merged;
-
-	if (Array.isArray(merged.tags) && merged.tags.length > 0) {
-		lines.push('tags:');
-		for (const tag of merged.tags as string[]) {
-			lines.push(`  - ${tag}`);
-		}
-	}
-
-	if (allowlist.has('source')) {
-		lines.push('source: youtube');
-	}
-
-	if (transcript.author && allowlist.has('channel')) {
-		lines.push(`channel: ${quoteYamlValue(transcript.author)}`);
-	}
-
-	if (transcript.channelUrl && allowlist.has('channelUrl')) {
-		lines.push(`channelUrl: ${quoteYamlValue(transcript.channelUrl)}`);
-	}
-
-	if (transcript.channelId && allowlist.has('channelId')) {
-		lines.push(`channelId: ${quoteYamlValue(transcript.channelId)}`);
-	}
-
-	if (allowlist.has('videoUrl')) {
-		lines.push(`videoUrl: ${quoteYamlValue(url)}`);
-	}
-
-	if (allowlist.has('videoId')) {
-		lines.push(`videoId: ${quoteYamlValue(transcript.videoId)}`);
-	}
-
-	if (transcript.thumbnailUrl && allowlist.has('thumbnailUrl')) {
-		lines.push(`thumbnailUrl: ${quoteYamlValue(transcript.thumbnailUrl)}`);
-	}
-
-	if (transcript.description && allowlist.has('videoDescription')) {
-		lines.push(`videoDescription: ${quoteYamlValue(transcript.description)}`);
-	}
-
-	if (transcript.uploadDate && allowlist.has('uploadDate')) {
-		lines.push(`uploadDate: ${transcript.uploadDate}`);
-	}
-
-	if (transcript.videoCategory && allowlist.has('videoCategory')) {
-		lines.push(`videoCategory: ${quoteYamlValue(transcript.videoCategory)}`);
-	}
-
-	if (typeof transcript.durationSeconds === 'number' && Number.isFinite(transcript.durationSeconds) && allowlist.has('durationSeconds')) {
-		lines.push(`durationSeconds: ${transcript.durationSeconds}`);
-	}
-
-	if (Array.isArray(transcript.keywords) && transcript.keywords.length > 0 && allowlist.has('keywords')) {
-		lines.push(formatYamlEntry('keywords', transcript.keywords));
-	}
-
-	if (allowlist.has('generated')) {
-		lines.push(`generated: ${new Date().toISOString()}`);
-	}
-
-	for (const [key, value] of Object.entries(merged)) {
-		if (key === 'tags') {
-			continue;
-		}
-		lines.push(formatYamlEntry(key, value));
-	}
-
-	lines.push('---');
-	return { content: lines.join('\n'), warnings: mergeResult.warnings };
 }
 
 export function buildPlaylistFrontmatter(
@@ -199,6 +154,33 @@ export function buildPlaylistFrontmatter(
 	options: GenerationOptions | undefined,
 	template: Template | null,
 	extractedFrontmatter: Record<string, unknown>,
+): RenderedFrontmatter {
+	return buildFrontmatter(playlist.title, options, template, extractedFrontmatter, (lines, allowlist) => {
+		if (allowlist.has('source')) {
+			lines.push('source: youtube-playlist');
+		}
+
+		if (allowlist.has('videoCount')) {
+			const videoCount = playlist.transcripts.length > 0 ? playlist.transcripts.length : playlist.entries.length;
+			lines.push(`videoCount: ${videoCount}`);
+		}
+
+		if (allowlist.has('playlistUrl')) {
+			lines.push(`playlistUrl: ${quoteYamlValue(playlist.url)}`);
+		}
+
+		if (allowlist.has('playlistId')) {
+			lines.push(`playlistId: ${quoteYamlValue(playlist.playlistId)}`);
+		}
+	});
+}
+
+function buildFrontmatter(
+	title: string,
+	options: GenerationOptions | undefined,
+	template: Template | null,
+	extractedFrontmatter: Record<string, unknown>,
+	appendMetadata: (lines: string[], allowlist: ReadonlySet<string>) => void,
 ): RenderedFrontmatter {
 	if (!(options?.includeFrontmatter ?? true)) {
 		return { content: null, warnings: [] };
@@ -208,12 +190,12 @@ export function buildPlaylistFrontmatter(
 	const lines: string[] = ['---'];
 
 	if (allowlist.has('title')) {
-		lines.push(`title: ${quoteYamlValue(playlist.title)}`);
+		lines.push(`title: ${quoteYamlValue(title)}`);
 	}
 
 	if (allowlist.has('aliases')) {
 		lines.push('aliases:');
-		lines.push(`  - ${quoteYamlValue(playlist.title)}`);
+		lines.push(`  - ${quoteYamlValue(title)}`);
 	}
 
 	const globalTags = parseTagList(options?.frontmatterTags);
@@ -233,22 +215,7 @@ export function buildPlaylistFrontmatter(
 		}
 	}
 
-	if (allowlist.has('source')) {
-		lines.push('source: youtube-playlist');
-	}
-
-	if (allowlist.has('videoCount')) {
-		const videoCount = playlist.transcripts.length > 0 ? playlist.transcripts.length : playlist.entries.length;
-		lines.push(`videoCount: ${videoCount}`);
-	}
-
-	if (allowlist.has('playlistUrl')) {
-		lines.push(`playlistUrl: ${quoteYamlValue(playlist.url)}`);
-	}
-
-	if (allowlist.has('playlistId')) {
-		lines.push(`playlistId: ${quoteYamlValue(playlist.playlistId)}`);
-	}
+	appendMetadata(lines, allowlist);
 
 	if (allowlist.has('generated')) {
 		lines.push(`generated: ${new Date().toISOString()}`);
@@ -381,7 +348,7 @@ function validateValue(value: unknown, declaration: FrontmatterDeclaration): Val
 			if (typeof value === 'string' && (declaration.enumValues ?? []).includes(value)) {
 				return { ok: true, value };
 			}
-			return { ok: false, reason: `expected one of ${(declaration.enumValues ?? []).join('|')}, got ${typeOf(value)} (${truncate(safeStringify(value), 30)})` };
+			return { ok: false, reason: `expected one of ${(declaration.enumValues ?? []).join('|')}, got ${typeOf(value)} (${truncate(formatYamlScalar(value), 30)})` };
 		case 'date':
 			if (value === null) {
 				return { ok: true, value: null };
@@ -389,7 +356,7 @@ function validateValue(value: unknown, declaration: FrontmatterDeclaration): Val
 			if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
 				return { ok: true, value };
 			}
-			return { ok: false, reason: `expected ISO date string or null, got ${typeOf(value)} (${truncate(safeStringify(value), 30)})` };
+			return { ok: false, reason: `expected ISO date string or null, got ${typeOf(value)} (${truncate(formatYamlScalar(value), 30)})` };
 		default:
 			return { ok: false, reason: `unsupported declared type ${(declaration as { type: FrontmatterFieldType }).type}` };
 	}
@@ -410,14 +377,4 @@ function truncate(value: string, max: number): string {
 		return value;
 	}
 	return `${value.slice(0, max)}…`;
-}
-
-function safeStringify(value: unknown): string {
-	if (typeof value === 'string') {
-		return value;
-	}
-	if (typeof value === 'number' || typeof value === 'boolean' || value === null) {
-		return `${value}`;
-	}
-	return JSON.stringify(value) ?? '';
 }

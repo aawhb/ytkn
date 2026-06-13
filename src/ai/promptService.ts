@@ -1,4 +1,4 @@
-import {
+import type {
 	InstructionConfig,
 	ModelConfig,
 	PlaylistTranscriptResponse,
@@ -8,6 +8,7 @@ import {
 import {
 	getTemplate,
 } from './templates/registry';
+import { buildAddonPromptFragments } from '../rendering/noteSections';
 import { FALLBACK_CONTEXT_WINDOW_TOKENS } from '../defaults';
 
 const ESTIMATED_CHARS_PER_TOKEN = 4;
@@ -21,6 +22,7 @@ Hard rules — never break these:
 - Correct only obvious transcription errors. Otherwise leave wording faithful.
 - Do not output a \`# H1\` heading. Section headings start at \`## H2\`.
 - Do not output a \`## Source\` section, a \`## Transcript\` section, or long verbatim transcript excerpts. Those are added separately.
+- Output only the sections specified in these instructions; do not add sections that were not requested.
 - Use Obsidian-flavored Markdown. Prefer \`> [!info]\`, \`> [!warning]\`, \`> [!quote]\`, and \`> [!summary]\` callouts when context fits. Use \`- [ ]\` for tasks.
 - Omit any section that would be empty. Do not write filler like "no items mentioned" or "n/a".
 - Keep bullets concise, specific, and high-signal. Do not restate the same idea twice.
@@ -36,50 +38,6 @@ Hard rules — never break these:
 - Do not output a \`## Source\`, \`## Transcript\`, or long verbatim transcript excerpts.
 - Output only the requested add-on sections, using H2 headings.
 - Omit a requested section if the transcript does not contain enough grounded material for it.`;
-
-const TLDR_SECTION_INSTRUCTIONS = `Add a TL;DR section before any other generated section:
-
-## TL;DR
-1-2 sentences (≤ 240 characters total) capturing the single most important takeaway.
-
-TL;DR rules:
-- Section heading must be exactly \`## TL;DR\`.
-- Keep it grounded in the transcript.
-- Do not repeat the title or source metadata.`;
-
-const NO_TLDR_SECTION_INSTRUCTIONS = `Do not output a \`## TL;DR\` section.`;
-
-const MINDMAP_APPENDIX_INSTRUCTIONS = `Add a Mermaid mindmap section for the key concepts. Use exactly this format — the backtick fences are required; do not replace the diagram with prose:
-
-## Mindmap
-\`\`\`mermaid
-mindmap
-  root((Central idea))
-    Branch A
-      Leaf 1
-      Leaf 2
-    Branch B
-      Leaf 3
-\`\`\`
-
-Mindmap rules:
-- Section heading must be exactly \`## Mindmap\`.
-- The content must be a \`\`\`mermaid mindmap\`\`\` code block — not prose, not a description of a mindmap.
-- Keep labels short: noun phrases or very short clauses.
-- Capture only the main ideas, supporting branches, and notable tradeoffs from the transcript.
-- Roughly 2–4 levels deep and 8–18 nodes total.
-- Do not invent nodes that are not grounded in the transcript.`;
-
-const MEMORABLE_QUOTES_APPENDIX_INSTRUCTIONS = `Add a memorable quotes section at the end of the AI output (after Mindmap if present):
-
-## Memorable quotes
-- 3–7 verbatim quotes worth preserving from this source.
-- Each quote must be its own callout block. Format every quote line as:
-  \`> [!quote] "..." (mm:ss)\`
-- Separate consecutive quote callouts with a blank line.
-- Append a \`(mm:ss)\` timestamp suffix when the timing is verifiable from the transcript.
-- The section heading must be exactly \`## Memorable quotes\`.
-- Omit the section entirely if fewer than 3 quote-worthy lines exist in the source.`;
 
 const LEVEL_GUIDES: Record<string, Record<string, string>> = {
 	learner_level: {
@@ -371,24 +329,8 @@ ${lines}`;
 		return this.runtimeOptions.includeTldr ?? true;
 	}
 
-	private stripTldrSectionFromBody(body: string): string {
-		return body
-			.replace(/(^|\n)##[ \t]+TL;DR[ \t]*\n[\s\S]*?(?=\n##[ \t]+|$)/i, (match) => match.startsWith('\n') ? '\n' : '')
-			.replace(/\n{3,}/g, '\n\n')
-			.trim();
-	}
-
 	private getPromptTemplate(): Template {
-		const template = getTemplate(this.instructionConfig.template);
-		if (this.shouldIncludeTldr()) {
-			return template;
-		}
-
-		return {
-			...template,
-			body: this.stripTldrSectionFromBody(template.body),
-			sections: template.sections?.filter((section) => section.id !== 'tldr'),
-		};
+		return getTemplate(this.instructionConfig.template);
 	}
 
 	private buildInstructionBlock(context: 'video' | 'playlist', includeAddons = true): string {
@@ -413,19 +355,11 @@ ${lines}`;
 	}
 
 	private buildInstructionAddons(): string {
-		const blocks: string[] = [];
-
-		blocks.push(this.shouldIncludeTldr() ? TLDR_SECTION_INSTRUCTIONS : NO_TLDR_SECTION_INSTRUCTIONS);
-
-		if (this.instructionConfig.includeMindmap) {
-			blocks.push(MINDMAP_APPENDIX_INSTRUCTIONS);
-		}
-
-		if (this.instructionConfig.includeMemorableQuotes) {
-			blocks.push(MEMORABLE_QUOTES_APPENDIX_INSTRUCTIONS);
-		}
-
-		return blocks.join('\n\n');
+		return buildAddonPromptFragments({
+			includeTldr: this.shouldIncludeTldr(),
+			includeMindmap: this.instructionConfig.includeMindmap,
+			includeMemorableQuotes: this.instructionConfig.includeMemorableQuotes,
+		});
 	}
 
 	private buildPlaylistAddonInstructions(playlist: PlaylistTranscriptResponse): string {

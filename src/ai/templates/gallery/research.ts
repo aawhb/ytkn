@@ -6,9 +6,6 @@ export const researchTemplate: Template = {
 	subtitle: 'Inquiry-shaped: claims, evidence quality, gaps, sources to chase next.',
 	body: `Produce a research dossier. The reader is investigating a question; this video is one data point. Be epistemically rigorous: distinguish strong claims from assertions, surface gaps the speaker glosses over, and flag what is missing as carefully as what is present.
 
-## TL;DR
-1-2 sentences naming this video's contribution to the inquiry.
-
 ## Inquiry
 Restate the research question this video helps answer. If the user supplied an inquiry, use that wording. Otherwise, infer the most likely inquiry the reader had in mind.
 
@@ -40,7 +37,6 @@ Style:
 - Be epistemically rigorous. Do not upgrade an assertion to a claim with strong evidence just because it sounds confident.
 - Skeptic-first orientation: every assertion is suspect until evidence appears.`,
 	sections: [
-		{ id: 'tldr', heading: 'TL;DR', required: true, description: 'This video\'s contribution to the inquiry.' },
 		{ id: 'inquiry', heading: 'Inquiry', required: false, description: 'The research question this video helps answer.' },
 		{ id: 'claims', heading: 'Claims made', required: false, description: 'Every claim with explicit strength tag.' },
 		{ id: 'evidence', heading: 'Evidence offered', required: false, description: 'Concrete evidence the speaker brings.' },

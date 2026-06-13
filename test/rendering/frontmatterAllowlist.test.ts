@@ -19,7 +19,6 @@ const transcript = {
 
 const baseOptions = {
 	includeFrontmatter: true,
-	linkbackStyle: 'frontmatter' as const,
 	tldrCalloutAtTop: false,
 };
 

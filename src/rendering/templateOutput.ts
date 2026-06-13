@@ -1,5 +1,4 @@
-import type { ExtractedTemplateOutput, Template } from '../types';
-import { sanitizeModelOutput } from './outputNormalizer';
+import { scanMarkdownLines, unwrapWholeMarkdownFence } from './markdownScanner';
 
 const FRONTMATTER_OPEN_MARKER = '<!-- ytkn:frontmatter';
 const FRONTMATTER_CLOSE_MARKER = '-->';
@@ -10,56 +9,14 @@ export interface ExtractedFrontmatterBlock {
 	warnings: string[];
 }
 
-export interface BuiltTemplateBody {
-	body: string;
-	tldr: string | null;
-	extractedFrontmatter: Record<string, unknown>;
-	warnings: string[];
-}
-
-export function buildBodyFromTemplate(
-	rawSummary: string,
-	template: Template,
-	includeTldr: boolean,
-): BuiltTemplateBody {
-	const sanitized = sanitizeModelOutput(rawSummary);
-	const extracted = extractTemplateOutput(sanitized, template);
-
-	const tldrFromSection = extracted.sections.get('tldr')?.trim() ?? null;
-
-	const orderedBody: string[] = [];
-	for (const section of template.sections ?? []) {
-		if (section.id === 'tldr') {
-			continue;
-		}
-		const content = extracted.sections.get(section.id);
-		if (content && content.trim().length > 0) {
-			orderedBody.push(`## ${section.heading}\n${content.trim()}`);
-		}
-	}
-
-	for (const extra of extracted.extras) {
-		orderedBody.push(`## ${extra.heading}\n${extra.body}`);
-	}
-
-	return {
-		body: orderedBody.join('\n\n'),
-		tldr: tldrFromSection,
-		extractedFrontmatter: extracted.frontmatter ?? {},
-		warnings: includeTldr
-			? extracted.warnings
-			: extracted.warnings.filter((warning) => !warning.includes('Required section "TL;DR"')),
-	};
-}
-
 export function extractFrontmatterBlock(rawBody: string): ExtractedFrontmatterBlock {
-	const openIndex = rawBody.indexOf(FRONTMATTER_OPEN_MARKER);
+	const openIndex = findOutsideFenceMarker(rawBody, FRONTMATTER_OPEN_MARKER);
 	if (openIndex === -1) {
 		return { frontmatter: null, bodyWithoutBlock: rawBody, warnings: [] };
 	}
 
 	const afterOpen = openIndex + FRONTMATTER_OPEN_MARKER.length;
-	const closeIndex = rawBody.indexOf(FRONTMATTER_CLOSE_MARKER, afterOpen);
+	const closeIndex = findOutsideFenceMarker(rawBody, FRONTMATTER_CLOSE_MARKER, afterOpen);
 	if (closeIndex === -1) {
 		return {
 			frontmatter: null,
@@ -80,6 +37,24 @@ export function extractFrontmatterBlock(rawBody: string): ExtractedFrontmatterBl
 		bodyWithoutBlock: stripped,
 		warnings: parsed.warnings,
 	};
+}
+
+function findOutsideFenceMarker(markdown: string, marker: string, minimumOffset = 0): number {
+	const lines = scanMarkdownLines(markdown);
+	let lineStart = 0;
+	for (const line of lines) {
+		if (!line.insideFence) {
+			const searchFrom = Math.max(0, minimumOffset - lineStart);
+			const markerIndex = line.text.indexOf(marker, searchFrom);
+			if (markerIndex !== -1) {
+				return lineStart + markerIndex;
+			}
+		}
+
+		const newlineIndex = markdown.indexOf('\n', lineStart);
+		lineStart = newlineIndex === -1 ? markdown.length : newlineIndex + 1;
+	}
+	return -1;
 }
 
 interface ParseResult {
@@ -155,67 +130,23 @@ function parseScalarOrArray(value: string): unknown {
 	return value;
 }
 
-export function extractTemplateOutput(rawBody: string, template: Template): ExtractedTemplateOutput {
-	const blockResult = extractFrontmatterBlock(rawBody);
-	const declaredSections = template.sections;
-
-	if (!declaredSections || declaredSections.length === 0) {
-		return {
-			frontmatter: blockResult.frontmatter,
-			sections: new Map(),
-			extras: [],
-			warnings: blockResult.warnings,
-		};
-	}
-
-	const splitResult = splitBodyByH2(blockResult.bodyWithoutBlock);
-
-	const matchedSections = new Map<string, string>();
-	const matchedHeadings = new Set<string>();
-	const extras: Array<{ heading: string; body: string }> = [];
-	const warnings = [...blockResult.warnings];
-
-	const declaredByLowerHeading = new Map<string, { id: string; heading: string }>();
-	for (const section of declaredSections) {
-		declaredByLowerHeading.set(section.heading.toLowerCase(), { id: section.id, heading: section.heading });
-	}
-
-	for (const piece of splitResult) {
-		const exactMatch = declaredSections.find((s) => s.heading === piece.heading);
-		const fallback = exactMatch ?? declaredByLowerHeading.get(piece.heading.toLowerCase());
-		if (fallback) {
-			matchedSections.set(fallback.id, piece.body);
-			matchedHeadings.add(fallback.heading);
-		} else {
-			extras.push({ heading: piece.heading, body: piece.body });
-		}
-	}
-
-	for (const section of declaredSections) {
-		if (section.required && !matchedSections.has(section.id)) {
-			warnings.push(`Required section "${section.heading}" was not emitted by the model.`);
-		}
-	}
-
-	return {
-		frontmatter: blockResult.frontmatter,
-		sections: matchedSections,
-		extras,
-		warnings,
-	};
-}
-
 interface SectionPiece {
 	heading: string;
 	body: string;
 }
 
-function splitBodyByH2(body: string): SectionPiece[] {
+interface SplitBodyByH2Result {
+	preamble: string;
+	sections: SectionPiece[];
+}
+
+export function splitBodyByH2(body: string): SplitBodyByH2Result {
 	const pieces: SectionPiece[] = [];
-	const lines = body.split('\n');
+	const lines = scanMarkdownLines(unwrapWholeMarkdownFence(body));
 
 	let currentHeading: string | null = null;
 	let currentBody: string[] = [];
+	const preamble: string[] = [];
 
 	const flush = () => {
 		if (currentHeading !== null) {
@@ -224,16 +155,23 @@ function splitBodyByH2(body: string): SectionPiece[] {
 	};
 
 	for (const line of lines) {
-		const headingMatch = line.match(/^##[ \t]+(.+?)[ \t]*$/);
+		const headingMatch = !line.insideFence
+			? line.text.match(/^##[ \t]+(.+?)[ \t]*$/)
+			: null;
 		if (headingMatch) {
 			flush();
 			currentHeading = headingMatch[1].trim();
 			currentBody = [];
-		} else if (currentHeading !== null) {
-			currentBody.push(line);
+		} else if (currentHeading === null) {
+			preamble.push(line.text);
+		} else {
+			currentBody.push(line.text);
 		}
 	}
 
 	flush();
-	return pieces;
+	return {
+		preamble: preamble.join('\n').trim(),
+		sections: pieces,
+	};
 }

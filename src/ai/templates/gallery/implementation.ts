@@ -6,9 +6,6 @@ export const implementationTemplate: Template = {
 	subtitle: 'Concrete steps, code, tools, and action items to act on the source.',
 	body: `Produce an implementation-focused note for a reader who wants to act on what the source shows — write the steps, code, tools, and action items needed.
 
-## TL;DR
-1-2 sentences naming what is built and the core approach.
-
 ## Approach
 A short paragraph or 3-5 bullets describing the strategy.
 
@@ -34,7 +31,6 @@ Style:
 - Be specific. "Run \`npm install\`" beats "install dependencies".
 - Do not invent function names, flags, or version numbers.`,
 	sections: [
-		{ id: 'tldr', heading: 'TL;DR', required: true, description: '1-2 sentences naming what is built and the core approach.' },
 		{ id: 'approach', heading: 'Approach', required: false, description: 'Strategy in a paragraph or 3-5 bullets.' },
 		{ id: 'steps', heading: 'Steps', required: false, description: 'Numbered concrete steps. Each one sentence.' },
 		{ id: 'code-patterns', heading: 'Code patterns', required: false, description: 'Fenced blocks for code shown or described.' },

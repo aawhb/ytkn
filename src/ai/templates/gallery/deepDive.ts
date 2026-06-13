@@ -6,9 +6,6 @@ export const deepDiveTemplate: Template = {
 	subtitle: 'Topic reference, canonical concept, mental model, gaps to learn.',
 	body: `Produce a deep-dive note that belongs to the topic, not just to this video. Future videos on the same topic should be able to add to this note. Define terms canonically and surface what is missing as much as what is present.
 
-## TL;DR
-1-2 sentences naming the topic and the central insight.
-
 ## Core concept
 The canonical definition of the topic. Lead with a one-paragraph definition the reader could quote. Then, in 2-4 sentences or bullets, give the intuition: how to think about it informally.
 
@@ -38,7 +35,6 @@ Style:
 - Define terms canonically; the reader will reference this for years.
 - Surface gaps explicitly rather than hide them.`,
 	sections: [
-		{ id: 'tldr', heading: 'TL;DR', required: true, description: '1-2 sentences naming the topic and central insight.' },
 		{ id: 'core-concept', heading: 'Core concept', required: false, description: 'Canonical definition + intuition.' },
 		{ id: 'mental-model', heading: 'Mental model', required: false, description: 'Transferable mental model.' },
 		{ id: 'components', heading: 'Components / sub-topics', required: false, description: 'Decomposition into named parts.' },

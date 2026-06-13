@@ -20,7 +20,11 @@ const transcript = {
 describe('media section rendering', () => {
 	it('renders video embeds, thumbnail embeds, or no embed based on options', () => {
 		expect(buildMediaEmbed('Video ] Name', 'https://youtu.be/abc', 'thumb.jpg', { mediaEmbedMode: 'video' }))
-			.toBe('![Video \\] Name](https://youtu.be/abc)');
+			.toBe('![Video ) Name](https://youtu.be/abc)');
+		expect(buildMediaEmbed('  Video ] \\ Name  ', 'https://youtu.be/abc', 'thumb.jpg', { mediaEmbedMode: 'video' }))
+			.toBe('![Video ) \\\\ Name](https://youtu.be/abc)');
+		expect(buildMediaEmbed('Recurrence [ T(n) ] #3', 'https://youtu.be/abc', 'thumb.jpg', { mediaEmbedMode: 'video' }))
+			.toBe('![Recurrence ( T(n) ) #3](https://youtu.be/abc)');
 		expect(buildMediaEmbed('Video', 'https://youtu.be/abc', 'thumb.jpg', { mediaEmbedMode: 'thumbnail' }))
 			.toBe('![Thumbnail](thumb.jpg)');
 		expect(buildMediaEmbed('Video', 'https://youtu.be/abc', null, { mediaEmbedMode: 'thumbnail' }))
@@ -35,7 +39,7 @@ describe('media section rendering', () => {
 		expect(buildPlaylistMediaEmbed(playlist as any, null, { mediaEmbedMode: 'thumbnail' }))
 			.toBe('![Thumbnail](entry-thumb.jpg)');
 		expect(buildPlaylistMediaEmbed(playlist as any, null, { mediaEmbedMode: 'video' }))
-			.toBe('![Playlist \\] Name](https://youtube.com/watch?v=abc123)');
+			.toBe('![Playlist ) Name](https://youtube.com/watch?v=abc123)');
 	});
 
 	it('builds video headers with a stable heading level and optional embed', () => {

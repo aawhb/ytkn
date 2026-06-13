@@ -1,12 +1,13 @@
 import type { GenerationOptions, MediaEmbedMode, PlaylistTranscriptResponse, TranscriptResponse } from '../types';
 import { DEFAULT_MEDIA_EMBED_MODE } from '../defaults';
+import { normalizeWhitespace } from '../utils';
+import { thumbnailUrlForQuality } from '../youtube/metadata';
 
 function escapeMarkdownAltText(value: string): string {
-	return value
-		.replace(/\s+/g, ' ')
+	return normalizeWhitespace(value)
 		.replace(/\\/g, '\\\\')
-		.replace(/\]/g, '\\]')
-		.trim();
+		.replace(/\[/g, '(')
+		.replace(/\]/g, ')');
 }
 
 function resolveMediaEmbedMode(options?: GenerationOptions): MediaEmbedMode {
@@ -32,10 +33,6 @@ export function buildMediaEmbed(
 	return `![${escapeMarkdownAltText(title)}](${url})`;
 }
 
-function fallbackVideoThumbnailUrl(videoId: string): string {
-	return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-}
-
 function resolvePlaylistThumbnailUrl(playlist: PlaylistTranscriptResponse, thumbnailUrl: string | null): string | null {
 	if (thumbnailUrl) {
 		return thumbnailUrl;
@@ -52,7 +49,7 @@ function resolvePlaylistThumbnailUrl(playlist: PlaylistTranscriptResponse, thumb
 	}
 
 	const firstVideoId = firstTranscript?.videoId ?? firstEntry?.videoId;
-	return firstVideoId ? fallbackVideoThumbnailUrl(firstVideoId) : null;
+	return firstVideoId ? thumbnailUrlForQuality(firstVideoId, 'high') : null;
 }
 
 function resolvePlaylistVideoEmbedUrl(playlist: PlaylistTranscriptResponse): string | null {
