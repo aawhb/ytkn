@@ -1,15 +1,17 @@
-import { App, Notice, TFile } from 'obsidian';
+import type { App } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
 import { notifyError } from '../ui/shared/notifications';
-import {
+import type {
 	PluginSettings,
 	QueueBatchReport,
 	QueueRunReportEntry,
 } from '../types';
-import { YouTubeService } from '../youtube/youtubeService';
+import type { YouTubeService } from '../youtube/youtubeService';
+import { extractPlaylistId, extractVideoId, isPlaylistUrl } from '../youtube/urls';
 import { isAbortError } from '../queue/progress';
 import { renderQueueBatchReport } from '../rendering/runReport';
 import { getErrorMessage } from '../utils';
-import { QueuedRun, RunBatch } from '../queue/runQueueService';
+import type { QueuedRun, RunBatch } from '../queue/runQueueService';
 import { resolveEffectiveGenerationOptions } from './effectiveOptions';
 import { buildAiExecutionContext } from './aiPolicy';
 import { playlistRunOutcome } from './reportEntries';
@@ -18,9 +20,6 @@ import { generatePlaylistNotes } from './workflows/playlist';
 import { generateSingleVideoNote } from './workflows/singleVideo';
 import { buildSafeBaseName, NoteTargetWriter } from './targets/noteTargets';
 import type { ProgressState } from './targets/noteTargets';
-
-export type { NoteInsertionTarget } from './targets/noteTargets';
-export { INSERT_AT_CARET_REQUIRES_NOTE } from './constants';
 
 export class GenerationService {
 	private targets: NoteTargetWriter;
@@ -47,17 +46,14 @@ export class GenerationService {
 
 			const initialTarget = await this.targets.resolveInitialTarget(run);
 
-			// When multi-URL paste coerces a `current-note` target to append-end,
-			// effectiveOptions.noteDestinationMode stays 'current-note' but runtime
-			// behavior must be append mode. Normalize here so the rendering (H1->H2
-			// fragment), rename-suppression, and progress-write branches all fire
-			// correctly. Does not affect single-URL current-note (mode='replace-range').
+			// Multi-URL editor batches need append behavior even though `current-note`
+			// means replace-range for single URLs; normalize the runtime mode here.
 			if (run.initialTargetRef?.mode === 'append-end' && effectiveOptions.noteDestinationMode === 'current-note') {
 				effectiveOptions = { ...effectiveOptions, noteDestinationMode: 'append-to-active-note' };
 			}
 
-			if (YouTubeService.isPlaylistUrl(run.url)) {
-				const { playlist, notePath, entries } = await generatePlaylistNotes(
+			if (isPlaylistUrl(run.url)) {
+				const { playlist, notePath, entries, warnings } = await generatePlaylistNotes(
 					this.workflowContext(), run.url, initialTarget, effectiveOptions, aiContext, progressState, signal,
 				);
 				return {
@@ -71,6 +67,7 @@ export class GenerationService {
 					playlistUrl: run.url,
 					outcome: playlistRunOutcome(entries),
 					notePath: notePath ?? undefined,
+					warnings: warnings.length > 0 ? warnings : undefined,
 					entries,
 				};
 			}
@@ -118,14 +115,14 @@ export class GenerationService {
 
 	async resolveTitle(run: QueuedRun, signal: AbortSignal): Promise<string> {
 		if (signal.aborted) throw signal.reason;
-		if (YouTubeService.isPlaylistUrl(run.url)) {
-			const playlistId = YouTubeService.extractPlaylistId(run.url);
+		if (isPlaylistUrl(run.url)) {
+			const playlistId = extractPlaylistId(run.url);
 			if (!playlistId) throw new Error('Could not extract playlist ID');
 			const title = await this.youtubeService.fetchPlaylistTitle(playlistId);
 			if (signal.aborted) throw signal.reason;
 			return title;
 		}
-		const videoId = YouTubeService.extractVideoId(run.url);
+		const videoId = extractVideoId(run.url);
 		if (!videoId) throw new Error('Could not extract video ID');
 		const title = await this.youtubeService.fetchVideoTitle(videoId);
 		if (signal.aborted) throw signal.reason;

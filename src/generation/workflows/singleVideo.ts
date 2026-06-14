@@ -2,7 +2,7 @@ import { Notice } from 'obsidian';
 import type { TranscriptResponse } from '../../types';
 import { getTemplate } from '../../ai/templates/registry';
 import { renderVideoNote } from '../../rendering/videoNote';
-import { YouTubeService } from '../../youtube/youtubeService';
+import { thumbnailUrlForQuality } from '../../youtube/metadata';
 import { INSERT_AT_CARET_REQUIRES_NOTE } from '../constants';
 import type { EffectiveGenerationOptions } from '../effectiveOptions';
 import { fetchVideoDataForUrl } from '../fetch';
@@ -30,7 +30,7 @@ export async function generateSingleVideoToTarget(
 		progressState.hasProgressContent = true;
 	}
 
-	const thumbnailUrl = transcript.thumbnailUrl ?? YouTubeService.getThumbnailUrl(transcript.videoId);
+	const thumbnailUrl = transcript.thumbnailUrl ?? thumbnailUrlForQuality(transcript.videoId, 'medium');
 	const generateSummary = shouldGenerateAiSummary(effectiveOptions);
 	const summary = aiContext
 		? await generateAiText(context, aiContext, transcript, url, target, progressState, signal, generateSummary)
@@ -41,7 +41,7 @@ export async function generateSingleVideoToTarget(
 		: null;
 	const { content, warnings } = renderVideoNote(transcript, thumbnailUrl, url, summary, effectiveOptions, template, isAppendMode ? 'fragment' : 'standalone');
 	for (const warning of warnings) {
-		if (warning.toLowerCase().includes('required section')) {
+		if (/\b(?:required|requested) section\b/i.test(warning)) {
 			new Notice(`Note generated with warning: ${warning}`);
 		}
 	}
@@ -78,7 +78,7 @@ export async function generateSingleVideoNote(
 		if (!target) {
 			throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
 		}
-		// Skip showProgress - do not write progress markers into the user's existing note
+		// Append mode must not write progress markers.
 	}
 
 	context.onStatusBar(metadataOnly ? 'Fetching video metadata…' : 'Fetching transcript…');

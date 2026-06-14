@@ -1,8 +1,8 @@
-import { GenerationOptions, QueueBatchReport, QueueRunOutcome, QueueRunReportEntry, RunReportLocation } from '../types';
+import type { GenerationOptions, QueueBatchReport, QueueRunOutcome, QueueRunReportEntry, RunReportLocation } from '../types';
+import { createJobId, getErrorMessage } from '../utils';
 import { isAbortError } from './progress';
 
-export type QueuedRunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'canceled';
-export type QueuedRunKind = 'video' | 'playlist' | 'unknown';
+type QueuedRunKind = 'video' | 'playlist';
 
 export interface QueuedRunInsertionTargetRef {
 	filePath: string;
@@ -19,15 +19,8 @@ export interface QueuedRun {
 	url: string;
 	kind: QueuedRunKind;
 	displayTitle: string;
-	titleResolved: boolean;
 	options: GenerationOptions;
 	initialTargetRef: QueuedRunInsertionTargetRef | null;
-	status: QueuedRunStatus;
-	enqueuedAt: number;
-	startedAt?: number;
-	finishedAt?: number;
-	statusMessage?: string;
-	reportEntry?: QueueRunReportEntry;
 }
 
 export interface BatchTargetPolicy {
@@ -35,25 +28,22 @@ export interface BatchTargetPolicy {
 	resolve(runIndex: number): QueuedRunInsertionTargetRef | null;
 }
 
-export interface RunBatchReportPolicy {
+interface RunBatchReportPolicy {
 	include: boolean;
 	location: RunReportLocation;
 }
 
 export interface RunBatch {
 	batchId: string;
-	enqueuedAt: number;
 	reportPolicy: RunBatchReportPolicy;
-	targetPolicy: BatchTargetPolicy;
 	runIds: string[];
 	outcomeEntries: QueueRunReportEntry[];
 	finalized: boolean;
 }
 
-export interface BatchUrlInput {
+interface BatchUrlInput {
 	url: string;
 	kind: QueuedRunKind;
-	provisionalTitle?: string;
 }
 
 export interface BatchEnqueueInput {
@@ -66,10 +56,8 @@ export interface BatchEnqueueInput {
 export type RunQueueEvent =
 	| { type: 'enqueued'; run: QueuedRun }
 	| { type: 'started'; run: QueuedRun }
-	| { type: 'status'; run: QueuedRun }
 	| { type: 'title-resolved'; run: QueuedRun }
 	| { type: 'finished'; run: QueuedRun }
-	| { type: 'batch-finished'; batch: RunBatch }
 	| { type: 'removed'; runId: string }
 	| { type: 'cleared' };
 
@@ -85,10 +73,6 @@ let _ordinalCounter = 0;
 
 function nextOrdinal(): number {
 	return ++_ordinalCounter;
-}
-
-function generateId(): string {
-	return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function buildUrlFallbackTitle(run: QueuedRun): string {
@@ -124,7 +108,7 @@ function buildCanceledEntry(run: QueuedRun): QueueRunReportEntry {
 
 function buildErrorEntry(run: QueuedRun, error: unknown, signal: AbortSignal): QueueRunReportEntry {
 	const outcome: QueueRunOutcome = isAbortError(error, signal) ? 'canceled' : 'failed';
-	const reason = error instanceof Error ? error.message : String(error);
+	const reason = getErrorMessage(error);
 	if (run.kind === 'playlist') {
 		return {
 			kind: 'playlist',
@@ -176,32 +160,20 @@ export class RunQueueService {
 	getSnapshot(): {
 		current: QueuedRun | null;
 		queued: QueuedRun[];
-		batches: RunBatch[];
 		history: QueueRunReportEntry[];
 	} {
 		return {
 			current: this.current?.run ?? null,
 			queued: this.queue.slice(this.current ? 1 : 0),
-			batches: Array.from(this.batches.values()),
 			history: this.history.slice(),
 		};
 	}
 
-	getCurrent(): QueuedRun | null {
-		return this.current?.run ?? null;
-	}
-
-	getRunSignal(): AbortSignal | undefined {
-		return this.current?.controller.signal;
-	}
-
 	enqueueBatch(input: BatchEnqueueInput): RunBatch {
-		const batchId = generateId();
+		const batchId = createJobId();
 		const batch: RunBatch = {
 			batchId,
-			enqueuedAt: Date.now(),
 			reportPolicy: input.reportPolicy,
-			targetPolicy: input.targetPolicy,
 			runIds: [],
 			outcomeEntries: [],
 			finalized: false,
@@ -209,8 +181,8 @@ export class RunQueueService {
 		this.batches.set(batchId, batch);
 
 		for (let i = 0; i < input.urls.length; i++) {
-			const { url, kind, provisionalTitle } = input.urls[i];
-			const id = generateId();
+			const { url, kind } = input.urls[i];
+			const id = createJobId();
 			const ordinal = nextOrdinal();
 			const run: QueuedRun = {
 				id,
@@ -219,13 +191,10 @@ export class RunQueueService {
 				url,
 				kind,
 				displayTitle: '',
-				titleResolved: false,
 				options: structuredClone(input.options),
 				initialTargetRef: input.targetPolicy.resolve(i),
-				status: 'queued',
-				enqueuedAt: Date.now(),
 			};
-			run.displayTitle = provisionalTitle ?? buildUrlFallbackTitle(run);
+			run.displayTitle = buildUrlFallbackTitle(run);
 			batch.runIds.push(id);
 			this.queue.push(run);
 			this.emit({ type: 'enqueued', run });
@@ -244,16 +213,11 @@ export class RunQueueService {
 				const title = await this.worker.resolveTitle(run, signal);
 				if (signal.aborted) return;
 				run.displayTitle = `#${run.ordinal} · ${title}`;
-				run.titleResolved = true;
 				this.emit({ type: 'title-resolved', run });
 			})
 			.catch(() => {
-				// Best-effort — keep URL-id fallback on failure
+				// Keep the URL fallback when title resolution fails.
 			});
-	}
-
-	notifyStatus(run: QueuedRun): void {
-		this.emit({ type: 'status', run });
 	}
 
 	cancelRun(runId: string): void {
@@ -264,9 +228,7 @@ export class RunQueueService {
 		const idx = this.queue.findIndex((r) => r.id === runId);
 		if (idx < 0) return;
 		const [removed] = this.queue.splice(idx, 1);
-		removed.status = 'canceled';
 		const entry = buildCanceledEntry(removed);
-		removed.reportEntry = entry;
 		this.pushHistory(entry);
 		const batch = this.batches.get(removed.batchId);
 		if (batch) {
@@ -284,9 +246,7 @@ export class RunQueueService {
 			: this.queue.slice();
 
 		for (const run of toCancel) {
-			run.status = 'canceled';
 			const entry = buildCanceledEntry(run);
-			run.reportEntry = entry;
 			this.pushHistory(entry);
 			const batch = this.batches.get(run.batchId);
 			if (batch) {
@@ -300,7 +260,7 @@ export class RunQueueService {
 			this.current.controller.abort(new Error('Generation canceled by user.'));
 		}
 
-		// Finalize any batch whose queued runs are all now terminal (current not yet done)
+		// Finalize terminal batches while the current run is pending.
 		for (const batch of this.batches.values()) {
 			if (!batch.finalized && this.allRunsTerminal(batch)) {
 				void this.finalizeBatch(batch);
@@ -320,8 +280,6 @@ export class RunQueueService {
 		try {
 			while (this.queue.length > 0) {
 				const run = this.queue[0];
-				run.status = 'running';
-				run.startedAt = Date.now();
 				const controller = new AbortController();
 				this.current = { run, controller };
 				this.emit({ type: 'started', run });
@@ -333,9 +291,6 @@ export class RunQueueService {
 					entry = buildErrorEntry(run, error, controller.signal);
 				}
 
-				run.reportEntry = entry;
-				run.finishedAt = Date.now();
-				run.status = outcomeToStatus(entry.outcome);
 				this.queue.shift();
 				this.current = null;
 
@@ -370,7 +325,6 @@ export class RunQueueService {
 		if (batch.reportPolicy.include) {
 			await this.worker.persistBatchReport(batch, report);
 		}
-		this.emit({ type: 'batch-finished', batch });
 	}
 
 	private pushHistory(entry: QueueRunReportEntry): void {
@@ -378,15 +332,6 @@ export class RunQueueService {
 		if (this.history.length > 50) {
 			this.history.shift();
 		}
-	}
-}
-
-function outcomeToStatus(outcome: QueueRunOutcome): QueuedRunStatus {
-	switch (outcome) {
-		case 'completed': return 'completed';
-		case 'failed': return 'failed';
-		case 'canceled': return 'canceled';
-		case 'skipped': return 'completed';
 	}
 }
 

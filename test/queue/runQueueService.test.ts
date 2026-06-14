@@ -1,16 +1,16 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import {
+import type {
 	BatchEnqueueInput,
 	QueuedRun,
 	RunBatch,
 	RunQueueEvent,
-	RunQueueService,
 	RunWorker,
+} from '../../src/queue/runQueueService';
+import {
+	RunQueueService,
 	buildFolderTargetPolicy,
 } from '../../src/queue/runQueueService';
-import { QueueBatchReport, QueueRunReportEntry } from '../../src/types';
-
-// ── Test helpers ──────────────────────────────────────────────────────────────
+import type { GenerationOptions, QueueBatchReport, QueueRunReportEntry } from '../../src/types';
 
 function makeEntry(run: QueuedRun, outcome: QueueRunReportEntry['outcome'] = 'completed'): QueueRunReportEntry {
 	return {
@@ -80,8 +80,6 @@ function collectEvents(svc: RunQueueService): RunQueueEvent[] {
 async function flushMicrotasks(): Promise<void> {
 	await new Promise<void>((resolve) => setTimeout(resolve, 50));
 }
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('RunQueueService', () => {
 	beforeEach(() => {
@@ -173,7 +171,7 @@ describe('RunQueueService', () => {
 			const svc = new RunQueueService(worker);
 			svc.enqueueBatch(makeInput(2));
 			await flushMicrotasks();
-			const currentId = svc.getCurrent()?.id;
+			const currentId = svc.getSnapshot().current?.id;
 			expect(currentId).toBeDefined();
 			svc.cancelRun(currentId!);
 			await new Promise((r) => setTimeout(r, 50));
@@ -183,7 +181,6 @@ describe('RunQueueService', () => {
 
 	describe('cancel queued (not running)', () => {
 		it('removes from queue, emits removed, pushes to history, run never executes', async () => {
-			// run #1 blocks indefinitely until aborted so run #2 stays queued
 			const worker: RunWorker = {
 				executeRun: vi.fn(async (_run: QueuedRun, signal: AbortSignal) => {
 					await new Promise<void>((resolve, reject) => {
@@ -200,13 +197,11 @@ describe('RunQueueService', () => {
 			await flushMicrotasks();
 			const queuedRunId = batch.runIds[1];
 			svc.cancelRun(queuedRunId);
-			// run #1 still blocked; run #2 removed from queue
 			expect(worker.executeRun).toHaveBeenCalledTimes(1);
 			const removed = events.find((e) => e.type === 'removed' && (e as { runId: string }).runId === queuedRunId);
 			expect(removed).toBeDefined();
 			const hist = svc.getSnapshot().history;
 			expect(hist.some((e) => e.runId === queuedRunId)).toBe(true);
-			// clean up
 			svc.cancelAll();
 			await new Promise((r) => setTimeout(r, 20));
 		});
@@ -375,15 +370,6 @@ describe('RunQueueService', () => {
 			expect(worker.persistCalls).toHaveLength(0);
 		});
 
-		it('emits batch-finished regardless of reportPolicy.include', async () => {
-			const worker = makeWorker();
-			const svc = new RunQueueService(worker);
-			const events = collectEvents(svc);
-			svc.enqueueBatch(makeInput(1, false));
-			await flushMicrotasks();
-			expect(events.find((e) => e.type === 'batch-finished')).toBeDefined();
-		});
-
 		it('ordinals are monotonically increasing across batches', async () => {
 			const ordinals: number[] = [];
 			const worker: RunWorker = {
@@ -405,6 +391,3 @@ describe('RunQueueService', () => {
 		});
 	});
 });
-
-// needed for the option clone isolation test type
-type GenerationOptions = import('../../src/types').GenerationOptions;

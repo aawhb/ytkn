@@ -1,5 +1,6 @@
-import { Editor, MarkdownView, Notice, Plugin, TFile } from 'obsidian';
-import {
+import type { Editor, TFile } from 'obsidian';
+import { MarkdownView, Notice, Plugin } from 'obsidian';
+import type {
 	GenerationOptions,
 	PluginSettings,
 } from './types';
@@ -7,24 +8,22 @@ import {
 import { SettingsTab } from './ui/settings/settingsTab';
 import { notifyError } from './ui/shared/notifications';
 import { YouTubeService } from './youtube/youtubeService';
+import { classifyUrls, isYouTubeUrl } from './youtube/urls';
 import { SettingsService } from './settings/settingsService';
-import {
-	GenerationService,
-	INSERT_AT_CARET_REQUIRES_NOTE,
-	NoteInsertionTarget,
-} from './generation/generationService';
+import { GenerationService } from './generation/generationService';
+import { INSERT_AT_CARET_REQUIRES_NOTE } from './generation/constants';
+import type { NoteInsertionTarget } from './generation/targets/noteTargets';
 import { GenerationOptionsModal } from './ui/generation/generationOptionsModal';
 import { QueueModal } from './ui/queue/queueModal';
 import { WhatsNewModal } from './ui/releaseNotes/whatsNewModal';
 import { resolveReleaseNotesStartupAction } from './releaseNotes';
-import {
-	buildModelId,
-	createJobId,
-} from './utils';
-import {
+import { buildModelId } from './modelId';
+import { createJobId } from './utils';
+import type {
 	BatchTargetPolicy,
 	QueuedRunInsertionTargetRef,
-	RunQueueEvent,
+} from './queue/runQueueService';
+import {
 	RunQueueService,
 	buildEditorAppendSequentialPolicy,
 	buildEditorReplaceRangeFirstPolicy,
@@ -41,7 +40,12 @@ export class YTKN extends Plugin {
 		try {
 			await this.initializeServices();
 			this.initializeStatusBar();
-			this.addSettingTab(new SettingsTab(this.app, this));
+			this.addSettingTab(new SettingsTab(
+				this.app,
+				this,
+				this.settings,
+				() => this.openQueueModal(),
+			));
 			this.registerCommands();
 			window.setTimeout(() => {
 				void this.showReleaseNotesIfUpdated();
@@ -72,7 +76,7 @@ export class YTKN extends Plugin {
 			resolveTitle: (run, signal) => this.generationService.resolveTitle(run, signal),
 			persistBatchReport: (batch, report) => this.generationService.persistBatchReport(batch, report),
 		});
-		this.runQueue.on((event) => this.onQueueEvent(event));
+		this.runQueue.on(() => this.renderStatusBar());
 	}
 
 	private registerCommands(): void {
@@ -180,7 +184,7 @@ export class YTKN extends Plugin {
 	}
 
 	private openGenerationModal(target: NoteInsertionTarget | null, selectedText: string): void {
-		const initialUrl = YouTubeService.isYouTubeUrl(selectedText) ? selectedText : '';
+		const initialUrl = isYouTubeUrl(selectedText) ? selectedText : '';
 		const hasActiveNote = target !== null;
 
 		new GenerationOptionsModal(
@@ -189,7 +193,7 @@ export class YTKN extends Plugin {
 			this.settings.getModels(),
 			this.getInitialGenerationOptions(),
 			(urls, options) => {
-				const classifications = YouTubeService.classifyUrls(urls);
+				const classifications = classifyUrls(urls);
 				const invalidIdx = classifications.indexOf('invalid');
 				if (invalidIdx >= 0) {
 					new Notice(`URL #${invalidIdx + 1} is not a YouTube link: ${urls[invalidIdx]}`);
@@ -285,7 +289,7 @@ export class YTKN extends Plugin {
 
 		let text: string;
 		if (current) {
-			text = `YouTube · #${current.ordinal} · ${current.displayTitle} — ${current.statusMessage ?? 'Working…'}`;
+			text = `YouTube · ${current.displayTitle} — Working…`;
 			if (queuedCount > 0) text += ` (${queuedCount} queued)`;
 		} else {
 			text = `YouTube · ${queuedCount} queued`;
@@ -337,12 +341,6 @@ export class YTKN extends Plugin {
 			createdByPlugin: false,
 			finalized: false,
 		};
-	}
-
-	private onQueueEvent(event: RunQueueEvent): void {
-		if (event.type === 'finished' || event.type === 'cleared' || event.type === 'enqueued' || event.type === 'started' || event.type === 'removed') {
-			this.renderStatusBar();
-		}
 	}
 }
 

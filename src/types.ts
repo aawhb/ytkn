@@ -114,7 +114,7 @@ export interface PluginSettings {
 	deleteProvider(provider: ProviderConfig): Promise<void>;
 	deleteModel(providerName: string, modelName: string): Promise<void>;
 	updateActiveModel(modelId: string): Promise<void>;
-	updateInstructionConfig(config: InstructionConfig): Promise<void>;
+	updateInstructionConfig(patch: Partial<InstructionConfig>): Promise<void>;
 	updateOutputDefaults(outputDefaults: OutputDefaults): Promise<void>;
 	updateTemperature(temperature: number): Promise<void>;
 	updateRequestTimeoutMs(timeoutMs: number): Promise<void>;
@@ -209,7 +209,7 @@ export interface TranscriptFetchResult {
 	languageCode: string;
 }
 
-export type PlaylistRunOutcome = 'completed' | 'skipped' | 'failed' | 'canceled';
+type PlaylistRunOutcome = QueueRunOutcome;
 
 export interface PlaylistRunReportEntry {
 	title: string;
@@ -223,7 +223,7 @@ export interface PlaylistRunReportEntry {
 }
 
 // Templates and rendering metadata
-export interface SectionDeclaration {
+interface SectionDeclaration {
 	id: string;
 	heading: string;
 	required: boolean;
@@ -240,7 +240,7 @@ export interface FrontmatterDeclaration {
 	default?: unknown;
 }
 
-export type ControlFieldType = 'string' | 'enum' | 'number' | 'duration';
+type ControlFieldType = 'string' | 'enum' | 'number' | 'duration';
 
 export interface ControlDeclaration {
 	id: string;
@@ -253,14 +253,6 @@ export interface ControlDeclaration {
 	multiline?: boolean;
 }
 
-export interface BlockDeclaration {
-	id: string;
-	kind: string;
-}
-
-export type LeadCalloutKind = 'summary' | 'quote' | 'note' | 'info' | 'warning';
-export type SectionCalloutKind = 'summary' | 'quote' | 'note' | 'info' | 'warning' | 'question' | 'example';
-
 export interface Template {
 	id: InstructionTemplate;
 	label: string;
@@ -270,10 +262,6 @@ export interface Template {
 	frontmatter?: FrontmatterDeclaration[];
 	tags?: string[];
 	controls?: ControlDeclaration[];
-	filenamePattern?: string;
-	leadCallout?: LeadCalloutKind;
-	sectionCallouts?: Record<string, SectionCalloutKind>;
-	customBlocks?: BlockDeclaration[];
 }
 
 // Queue and reporting
@@ -312,12 +300,4 @@ export type QueueRunReportEntry =
 export interface QueueBatchReport {
 	batchId: string;
 	entries: QueueRunReportEntry[];
-}
-
-// Output extraction
-export interface ExtractedTemplateOutput {
-	frontmatter: Record<string, unknown> | null;
-	sections: Map<string, string>;
-	extras: Array<{ heading: string; body: string }>;
-	warnings: string[];
 }

@@ -9,9 +9,9 @@ import {
 import type { PlaylistEntry, PlaylistRunReportEntry } from '../../src/types';
 
 const entries: PlaylistEntry[] = [
-	{ title: 'One', url: 'https://youtu.be/one', position: 1 },
-	{ title: 'Two', url: 'https://youtu.be/two', position: 2 },
-	{ title: 'Three', url: 'https://youtu.be/three', position: 3 },
+	{ videoId: 'one', title: 'One', url: 'https://youtu.be/one', position: 1 },
+	{ videoId: 'two', title: 'Two', url: 'https://youtu.be/two', position: 2 },
+	{ videoId: 'three', title: 'Three', url: 'https://youtu.be/three', position: 3 },
 ];
 
 describe('playlist report entries', () => {

@@ -10,11 +10,9 @@ vi.mock('obsidian', async () => {
 });
 
 vi.mock('../../src/ai/providers/factory', () => ({
-	ProvidersFactory: {
-		createProvider: vi.fn(() => ({
-			summarizeVideo: providerMocks.summarizeVideo,
-		})),
-	},
+	createProvider: vi.fn(() => ({
+		summarizeVideo: providerMocks.summarizeVideo,
+	})),
 }));
 
 import { GenerationService } from '../../src/generation/generationService';
@@ -47,7 +45,7 @@ function makeTranscript(url: string, overrides: Partial<TranscriptResponse> = {}
 	};
 }
 
-function makePlaylist(entries = [
+function makePlaylist(entries: PlaylistResponse['entries'] = [
 	{ videoId: 'video000001', url: 'https://www.youtube.com/watch?v=video000001&list=PL123', position: 1, title: 'Playlist Video 1' },
 	{ videoId: 'video000002', url: 'https://www.youtube.com/watch?v=video000002&list=PL123', position: 2, title: 'Playlist Video 2' },
 ]): PlaylistResponse {
@@ -143,11 +141,8 @@ function makeRun(url: string, options: GenerationOptions, kind: QueuedRun['kind'
 		url,
 		kind,
 		displayTitle: kind === 'playlist' ? 'Metadata Playlist' : 'Captionless Video',
-		titleResolved: true,
 		options,
 		initialTargetRef: null,
-		status: 'queued',
-		enqueuedAt: Date.now(),
 	};
 }
 
@@ -376,7 +371,7 @@ describe('GenerationService metadata-only runs', () => {
 		expect(entry.kind).toBe('video');
 		expect(providerMocks.summarizeVideo).toHaveBeenCalledOnce();
 		const prompt = providerMocks.summarizeVideo.mock.calls[0]?.[0] as string;
-		expect(prompt).toContain('Add a TL;DR section before any other generated section');
+		expect(prompt).toContain('Add a TL;DR section');
 		expect(prompt).not.toContain('Use exactly these H2 headings');
 		const content = Array.from(contents.values()).join('\n');
 		expect(content).toContain('> [!summary] TL;DR');
@@ -459,5 +454,42 @@ describe('GenerationService metadata-only runs', () => {
 		expect(content).toContain('> [!summary] TL;DR');
 		expect(content).toContain('> Combined playlist takeaway.');
 		expect(content).toContain('## Mindmap');
+	});
+
+	it('propagates combined playlist rendering warnings to the playlist report', async () => {
+		providerMocks.summarizeVideo.mockImplementation(async (prompt: string) => {
+			if (prompt.includes('Per-video add-on notes')) {
+				return '## TL;DR\nCombined playlist takeaway.';
+			}
+			return '## TL;DR\nPer-video takeaway.';
+		});
+		const playlist = makePlaylist();
+		const youtubeService = {
+			fetchPlaylist: vi.fn(async () => playlist),
+			fetchVideoMetadata: vi.fn(),
+			fetchTranscript: vi.fn(async (url: string) => ({
+				transcript: makeTranscript(url, { lines: [{ text: 'Grounded transcript.', offset: 0 }] }),
+				languageCode: 'en',
+			})),
+		};
+		const { app } = makeApp();
+		const service = new GenerationService(app, youtubeService as any, makeAiSettings(), vi.fn());
+
+		const entry = await service.executeRun(
+			makeRun(PLAYLIST_URL, metadataOptions({
+				useAi: true,
+				generateAiSummary: false,
+				tldrCalloutAtTop: true,
+				includeMindmap: true,
+				transcriptMode: 'none',
+				playlistMode: 'combined',
+				modelId: 'Ollama:local-model',
+			}), 'playlist'),
+			new AbortController().signal,
+		);
+
+		expect(entry.kind).toBe('playlist');
+		if (entry.kind !== 'playlist') throw new Error('Expected playlist report entry');
+		expect(entry.warnings).toContain('Requested section "Mindmap" was not emitted by the model.');
 	});
 });

@@ -24,7 +24,7 @@ function makeOptions(overrides: Partial<EffectiveGenerationOptions> = {}): Effec
 		controlValues: {},
 		transcriptMode: 'readable',
 		playlistMode: 'combined',
-		transcriptLanguageMode: 'default',
+		transcriptLanguageMode: 'auto',
 		preferredTranscriptLanguage: '',
 		transcriptFailureMode: 'skip',
 		mediaEmbedMode: 'thumbnail',
@@ -50,6 +50,7 @@ const transcript: TranscriptResponse = {
 	videoId: 'video1234567',
 	title: 'Workflow Video',
 	author: 'Channel',
+	channelUrl: 'https://youtube.com/@channel',
 	lines: [{ text: 'Transcript line.', offset: 0 }],
 };
 
