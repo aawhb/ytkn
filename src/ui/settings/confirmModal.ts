@@ -1,4 +1,5 @@
-import { App, Modal, Setting } from 'obsidian';
+import type { App } from 'obsidian';
+import { Modal, Setting } from 'obsidian';
 
 export class ConfirmModal extends Modal {
 	constructor(
@@ -27,7 +28,6 @@ export class ConfirmModal extends Modal {
 			.addButton((button) =>
 				button
 					.setButtonText(this.confirmText)
-					// setWarning() keeps compatibility with minAppVersion 1.11.4; setDestructive() requires Obsidian 1.13.0.
 					.setWarning()
 					.onClick(async () => {
 						try {

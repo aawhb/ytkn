@@ -10,7 +10,7 @@ import type {
 	TranscriptMode,
 } from '../../types';
 
-export type SettingFieldCopy<
+type SettingFieldCopy<
 	TOptions extends Record<string, string> = Record<string, string>,
 > = {
 	name: string;
@@ -35,6 +35,7 @@ type SharedSettingCopy = {
 	tldrCallout: SettingFieldCopy;
 	mindmap: SettingFieldCopy;
 	memorableQuotes: SettingFieldCopy;
+	noteStructurePreview: SettingFieldCopy;
 	mediaEmbed: SettingFieldCopy<Record<MediaEmbedMode, string>>;
 	useVideoTitleAsNoteName: SettingFieldCopy;
 	includeFrontmatter: SettingFieldCopy;
@@ -98,6 +99,9 @@ export const SETTING_COPY: SharedSettingCopy = {
 	memorableQuotes: {
 		name: 'Add memorable quotes',
 		desc: 'Add 3-7 verbatim quotes, independent of the selected template.',
+	},
+	noteStructurePreview: {
+		name: 'Preview note structure',
 	},
 	mediaEmbed: {
 		name: 'Media embed',
@@ -213,5 +217,3 @@ export const SETTING_COPY: SharedSettingCopy = {
 		placeholder: '300',
 	},
 };
-
-export type SettingCopyKey = keyof typeof SETTING_COPY;

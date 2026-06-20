@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import type { ReleaseNote } from '../src/releaseNotes';
 import {
 	getRecentReleaseNotes,
 	getReleaseNote,
-	ReleaseNote,
 	resolveReleaseNotesStartupAction,
 } from '../src/releaseNotes';
 

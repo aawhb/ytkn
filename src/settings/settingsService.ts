@@ -1,5 +1,4 @@
-import YTKN from '../main';
-import {
+import type {
 	DiscoveredModel,
 	InstructionConfig,
 	ModelConfig,
@@ -17,34 +16,40 @@ import {
 	DEFAULT_TEMPERATURE,
 } from '../defaults';
 import { normalizeRequestTimeoutMs } from '../ai/providers/shared';
+import { formatModelId, parseModelId } from '../modelId';
+import type { RawOutputDefaults } from './normalizeSettings';
 import {
 	normalizeContextWindow,
 	normalizeInstructionConfig,
 	normalizeOutputDefaults,
 	normalizeReleaseNotesVersion,
 	normalizeTemperature,
-	RawOutputDefaults,
 } from './normalizeSettings';
 
 interface SecretStorageLike {
 	getSecret(id: string): string | null;
 }
 
+interface SettingsHost {
+	app: unknown;
+	loadData(): Promise<unknown>;
+	saveData(data: unknown): Promise<void>;
+}
+
 export class SettingsService implements PluginSettings {
 	private settings: StoredSettings;
 	private loadedSettingsExisted = false;
 
-	constructor(private plugin: YTKN) {
+	constructor(private host: SettingsHost) {
 		this.settings = this.getDefaultSettings();
 	}
 
 	async loadSettings(): Promise<void> {
-		const loaded = (await this.plugin.loadData()) as { settings?: Partial<Omit<StoredSettings, 'providers'>> & { providers?: RawStoredProvider[]; outputDefaults?: RawOutputDefaults } } | undefined;
+		const loaded = (await this.host.loadData()) as { settings?: Partial<Omit<StoredSettings, 'providers'>> & { providers?: RawStoredProvider[]; outputDefaults?: RawOutputDefaults } } | undefined;
 		const savedSettings = loaded?.settings;
 		this.loadedSettingsExisted = savedSettings !== undefined;
 
-		// One-shot migration: if the user previously set addAlias=false, honour that intent by
-		// removing 'aliases' from frontmatterPropertyAllowlist before we drop the field entirely.
+		// One-shot migration: honor addAlias=false by removing 'aliases' from the allowlist.
 		if (savedSettings?.outputDefaults && savedSettings.outputDefaults.addAlias === false) {
 			const raw = savedSettings.outputDefaults.frontmatterPropertyAllowlist
 				?? DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST;
@@ -183,8 +188,7 @@ export class SettingsService implements PluginSettings {
 
 			const existingModel = provider.models.find((item) => item.name === name);
 			if (existingModel) {
-				existingModel.displayName = displayName;
-				existingModel.contextWindow = contextWindow;
+				existingModel.contextWindow = contextWindow ?? existingModel.contextWindow;
 				continue;
 			}
 
@@ -220,9 +224,9 @@ export class SettingsService implements PluginSettings {
 		this.settings.providers[index] = updatedProvider;
 
 		if (this.settings.selectedModelId?.startsWith(`${originalName}:`) && originalName !== updatedProvider.name) {
-			const selectedModel = this.parseModelId(this.settings.selectedModelId);
+			const selectedModel = parseModelId(this.settings.selectedModelId);
 			if (selectedModel) {
-				this.settings.selectedModelId = this.makeModelId(updatedProvider.name, selectedModel.modelName);
+				this.settings.selectedModelId = formatModelId(updatedProvider.name, selectedModel.modelName);
 			}
 		}
 
@@ -276,7 +280,7 @@ export class SettingsService implements PluginSettings {
 			throw new Error(`Model "${modelName}" not found.`);
 		}
 
-		if (this.settings.selectedModelId === this.makeModelId(providerName, modelName)) {
+		if (this.settings.selectedModelId === formatModelId(providerName, modelName)) {
 			this.settings.selectedModelId = null;
 		}
 
@@ -289,8 +293,11 @@ export class SettingsService implements PluginSettings {
 		await this.saveData();
 	}
 
-	async updateInstructionConfig(config: InstructionConfig): Promise<void> {
-		this.settings.instructionConfig = normalizeInstructionConfig(config);
+	async updateInstructionConfig(patch: Partial<InstructionConfig>): Promise<void> {
+		this.settings.instructionConfig = normalizeInstructionConfig({
+			...this.settings.instructionConfig,
+			...patch,
+		});
 		await this.saveData();
 	}
 
@@ -327,12 +334,12 @@ export class SettingsService implements PluginSettings {
 	}
 
 	validateModelId(modelId: string): boolean {
-		const parsed = this.parseModelId(modelId);
+		const parsed = parseModelId(modelId);
 		if (!parsed) {
 			return false;
 		}
 
-		return this.findModelAndProvider(this.makeModelId(parsed.providerName, parsed.modelName)) !== null;
+		return this.findModelAndProvider(formatModelId(parsed.providerName, parsed.modelName)) !== null;
 	}
 
 	private getDefaultSettings(): StoredSettings {
@@ -349,8 +356,7 @@ export class SettingsService implements PluginSettings {
 
 	private normalizeProviders(providers?: RawStoredProvider[]): StoredProvider[] {
 		return (providers ?? []).map((provider) => {
-			// Migrate legacy 'openai' providers that had a custom URL to 'openai-compatible'.
-			// Anyone using cloud OpenAI never sets a URL; a custom URL means local/compat server.
+			// Migrate legacy OpenAI providers with custom URLs to openai-compatible.
 			const storedType = provider.type as string;
 			const type =
 				storedType === 'openai' && provider.url && !provider.url.includes('api.openai.com')
@@ -373,7 +379,7 @@ export class SettingsService implements PluginSettings {
 
 	private async saveData(): Promise<void> {
 		try {
-			await this.plugin.saveData({ settings: this.settings });
+			await this.host.saveData({ settings: this.settings });
 		} catch (error) {
 			console.error('Failed to save settings:', error);
 			throw error;
@@ -401,7 +407,7 @@ export class SettingsService implements PluginSettings {
 	}
 
 	private getSecretStorage(): SecretStorageLike | null {
-		return (this.plugin.app as { secretStorage?: SecretStorageLike } | undefined)?.secretStorage ?? null;
+		return (this.host.app as { secretStorage?: SecretStorageLike } | undefined)?.secretStorage ?? null;
 	}
 
 	private resolveProviderApiKey(provider: Pick<StoredProvider, 'apiKeySecretId'>): string {
@@ -467,7 +473,7 @@ export class SettingsService implements PluginSettings {
 	}
 
 	private findModelAndProvider(modelId: string): { model: StoredModel; provider: StoredProvider } | null {
-		const parsed = this.parseModelId(modelId);
+		const parsed = parseModelId(modelId);
 		if (!parsed) {
 			return null;
 		}
@@ -496,25 +502,4 @@ export class SettingsService implements PluginSettings {
 		};
 	}
 
-	private parseModelId(modelId: string): { providerName: string; modelName: string } | null {
-		// Provider names cannot contain a colon (enforced in assertProviderValid),
-		// so the first colon always separates provider from model. Model names
-		// may contain colons (e.g. Ollama tags like "qwen3:4b").
-		const separatorIndex = modelId.indexOf(':');
-		if (separatorIndex <= 0) {
-			return null;
-		}
-
-		const providerName = modelId.slice(0, separatorIndex);
-		const modelName = modelId.slice(separatorIndex + 1);
-		if (!providerName || !modelName) {
-			return null;
-		}
-
-		return { providerName, modelName };
-	}
-
-	private makeModelId(provider: string, model: string): string {
-		return `${provider}:${model}`;
-	}
 }

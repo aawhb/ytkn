@@ -1,7 +1,8 @@
-import { App, SecretComponent, Setting, setIcon } from 'obsidian';
-import { ProviderConfig } from '../../types';
-import { SettingsEventHandlers } from './settingsEventHandlers';
-import { buildModelId } from '../../utils';
+import type { App } from 'obsidian';
+import { SecretComponent, Setting, setIcon } from 'obsidian';
+import type { ProviderConfig } from '../../types';
+import type { SettingsEventHandlers } from './settingsEventHandlers';
+import { buildModelId } from '../../modelId';
 import { DEFAULT_OPENAI_COMPATIBLE_URL } from '../../defaults';
 
 interface AccordionElements {
@@ -93,18 +94,20 @@ export class ProviderAccordion {
 		const fields = content.createDiv({ cls: 'ytkn-settings__provider-fields' });
 		this.createApiKeySetting(fields, provider, handlers);
 
-		const urlSetting = new Setting(fields)
-			.setName('URL')
-			.setDesc(provider.type === 'openai-compatible' ? 'Base URL for OpenAI-compatible providers like Ollama.' : 'Optional custom API URL.')
-			.addText((text) =>
-				text
-					.setPlaceholder(provider.type === 'openai-compatible' ? DEFAULT_OPENAI_COMPATIBLE_URL : 'Optional custom URL')
-					.setValue(provider.url ?? '')
-					.onChange(async (value) => {
-						await handlers.handleProviderUrlChange(provider, value);
-					}),
-			);
-		urlSetting.settingEl.addClass('ytkn-settings__provider-field');
+		if (provider.type === 'openai-compatible') {
+			const urlSetting = new Setting(fields)
+				.setName('URL')
+				.setDesc('Base URL of the OpenAI-compatible endpoint.')
+				.addText((text) =>
+					text
+						.setPlaceholder(DEFAULT_OPENAI_COMPATIBLE_URL)
+						.setValue(provider.url ?? '')
+						.onChange(async (value) => {
+							await handlers.handleProviderUrlChange(provider, value);
+						}),
+				);
+			urlSetting.settingEl.addClass('ytkn-settings__provider-field');
+		}
 
 		const modelsSection = content.createDiv({ cls: 'ytkn-settings__models-section' });
 		const modelsHeader = new Setting(modelsSection)

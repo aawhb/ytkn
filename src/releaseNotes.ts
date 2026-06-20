@@ -26,7 +26,9 @@ export const SUPPORT_LINKS = {
 	buyMeACoffee: 'https://buymeacoffee.com/aawhb',
 } as const;
 
-export const RELEASE_NOTES: ReleaseNote[] = [
+export const DOCUMENTATION_LINK = 'https://github.com/aawhb/ytkn/blob/main/docs/getting-started.md';
+
+const RELEASE_NOTES: ReleaseNote[] = [
 	{
 		version: '1.7.2',
 		date: '2026-06-02',

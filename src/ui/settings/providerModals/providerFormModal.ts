@@ -1,6 +1,6 @@
-import { App, Modal, SecretComponent, Setting } from 'obsidian';
-import { ProviderConfig, ProviderType } from '../../../types';
-import { SettingsEventHandlers } from '../settingsEventHandlers';
+import type { App } from 'obsidian';
+import { Modal, SecretComponent, Setting } from 'obsidian';
+import type { ProviderConfig, ProviderType } from '../../../types';
 import { DEFAULT_OPENAI_COMPATIBLE_URL } from '../../../defaults';
 
 type ProviderFormMode =
@@ -14,6 +14,11 @@ const PROVIDER_TYPE_OPTIONS: Record<ProviderType, string> = {
 	openai: 'OpenAI',
 };
 
+export interface ProviderFormActions {
+	handleProviderAdd(provider: ProviderConfig): Promise<void>;
+	handleProviderEdit(provider: ProviderConfig, originalName: string): Promise<void>;
+}
+
 export class ProviderFormModal extends Modal {
 	private name: string;
 	private type: ProviderType;
@@ -23,7 +28,7 @@ export class ProviderFormModal extends Modal {
 	constructor(
 		app: App,
 		private mode: ProviderFormMode,
-		private handlers: SettingsEventHandlers,
+		private handlers: ProviderFormActions,
 	) {
 		super(app);
 

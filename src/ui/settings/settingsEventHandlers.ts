@@ -1,38 +1,25 @@
 import { Notice } from 'obsidian';
-import { ModelConfig, ProviderConfig } from '../../types';
-import { YTKN } from '../../main';
+import type { ModelConfig, PluginSettings, ProviderConfig } from '../../types';
 import { discoverProviderModels } from '../../ai/providers/discovery';
-import { SettingsModalsFactory } from './settingsModalsFactory';
+import type { SettingsModalsFactory } from './settingsModalsFactory';
 import { notifyError } from '../shared/notifications';
-
-export interface UICallbacks {
-	onModelAdded?: (model: ModelConfig) => void;
-	onModelDeleted?: (model: ModelConfig) => void;
-	onModelUpdated?: (model: ModelConfig) => void;
-	onProviderAdded?: (provider: ProviderConfig) => void;
-	onProviderDeleted?: (provider: ProviderConfig) => void;
-	onProviderUpdated?: (provider: ProviderConfig, originalName: string) => void;
-	onProviderModelsFetched?: (provider: ProviderConfig) => void;
-	onSettingsReset?: () => void;
-	onActiveModelChanged?: () => void;
-}
 
 export class SettingsEventHandlers {
 	constructor(
-		private plugin: YTKN,
+		private settings: PluginSettings,
 		private settingsModalsFactory: SettingsModalsFactory,
-		private callbacks: UICallbacks = {},
+		private onChanged: () => void = () => undefined,
 	) { }
 
 	async handleModelSelection(value: string): Promise<void> {
 		try {
-			if (!this.plugin.settings.validateModelId(value)) {
+			if (!this.settings.validateModelId(value)) {
 				console.error('Could not save active model:', value, 'Invalid model ID');
 				return;
 			}
 
-			await this.plugin.settings.updateActiveModel(value);
-			this.callbacks.onActiveModelChanged?.();
+			await this.settings.updateActiveModel(value);
+			this.onChanged();
 		} catch (error) {
 			notifyError('Failed to set active model', error, 'Selected model:', value);
 		}
@@ -59,8 +46,8 @@ export class SettingsEventHandlers {
 
 	async handleProviderAdd(provider: ProviderConfig): Promise<void> {
 		try {
-			await this.plugin.settings.addProvider(provider);
-			this.callbacks.onProviderAdded?.(provider);
+			await this.settings.addProvider(provider);
+			this.onChanged();
 		} catch (error) {
 			notifyError('Failed to add provider', error);
 			throw error;
@@ -69,8 +56,8 @@ export class SettingsEventHandlers {
 
 	async handleProviderEdit(provider: ProviderConfig, originalName: string): Promise<void> {
 		try {
-			await this.plugin.settings.updateProvider(provider, originalName);
-			this.callbacks.onProviderUpdated?.(provider, originalName);
+			await this.settings.updateProvider(provider, originalName);
+			this.onChanged();
 			new Notice(`Provider ${provider.name} updated successfully`);
 		} catch (error) {
 			notifyError('Failed to update provider', error);
@@ -84,8 +71,8 @@ export class SettingsEventHandlers {
 
 	async handleProviderDelete(provider: ProviderConfig): Promise<void> {
 		try {
-			await this.plugin.settings.deleteProvider(provider);
-			this.callbacks.onProviderDeleted?.(provider);
+			await this.settings.deleteProvider(provider);
+			this.onChanged();
 			new Notice(`Provider ${provider.name} deleted successfully`);
 		} catch (error) {
 			notifyError('Failed to delete provider', error);
@@ -105,7 +92,7 @@ export class SettingsEventHandlers {
 		}
 
 		try {
-			await this.plugin.settings.updateProvider({
+			await this.settings.updateProvider({
 				...currentProvider,
 				url: normalizedUrl,
 			}, currentProvider.name);
@@ -123,7 +110,7 @@ export class SettingsEventHandlers {
 
 		try {
 			const discoveredModels = await discoverProviderModels(currentProvider);
-			const addedCount = await this.plugin.settings.mergeProviderModels(currentProvider.name, discoveredModels);
+			const addedCount = await this.settings.mergeProviderModels(currentProvider.name, discoveredModels);
 
 			if (!discoveredModels.length) {
 				new Notice(`No models found for ${currentProvider.name}.`);
@@ -133,7 +120,7 @@ export class SettingsEventHandlers {
 				new Notice(`Added ${addedCount} model${addedCount === 1 ? '' : 's'} to ${currentProvider.name}.`);
 			}
 
-			this.callbacks.onProviderModelsFetched?.(currentProvider);
+			this.onChanged();
 		} catch (error) {
 			notifyError('Failed to fetch models', error);
 		}
@@ -141,8 +128,8 @@ export class SettingsEventHandlers {
 
 	async handleModelAdd(model: ModelConfig): Promise<void> {
 		try {
-			await this.plugin.settings.addModel(model);
-			this.callbacks.onModelAdded?.(model);
+			await this.settings.addModel(model);
+			this.onChanged();
 		} catch (error) {
 			notifyError('Failed to add model', error);
 			throw error;
@@ -151,12 +138,12 @@ export class SettingsEventHandlers {
 
 	async handleModelEdit(model: ModelConfig): Promise<void> {
 		try {
-			await this.plugin.settings.updateModel(
+			await this.settings.updateModel(
 				model.name,
 				model.displayName || model.name,
 				model.provider.name,
 			);
-			this.callbacks.onModelUpdated?.(model);
+			this.onChanged();
 		} catch (error) {
 			notifyError('Failed to update model', error);
 			throw error;
@@ -165,8 +152,8 @@ export class SettingsEventHandlers {
 
 	async handleModelDelete(model: ModelConfig): Promise<void> {
 		try {
-			await this.plugin.settings.deleteModel(model.provider.name, model.name);
-			this.callbacks.onModelDeleted?.(model);
+			await this.settings.deleteModel(model.provider.name, model.name);
+			this.onChanged();
 		} catch (error) {
 			notifyError('Failed to delete model', error);
 			throw error;
@@ -175,8 +162,8 @@ export class SettingsEventHandlers {
 
 	async handleResetSettings(): Promise<void> {
 		try {
-			await this.plugin.settings.resetSettings();
-			this.callbacks.onSettingsReset?.();
+			await this.settings.resetSettings();
+			this.onChanged();
 		} catch (error) {
 			console.error('Failed to reset settings:', error);
 			throw error;
@@ -201,13 +188,13 @@ export class SettingsEventHandlers {
 
 	async handleApiKeySecretChange(providerName: string, apiKeySecretId: string): Promise<void> {
 		try {
-			await this.plugin.settings.saveProviderSecretId(providerName, apiKeySecretId);
+			await this.settings.saveProviderSecretId(providerName, apiKeySecretId);
 		} catch (error) {
 			console.error('Failed to save API key secret:', error);
 		}
 	}
 
 	private getCurrentProvider(providerName: string): ProviderConfig | null {
-		return this.plugin.settings.getProviders().find((provider) => provider.name === providerName) ?? null;
+		return this.settings.getProviders().find((provider) => provider.name === providerName) ?? null;
 	}
 }

@@ -1,10 +1,15 @@
-import { App, Modal, Setting } from 'obsidian';
-import { ModelConfig, ProviderConfig } from '../../../types';
-import { SettingsEventHandlers } from '../settingsEventHandlers';
+import type { App } from 'obsidian';
+import { Modal, Setting } from 'obsidian';
+import type { ModelConfig, ProviderConfig } from '../../../types';
 
 type ModelFormMode =
 	| { kind: 'add'; provider: ProviderConfig }
 	| { kind: 'edit'; model: ModelConfig };
+
+export interface ModelFormActions {
+	handleModelAdd(model: ModelConfig): Promise<void>;
+	handleModelEdit(model: ModelConfig): Promise<void>;
+}
 
 export class ModelFormModal extends Modal {
 	private modelName: string;
@@ -13,7 +18,7 @@ export class ModelFormModal extends Modal {
 	constructor(
 		app: App,
 		private mode: ModelFormMode,
-		private handlers: SettingsEventHandlers,
+		private handlers: ModelFormActions,
 	) {
 		super(app);
 

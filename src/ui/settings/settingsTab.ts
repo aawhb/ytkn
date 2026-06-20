@@ -1,5 +1,6 @@
-import { App, Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
-import {
+import type { App, Plugin } from 'obsidian';
+import { Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
+import type {
 	InstructionConfig,
 	InstructionMode,
 	InstructionTemplate,
@@ -14,10 +15,7 @@ import {
 	TranscriptLanguageMode,
 	TranscriptMode,
 } from '../../types';
-import {
-	SettingsEventHandlers,
-	UICallbacks,
-} from './settingsEventHandlers';
+import { SettingsEventHandlers } from './settingsEventHandlers';
 import { SettingsModalsFactory } from './settingsModalsFactory';
 import { ProviderAccordion } from './providerAccordion';
 import { createSettingsCard } from '../shared/cards';
@@ -29,18 +27,17 @@ import {
 } from '../shared/tabs';
 import { ConfirmModal } from './confirmModal';
 import { WhatsNewModal } from '../releaseNotes/whatsNewModal';
-import { YTKN } from '../../main';
 import { ACTIVE_MODEL_SELECT_CLASS } from '../../defaults';
 import {
+	DOCUMENTATION_LINK,
 	SUPPORT_LINKS,
 	getRecentReleaseNotes,
 } from '../../releaseNotes';
-import {
-	buildModelId,
-	getErrorMessage,
-} from '../../utils';
+import { getErrorMessage } from '../../utils';
+import { buildModelId } from '../../modelId';
 import {
 	findTemplateChoice,
+	getTemplate,
 	populateTemplateDropdown,
 } from '../../ai/templates/registry';
 import { renderTemplateControls } from '../shared/templateControls';
@@ -54,36 +51,28 @@ export class SettingsTab extends PluginSettingTab {
 	private eventHandlers: SettingsEventHandlers;
 	private modals: SettingsModalsFactory;
 	private activeTabId: string = DEFAULT_SETTINGS_TAB_ID;
+	private notePreviewHostEl?: HTMLElement;
+	private notePreviewOpen = false;
 
 	constructor(
 		app: App,
-		private plugin: YTKN,
+		private plugin: Plugin,
+		private pluginSettings: PluginSettings,
+		private openQueueModal: () => void,
 	) {
 		super(app, plugin);
 		this.uiComponents = new ProviderAccordion(app);
 
-		const callbacks: UICallbacks = {
-			onModelAdded: () => this.reload(),
-			onModelDeleted: () => this.reload(),
-			onModelUpdated: () => this.reload(),
-			onProviderAdded: () => this.reload(),
-			onProviderDeleted: () => this.reload(),
-			onProviderUpdated: () => this.reload(),
-			onProviderModelsFetched: () => this.reload(),
-			onSettingsReset: () => this.reload(),
-			onActiveModelChanged: () => this.reload(),
-		};
-
 		this.modals = new SettingsModalsFactory(app);
 		this.eventHandlers = new SettingsEventHandlers(
-			plugin,
+			pluginSettings,
 			this.modals,
-			callbacks,
+			() => this.reload(),
 		);
 	}
 
 	private get settings(): PluginSettings {
-		return this.plugin.settings;
+		return this.pluginSettings;
 	}
 
 	display(): void {
@@ -136,7 +125,13 @@ export class SettingsTab extends PluginSettingTab {
 				id: 'manage-queue',
 				label: 'Manage queue',
 				icon: 'list-todo',
-				onClick: () => this.plugin.openQueueModal(),
+				onClick: this.openQueueModal,
+			},
+			{
+				id: 'documentation',
+				label: 'Help and documentation',
+				icon: 'circle-help',
+				href: DOCUMENTATION_LINK,
 			},
 			{
 				id: 'sponsor',
@@ -619,7 +614,6 @@ export class SettingsTab extends PluginSettingTab {
 						.setValue(instructionConfig.mode)
 						.onChange(async (value) => {
 							await this.updateInstructionConfig({
-								...instructionConfig,
 								mode: value as InstructionMode,
 							});
 							this.reload();
@@ -628,9 +622,8 @@ export class SettingsTab extends PluginSettingTab {
 
 			if (instructionConfig.mode === 'template') {
 				const choice = findTemplateChoice(instructionConfig.template);
-				const templateCard = containerEl.createDiv({ cls: 'ytkn-settings__template-card' });
 
-				const templateSetting = new Setting(templateCard)
+				const templateSetting = new Setting(containerEl)
 					.setName(SETTING_COPY.contentTemplate.name)
 					.addDropdown((dropdown) => {
 						populateTemplateDropdown(dropdown.selectEl);
@@ -638,7 +631,6 @@ export class SettingsTab extends PluginSettingTab {
 							.setValue(instructionConfig.template)
 							.onChange(async (value) => {
 								await this.updateInstructionConfig({
-									...instructionConfig,
 									template: value as InstructionTemplate,
 								});
 								this.reload();
@@ -650,20 +642,11 @@ export class SettingsTab extends PluginSettingTab {
 				}
 
 				if (choice && (choice.controls?.length ?? 0) > 0) {
-					renderTemplateControls(templateCard, choice.controls!, instructionConfig.controlValues ?? {}, (id, val) => {
+					renderTemplateControls(containerEl, choice.controls!, instructionConfig.controlValues ?? {}, (id, val) => {
 						void this.updateInstructionConfig({
-							...instructionConfig,
-							controlValues: { ...instructionConfig.controlValues, [id]: val },
+							controlValues: { ...this.settings.getInstructionConfig().controlValues, [id]: val },
 						}).then(() => this.reload());
 					});
-				}
-
-				if (choice) {
-					const previewWrap = templateCard.createDiv({ cls: 'ytkn-settings__collapsible' });
-					const previewDetails = previewWrap.createEl('details');
-					previewDetails.createEl('summary', { text: 'Show preview' });
-					const previewBox = previewDetails.createDiv({ cls: 'ytkn-settings__template-preview' });
-					renderTemplatePreview(previewBox, choice.body);
 				}
 			} else {
 				new Setting(containerEl)
@@ -675,7 +658,6 @@ export class SettingsTab extends PluginSettingTab {
 							.setValue(instructionConfig.manualInstructions)
 							.onChange(async (value) => {
 								await this.updateInstructionConfig({
-									...instructionConfig,
 									manualInstructions: value,
 								});
 							})
@@ -701,6 +683,7 @@ export class SettingsTab extends PluginSettingTab {
 						await this.updateOutputDefaults({
 							tldrCalloutAtTop: value,
 						});
+						this.refreshNoteStructurePreview();
 					}),
 			);
 
@@ -712,9 +695,9 @@ export class SettingsTab extends PluginSettingTab {
 					.setValue(instructionConfig.includeMindmap)
 					.onChange(async (value) => {
 						await this.updateInstructionConfig({
-							...instructionConfig,
 							includeMindmap: value,
 						});
+						this.refreshNoteStructurePreview();
 					}),
 			);
 
@@ -726,11 +709,21 @@ export class SettingsTab extends PluginSettingTab {
 					.setValue(instructionConfig.includeMemorableQuotes)
 					.onChange(async (value) => {
 						await this.updateInstructionConfig({
-							...instructionConfig,
 							includeMemorableQuotes: value,
 						});
+						this.refreshNoteStructurePreview();
 					}),
 			);
+
+		const previewWrap = containerEl.createDiv({ cls: 'ytkn-settings__collapsible' });
+		const previewDetails = previewWrap.createEl('details');
+		previewDetails.createEl('summary', { text: SETTING_COPY.noteStructurePreview.name });
+		previewDetails.open = this.notePreviewOpen;
+		previewDetails.addEventListener('toggle', () => {
+			this.notePreviewOpen = previewDetails.open;
+		});
+		this.notePreviewHostEl = previewDetails.createDiv({ cls: 'ytkn-settings__template-preview' });
+		this.refreshNoteStructurePreview();
 
 	}
 
@@ -744,9 +737,18 @@ export class SettingsTab extends PluginSettingTab {
 	}
 
 	private async updateInstructionConfig(
-		config: InstructionConfig,
+		patch: Partial<InstructionConfig>,
 	): Promise<void> {
-		await this.settings.updateInstructionConfig(config);
+		await this.settings.updateInstructionConfig(patch);
+	}
+
+	private refreshNoteStructurePreview(): void {
+		const host = this.notePreviewHostEl;
+		if (!host) {
+			return;
+		}
+		host.empty();
+		renderNoteStructure(host, this.settings.getInstructionConfig(), this.settings.getOutputDefaults());
 	}
 
 	private resetSettings(): void {
@@ -775,8 +777,7 @@ export class SettingsTab extends PluginSettingTab {
 		const openedProviderName =
 			openedAccordion?.getAttribute('data-provider-name') ?? null;
 
-		// display() is still the supported settings-tab render hook for minAppVersion 1.11.4;
-		// migrating to Obsidian's newer settings definitions API should be a separate compatibility decision.
+		// Keep display() for minAppVersion 1.11.4 compatibility.
 		this.display();
 
 		if (openedProviderName) {
@@ -787,23 +788,27 @@ export class SettingsTab extends PluginSettingTab {
 	}
 }
 
-function renderTemplatePreview(host: HTMLElement, body: string): void {
-	const previewLines = body
-		.split('\n')
-		.map((line) => line.trim())
-		.filter((line) => line.startsWith('## ') || line.startsWith('- '));
+function renderNoteStructure(host: HTMLElement, instructionConfig: InstructionConfig, outputDefaults: OutputDefaults): void {
+	const addHeading = (text: string) => host.createDiv({ cls: 'ytkn-settings__template-preview-h2', text });
 
-	for (const line of previewLines) {
-		if (line.startsWith('## ')) {
-			host.createDiv({
-				cls: 'ytkn-settings__template-preview-h2',
-				text: line.replace('##', '').trim(),
-			});
+	if (outputDefaults.tldrCalloutAtTop) {
+		addHeading('TL;DR');
+	}
+
+	if (outputDefaults.generateAiSummary) {
+		if (instructionConfig.mode === 'manual') {
+			addHeading('Summary');
 		} else {
-			host.createDiv({
-				cls: 'ytkn-settings__template-preview-li',
-				text: `• ${line.replace('- ', '').trim()}`,
-			});
+			for (const section of getTemplate(instructionConfig.template).sections ?? []) {
+				addHeading(section.heading);
+			}
 		}
+	}
+
+	if (instructionConfig.includeMindmap) {
+		addHeading('Mindmap');
+	}
+	if (instructionConfig.includeMemorableQuotes) {
+		addHeading('Memorable quotes');
 	}
 }

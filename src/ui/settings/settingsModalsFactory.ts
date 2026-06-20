@@ -1,18 +1,22 @@
-import { App } from 'obsidian';
-import { ModelConfig, ProviderConfig } from '../../types';
-import { ModelFormModal } from './providerModals/modelFormModal';
-import { ProviderFormModal } from './providerModals/providerFormModal';
+import type { App } from 'obsidian';
+import type { ModelConfig, ProviderConfig } from '../../types';
+import { ModelFormModal, type ModelFormActions } from './providerModals/modelFormModal';
+import { ProviderFormModal, type ProviderFormActions } from './providerModals/providerFormModal';
 import { ConfirmModal } from './confirmModal';
-import { SettingsEventHandlers } from './settingsEventHandlers';
+
+export interface SettingsModalActions extends ModelFormActions, ProviderFormActions {
+	handleModelDelete(model: ModelConfig): Promise<void>;
+	handleProviderDelete(provider: ProviderConfig): Promise<void>;
+}
 
 export class SettingsModalsFactory {
 	constructor(private app: App) { }
 
-	createAddProviderModal(handlers: SettingsEventHandlers): ProviderFormModal {
+	createAddProviderModal(handlers: SettingsModalActions): ProviderFormModal {
 		return new ProviderFormModal(this.app, { kind: 'add' }, handlers);
 	}
 
-	createEditProviderModal(provider: ProviderConfig, handlers: SettingsEventHandlers): ProviderFormModal {
+	createEditProviderModal(provider: ProviderConfig, handlers: SettingsModalActions): ProviderFormModal {
 		return new ProviderFormModal(
 			this.app,
 			{ kind: 'edit', provider, originalName: provider.name },
@@ -20,7 +24,7 @@ export class SettingsModalsFactory {
 		);
 	}
 
-	createDeleteProviderModal(provider: ProviderConfig, handlers: SettingsEventHandlers): ConfirmModal {
+	createDeleteProviderModal(provider: ProviderConfig, handlers: SettingsModalActions): ConfirmModal {
 		const modelCount = provider.models?.length ?? 0;
 		const warning = modelCount > 0
 			? ` This provider has ${modelCount} associated model${modelCount === 1 ? '' : 's'}, which will also be deleted.`
@@ -40,15 +44,15 @@ export class SettingsModalsFactory {
 		);
 	}
 
-	createAddModelModal(provider: ProviderConfig, handlers: SettingsEventHandlers): ModelFormModal {
+	createAddModelModal(provider: ProviderConfig, handlers: SettingsModalActions): ModelFormModal {
 		return new ModelFormModal(this.app, { kind: 'add', provider }, handlers);
 	}
 
-	createEditModelModal(model: ModelConfig, handlers: SettingsEventHandlers): ModelFormModal {
+	createEditModelModal(model: ModelConfig, handlers: SettingsModalActions): ModelFormModal {
 		return new ModelFormModal(this.app, { kind: 'edit', model }, handlers);
 	}
 
-	createDeleteModelModal(model: ModelConfig, handlers: SettingsEventHandlers): ConfirmModal {
+	createDeleteModelModal(model: ModelConfig, handlers: SettingsModalActions): ConfirmModal {
 		const displayName = model.displayName || model.name;
 		return new ConfirmModal(
 			this.app,

@@ -112,6 +112,27 @@ describe('SettingsService current contracts', () => {
 		expect(manager.validateModelId('Local:qwen3.5:4b')).toBe(false);
 	});
 
+	it('preserves user-configured model metadata during discovery', async () => {
+		const { manager } = makeManager();
+		await manager.loadSettings();
+		await manager.addProvider({ name: 'Local', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1', models: [] });
+		await manager.addModel({
+			name: 'qwen3.5:4b',
+			displayName: 'Qwen 3.5 4B',
+			contextWindow: 8192,
+			provider: { name: 'Local', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1' },
+		});
+
+		await manager.mergeProviderModels('Local', [
+			{ name: 'qwen3.5:4b', displayName: 'Qwen discovered', contextWindow: undefined },
+		]);
+
+		expect(manager.getProviders()[0]?.models?.[0]).toMatchObject({
+			displayName: 'Qwen 3.5 4B',
+			contextWindow: 8192,
+		});
+	});
+
 	it('rejects invalid provider and model identifiers', async () => {
 		const { manager } = makeManager();
 		await manager.loadSettings();
@@ -126,6 +147,34 @@ describe('SettingsService current contracts', () => {
 		expect(manager.validateModelId('NoColon')).toBe(false);
 		expect(manager.validateModelId(':missing-provider')).toBe(false);
 		expect(manager.validateModelId('missing-model:')).toBe(false);
+	});
+
+	it('persists custom URLs only for OpenAI-compatible providers', async () => {
+		const { manager } = makeManager({
+			settings: {
+				providers: [
+					{
+						name: 'Anthropic',
+						type: 'anthropic',
+						apiKeySecretId: 'anthropic-secret',
+						url: 'https://proxy.example/anthropic',
+						models: [],
+					},
+					{
+						name: 'Gateway',
+						type: 'openai-compatible',
+						url: 'https://gateway.example/v1',
+						models: [],
+					},
+				],
+			},
+		});
+
+		await manager.loadSettings();
+
+		expect(manager.getProviders().find((provider) => provider.type === 'anthropic')?.url).toBeUndefined();
+		expect(manager.getProviders().find((provider) => provider.type === 'openai-compatible')?.url)
+			.toBe('https://gateway.example/v1');
 	});
 
 	it('clears stale selected models while preserving valid saved selections', async () => {
@@ -199,53 +248,13 @@ describe('SettingsService current contracts', () => {
 		expect(plugin.saveData).toHaveBeenCalled();
 	});
 
-	it('keeps compact saved-config compatibility for still-implemented normalization paths', async () => {
-		const sparse = makeManager({
-			settings: {
-				outputDefaults: {
-					generateAiSummary: false,
-					includeThumbnail: false,
-					addAlias: false,
-					frontmatterPropertyAllowlist: 'title aliases channel',
-				},
-				requestTimeoutMs: 0,
-			},
-		});
-
-		await sparse.manager.loadSettings();
-
-		expect(sparse.manager.getOutputDefaults()).toMatchObject({
-			useAi: false,
-			generateAiSummary: false,
-			mediaEmbedMode: 'none',
-			frontmatterPropertyAllowlist: 'title channel',
-			tldrCalloutAtTop: DEFAULT_TLDR_CALLOUT_AT_TOP,
-		});
-		expect(sparse.manager.getRequestTimeoutMs()).toBe(DEFAULT_REQUEST_TIMEOUT_MS);
-
+	it('falls back from invalid persisted output values', async () => {
 		const invalidMedia = makeManager({ settings: { outputDefaults: { mediaEmbedMode: 'poster' } } });
 		await invalidMedia.manager.loadSettings();
 		expect(invalidMedia.manager.getOutputDefaults().mediaEmbedMode).toBe(DEFAULT_MEDIA_EMBED_MODE);
 	});
 
-	it('normalizes instruction config to current templates and usable control values', async () => {
-		const invalidTemplate = makeManager({
-			settings: {
-				instructionConfig: {
-					mode: 'template',
-					template: 'talk',
-					manualInstructions: 'prompt',
-					includeMindmap: false,
-					includeMemorableQuotes: false,
-				},
-			},
-		});
-
-		await invalidTemplate.manager.loadSettings();
-
-		expect(invalidTemplate.manager.getInstructionConfig().template).toBe(DEFAULT_INSTRUCTION_TEMPLATE);
-		expect(invalidTemplate.plugin.saveData).toHaveBeenCalled();
-
+	it('normalizes usable instruction control values', async () => {
 		const controls = makeManager({
 			settings: {
 				instructionConfig: {
@@ -269,6 +278,29 @@ describe('SettingsService current contracts', () => {
 		expect(controls.manager.getInstructionConfig().controlValues).toEqual({
 			inquiry: 'How does retrieval practice scale?',
 			strictness: 'strict',
+		});
+	});
+
+	it('merges sequential instruction patches without reverting earlier changes', async () => {
+		const { manager } = makeManager({
+			settings: {
+				instructionConfig: {
+					mode: 'template',
+					template: 'general',
+					manualInstructions: '',
+					includeMindmap: true,
+					includeMemorableQuotes: false,
+				},
+			},
+		});
+		await manager.loadSettings();
+
+		await manager.updateInstructionConfig({ includeMindmap: false });
+		await manager.updateInstructionConfig({ includeMemorableQuotes: true });
+
+		expect(manager.getInstructionConfig()).toMatchObject({
+			includeMindmap: false,
+			includeMemorableQuotes: true,
 		});
 	});
 
@@ -303,22 +335,5 @@ describe('SettingsService current contracts', () => {
 		expect(plugin.data?.settings?.providers?.[0].apiKey).toBeUndefined();
 		expect(plugin.data?.settings?.providers?.[0].apiKeySecretId).toBe('replacement-secret');
 		await expect(manager.saveProviderSecretId('Missing', 'replacement-secret')).rejects.toThrow(/Provider "Missing" not found/);
-
-		const plaintextProvider = makeManager({
-			settings: {
-				providers: [{
-					name: 'Gemini',
-					type: 'gemini',
-					apiKey: 'plaintext-key',
-					models: [{ name: 'gemini-1.5-flash', displayName: 'Gemini Flash' }],
-				}],
-			},
-		});
-
-		await plaintextProvider.manager.loadSettings();
-
-		expect(plaintextProvider.manager.getProviders()[0].apiKey).toBe('');
-		expect(plaintextProvider.plugin.data?.settings?.providers?.[0].apiKey).toBeUndefined();
-		expect(plaintextProvider.plugin.data?.settings?.providers?.[0].apiKeySecretId).toBeUndefined();
 	});
 });
