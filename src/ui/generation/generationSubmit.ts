@@ -1,6 +1,7 @@
 import type { GenerationOptions } from '../../types';
 import { getTemplate } from '../../ai/templates/registry';
 import { parseUrls } from '../../youtube/urls';
+import { shouldGenerateAiSummary, shouldUseAi } from '../../aiOutputPolicy';
 import type { GenerationFormState } from './generationFormState';
 
 export type GenerationSubmitResult =
@@ -22,9 +23,8 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 	const parsedTimeoutSecs = state.requestTimeoutSeconds.trim() ? Number(state.requestTimeoutSeconds.trim()) : undefined;
 	const trimmedManualInstructions = state.manualInstructions.trim();
 	const trimmedFolder = state.noteDestinationFolder.trim();
-	const hasAiOutputs = state.generateAiSummary || state.tldrCalloutAtTop || state.includeMindmap || state.includeMemorableQuotes;
-	const effectiveUseAi = state.useAi && hasAiOutputs;
-	const effectiveGenerateAiSummary = effectiveUseAi && state.generateAiSummary;
+	const effectiveUseAi = shouldUseAi(state);
+	const effectiveGenerateAiSummary = shouldGenerateAiSummary(state);
 
 	if (!trimmedUrl) {
 		return failure('Paste a YouTube video or playlist URL to continue.');
@@ -118,13 +118,5 @@ function failure(message: string, duplicateCount = 0): GenerationSubmitResult {
 }
 
 function dedupeUrls(parsedUrls: string[]): string[] {
-	const seen = new Set<string>();
-	const urls: string[] = [];
-	for (const url of parsedUrls) {
-		if (!seen.has(url)) {
-			seen.add(url);
-			urls.push(url);
-		}
-	}
-	return urls;
+	return [...new Set(parsedUrls)];
 }

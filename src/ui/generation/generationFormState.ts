@@ -34,7 +34,8 @@ import {
 	DEFAULT_USE_AI,
 	DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,
 } from '../../defaults';
-import { buildModelId } from '../../utils';
+import { resolveLegacyUseAi } from '../../aiOutputPolicy';
+import { buildModelId } from '../../modelId';
 import { getTemplate } from '../../ai/templates/registry';
 import { controlDefaultToString } from '../shared/templateControls';
 
@@ -70,6 +71,19 @@ export interface GenerationFormState {
 	controlValues: Record<string, string>;
 }
 
+export function seedTemplateControlValues(
+	instructionTemplate: InstructionTemplate,
+	values: Record<string, string> = {},
+): Record<string, string> {
+	const seeded = { ...values };
+	for (const control of getTemplate(instructionTemplate).controls ?? []) {
+		if (seeded[control.id] === undefined && control.default !== undefined) {
+			seeded[control.id] = controlDefaultToString(control.default);
+		}
+	}
+	return seeded;
+}
+
 interface BuildGenerationFormStateInput {
 	initialUrl: string;
 	availableModels: ModelConfig[];
@@ -85,16 +99,11 @@ export function buildGenerationFormState({
 }: BuildGenerationFormStateInput): GenerationFormState {
 	const init = initialOptions;
 	const instructionTemplate = init.instructionTemplate ?? DEFAULT_INSTRUCTION_TEMPLATE;
-	const controlValues: Record<string, string> = { ...(init.controlValues ?? {}) };
-	for (const control of getTemplate(instructionTemplate).controls ?? []) {
-		if (controlValues[control.id] === undefined && control.default !== undefined) {
-			controlValues[control.id] = controlDefaultToString(control.default);
-		}
-	}
+	const controlValues = seedTemplateControlValues(instructionTemplate, init.controlValues);
 
 	return {
 		url: initialUrl,
-		useAi: init.useAi ?? init.generateAiSummary ?? DEFAULT_USE_AI,
+		useAi: resolveLegacyUseAi(init, DEFAULT_USE_AI),
 		generateAiSummary: init.generateAiSummary ?? DEFAULT_GENERATE_AI_SUMMARY,
 		transcriptMode: init.transcriptMode ?? DEFAULT_OUTPUT_TRANSCRIPT_MODE,
 		playlistMode: init.playlistMode ?? DEFAULT_PLAYLIST_MODE,

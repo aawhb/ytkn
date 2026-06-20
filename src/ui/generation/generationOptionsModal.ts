@@ -1,11 +1,13 @@
-import { App, Modal, Notice, Setting, setIcon } from 'obsidian';
+import type { App } from 'obsidian';
+import { Modal, Notice, Setting, setIcon } from 'obsidian';
 import { SETTINGS_TABS, TabGroup } from '../shared/tabs';
 import { createSettingsCard } from '../shared/cards';
 import { renderBrandActions } from '../shared/brandActions';
-import { controlDefaultToString, renderTemplateControls } from '../shared/templateControls';
-import { buildGenerationFormState, GenerationFormState } from './generationFormState';
+import { renderTemplateControls } from '../shared/templateControls';
+import type { GenerationFormState } from './generationFormState';
+import { buildGenerationFormState, seedTemplateControlValues } from './generationFormState';
 import { buildGenerationSubmit } from './generationSubmit';
-import {
+import type {
 	ControlDeclaration,
 	GenerationOptions,
 	InstructionMode,
@@ -20,8 +22,13 @@ import {
 	TranscriptLanguageMode,
 	TranscriptMode,
 } from '../../types';
-import { buildModelId } from '../../utils';
-import { YouTubeService } from '../../youtube/youtubeService';
+import { buildModelId } from '../../modelId';
+import {
+	classifyUrls,
+	isPlaylistUrl,
+	isYouTubeUrl,
+	parseUrls,
+} from '../../youtube/urls';
 import {
 	findTemplateChoice,
 	getTemplate,
@@ -188,9 +195,9 @@ export class GenerationOptionsModal extends Modal {
 			return;
 		}
 
-		const urls = YouTubeService.parseUrls(trimmed);
+		const urls = parseUrls(trimmed);
 		if (urls.length > 1) {
-			const classifications = YouTubeService.classifyUrls(urls);
+			const classifications = classifyUrls(urls);
 			const videos = classifications.filter((c) => c === 'video').length;
 			const playlists = classifications.filter((c) => c === 'playlist').length;
 			const invalid = classifications.filter((c) => c === 'invalid').length;
@@ -201,11 +208,11 @@ export class GenerationOptionsModal extends Modal {
 			hintEl.setText(`${urls.length} URLs detected: ${parts.join(', ')}.`);
 			hintEl.show();
 		} else {
-			const isPlaylist = YouTubeService.isPlaylistUrl(trimmed);
+			const isPlaylist = isPlaylistUrl(trimmed);
 			if (isPlaylist) {
 				hintEl.setText('Playlist detected.');
 				hintEl.show();
-			} else if (YouTubeService.isYouTubeUrl(trimmed)) {
+			} else if (isYouTubeUrl(trimmed)) {
 				hintEl.setText('Single video detected.');
 				hintEl.show();
 			} else {
@@ -218,7 +225,7 @@ export class GenerationOptionsModal extends Modal {
 	}
 
 	private syncPlaylistContextVisibility(): void {
-		const isPlaylist = YouTubeService.isPlaylistUrl(this.state.url.trim());
+		const isPlaylist = isPlaylistUrl(this.state.url.trim());
 		this.playlistQuickSettingEl?.toggle(isPlaylist);
 	}
 
@@ -280,12 +287,7 @@ export class GenerationOptionsModal extends Modal {
 					.setValue(this.state.instructionTemplate)
 					.onChange((value) => {
 						this.state.instructionTemplate = value as InstructionTemplate;
-						this.state.controlValues = {};
-						for (const control of getTemplate(this.state.instructionTemplate).controls ?? []) {
-							if (control.default !== undefined) {
-								this.state.controlValues[control.id] = controlDefaultToString(control.default);
-							}
-						}
+						this.state.controlValues = seedTemplateControlValues(this.state.instructionTemplate);
 						this.updateTemplateSubtitle();
 						this.updateControlsArea();
 					});

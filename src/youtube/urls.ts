@@ -22,7 +22,7 @@ export function extractPlaylistId(url: string): string | null {
 			return playlistId;
 		}
 	} catch {
-		// Non-URL text can still contain a copied query fragment; try the regex fallback below.
+		// Fall back to a query-fragment match for non-URL text.
 	}
 
 	return extractUrlMatch(url, /[?&]list=([a-zA-Z0-9_-]+)/);
