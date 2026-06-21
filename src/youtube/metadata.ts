@@ -1,5 +1,5 @@
 import type { TranscriptLine, TranscriptResponse } from '../types';
-import { decodeHtmlEntities } from '../rendering/outputNormalizer';
+import { decodeHtmlEntities, normalizeWhitespace } from '../utils';
 
 export type Thumbnail = {
 	url?: string;
@@ -64,10 +64,7 @@ export function thumbnailUrlForQuality(videoId: string, quality: ThumbnailQualit
 }
 
 export function normalizeHtmlText(text: string): string {
-	return decodeHtmlEntities(text)
-		.replace(/\\n/g, ' ')
-		.replace(/\s+/g, ' ')
-		.trim();
+	return normalizeWhitespace(decodeHtmlEntities(text).replace(/\\n/g, ' '));
 }
 
 function parsePositiveInteger(value: unknown): number | undefined {

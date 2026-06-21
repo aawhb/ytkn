@@ -1,11 +1,12 @@
-import { App, Notice, TFile } from 'obsidian';
+import type { App } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
+import type { ProgressMarkers } from '../../queue/progress';
 import {
 	buildProgressContent,
 	buildProgressMarkers,
-	ProgressMarkers,
 	replaceMarkedContent,
 } from '../../queue/progress';
-import { QueuedRun } from '../../queue/runQueueService';
+import type { QueuedRun } from '../../queue/runQueueService';
 import {
 	createJobId,
 	getErrorMessage,

@@ -6,19 +6,9 @@ import type { YouTubeService } from '../youtube/youtubeService';
 import { isMetadataOnlyRun } from './aiPolicy';
 import type { EffectiveGenerationOptions } from './effectiveOptions';
 
-export interface VideoDataFetchResult {
+interface VideoDataFetchResult {
 	transcript: TranscriptResponse;
 	languageCode?: string;
-}
-
-export function getTranscriptFetchOptions(effectiveOptions: EffectiveGenerationOptions): {
-	languageMode: EffectiveGenerationOptions['transcriptLanguageMode'];
-	preferredLanguageCode: string;
-} {
-	return {
-		languageMode: effectiveOptions.transcriptLanguageMode,
-		preferredLanguageCode: effectiveOptions.preferredTranscriptLanguage,
-	};
 }
 
 export async function fetchTranscriptForUrl(
@@ -28,7 +18,10 @@ export async function fetchTranscriptForUrl(
 	signal: AbortSignal,
 ): Promise<TranscriptFetchResult> {
 	if (signal.aborted) throw signal.reason;
-	const result = await youtubeService.fetchTranscript(url, getTranscriptFetchOptions(effectiveOptions));
+	const result = await youtubeService.fetchTranscript(url, {
+		languageMode: effectiveOptions.transcriptLanguageMode,
+		preferredLanguageCode: effectiveOptions.preferredTranscriptLanguage,
+	});
 	if (signal.aborted) throw signal.reason;
 	return result;
 }

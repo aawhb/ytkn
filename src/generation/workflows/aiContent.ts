@@ -9,7 +9,7 @@ export interface AiContentContext {
 	promptService: PromptService;
 }
 
-export interface AiContentProgress {
+interface AiContentProgress {
 	hasProgressContent: boolean;
 	updateProgress(message: string): Promise<void>;
 	updateStatus(message: string): void;

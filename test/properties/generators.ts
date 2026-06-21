@@ -12,10 +12,6 @@ export const safeLineArbitrary = fc
 	.map((chars) => chars.join('').replace(/\s+/g, ' ').trim())
 	.filter(Boolean);
 
-export const safeParagraphArbitrary = fc
-	.array(safeLineArbitrary, { minLength: 1, maxLength: 4 })
-	.map((lines) => lines.join('\n'));
-
 export const youtubeVideoIdArbitrary = fc
 	.array(fc.constantFrom(...YOUTUBE_ID_CHARS), { minLength: 11, maxLength: 11 })
 	.map((chars) => chars.join(''));

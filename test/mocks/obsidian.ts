@@ -208,6 +208,7 @@ export class Setting {
 			setTooltip(_t: string): any { return this; },
 			setCta(): any { return this; },
 			setWarning(): any { return this; },
+			setDestructive(): any { btnEl.classList.add('mod-destructive'); return this; },
 			setDisabled(v: boolean): any { btnEl.disabled = v; return this; },
 		};
 		cb(b);

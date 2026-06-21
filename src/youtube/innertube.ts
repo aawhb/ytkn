@@ -1,10 +1,9 @@
 import { requestUrl } from 'obsidian';
 import { getErrorMessage } from '../utils';
-import { microformatMetadata, PlayerEnvelope, SupplementalVideoMetadata } from './metadata';
+import type { PlayerEnvelope, SupplementalVideoMetadata } from './metadata';
+import { microformatMetadata } from './metadata';
 
-// YouTube's InnerTube clients use a public client key in their own web/mobile requests.
-// It is split here so automated secret scanners do not treat the public client key as
-// a private project credential.
+// Split YouTube's public client key to avoid secret-scanner false positives.
 const PUBLIC_INNERTUBE_KEY = [
 	'AIza',
 	'SyAO_FJ2SlqU8Q4STEHLGCilw',

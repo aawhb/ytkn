@@ -1,5 +1,7 @@
-import { App, Modal, Setting } from 'obsidian';
-import { ReleaseNote, SUPPORT_LINKS } from '../../releaseNotes';
+import type { App } from 'obsidian';
+import { Modal, Setting } from 'obsidian';
+import type { ReleaseNote } from '../../releaseNotes';
+import { SUPPORT_LINKS } from '../../releaseNotes';
 
 const SECTION_LABELS: Array<{ key: keyof Pick<ReleaseNote, 'new' | 'improved' | 'fixed' | 'changed'>; label: string }> = [
 	{ key: 'new', label: 'New' },
@@ -100,8 +102,7 @@ export class WhatsNewModal extends Modal {
 		const copy = support.createDiv({ cls: 'ytkn-whats-new-modal__support-copy' });
 		copy.createEl('h3', {
 			cls: 'ytkn-whats-new-modal__support-title',
-			// eslint-disable-next-line obsidianmd/ui/sentence-case
-			text: 'Support YTKN Development',
+			text: 'Support YTKN development',
 		});
 
 		const actions = support.createDiv({ cls: 'ytkn-whats-new-modal__support-actions' });

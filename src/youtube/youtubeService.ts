@@ -2,21 +2,15 @@ import type {
 	PlaylistResponse,
 	TranscriptFetchResult,
 	TranscriptLanguageMode,
-	TranscriptLine,
 	TranscriptResponse,
 } from '../types';
 import { getErrorMessage } from '../utils';
 import {
-	parseCaptionXml,
 	requestCaptionLines,
 	requestedTranscriptLanguage,
 	selectCaptionTrack,
 } from './captions';
-import {
-	buildTranscriptResponseFromPlayer,
-	ThumbnailQuality,
-	thumbnailUrlForQuality,
-} from './metadata';
+import { buildTranscriptResponseFromPlayer } from './metadata';
 import {
 	requestContinuation,
 	requestOEmbedTitle,
@@ -26,48 +20,11 @@ import {
 } from './innertube';
 import { collectPlaylistEntries, playlistTitleFromPayload } from './playlistPayload';
 import {
-	classifyUrls,
 	extractPlaylistId,
 	extractVideoId,
-	isPlaylistUrl,
-	isYouTubeUrl,
-	parseUrls,
-	YouTubeUrlClassification,
 } from './urls';
 
 export class YouTubeService {
-	static getThumbnailUrl(videoId: string, quality: ThumbnailQuality = 'medium'): string {
-		return thumbnailUrlForQuality(videoId, quality);
-	}
-
-	static isYouTubeUrl(url: string): boolean {
-		return isYouTubeUrl(url);
-	}
-
-	static extractVideoId(url: string): string | null {
-		return extractVideoId(url);
-	}
-
-	static extractPlaylistId(url: string): string | null {
-		return extractPlaylistId(url);
-	}
-
-	static isPlaylistUrl(url: string): boolean {
-		return isPlaylistUrl(url);
-	}
-
-	static parseUrls(input: string): string[] {
-		return parseUrls(input);
-	}
-
-	static classifyUrls(urls: string[]): YouTubeUrlClassification[] {
-		return classifyUrls(urls);
-	}
-
-	static parseTranscriptXml(xmlContent: string): TranscriptLine[] {
-		return parseCaptionXml(xmlContent);
-	}
-
 	async fetchVideoTitle(videoId: string): Promise<string> {
 		return requestOEmbedTitle(videoId);
 	}
@@ -79,7 +36,7 @@ export class YouTubeService {
 
 	async fetchVideoMetadata(url: string): Promise<TranscriptResponse> {
 		try {
-			const videoId = YouTubeService.extractVideoId(url);
+			const videoId = extractVideoId(url);
 			if (!videoId) {
 				throw new Error('Invalid YouTube URL');
 			}
@@ -99,7 +56,7 @@ export class YouTubeService {
 		options: { languageMode?: TranscriptLanguageMode; preferredLanguageCode?: string } = {},
 	): Promise<TranscriptFetchResult> {
 		try {
-			const videoId = YouTubeService.extractVideoId(url);
+			const videoId = extractVideoId(url);
 			if (!videoId) {
 				throw new Error('Invalid YouTube URL');
 			}
@@ -134,7 +91,7 @@ export class YouTubeService {
 	}
 
 	async fetchPlaylist(url: string): Promise<PlaylistResponse> {
-		const playlistId = YouTubeService.extractPlaylistId(url);
+		const playlistId = extractPlaylistId(url);
 		if (!playlistId) {
 			throw new Error('Invalid YouTube playlist URL');
 		}

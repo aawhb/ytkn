@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fetchTranscriptForUrl, fetchVideoDataForUrl, getTranscriptFetchOptions } from '../../src/generation/fetch';
+import { fetchTranscriptForUrl, fetchVideoDataForUrl } from '../../src/generation/fetch';
 import type { EffectiveGenerationOptions } from '../../src/generation/effectiveOptions';
 
 function makeOptions(overrides: Partial<EffectiveGenerationOptions> = {}): EffectiveGenerationOptions {
@@ -36,13 +36,6 @@ function makeOptions(overrides: Partial<EffectiveGenerationOptions> = {}): Effec
 }
 
 describe('generation fetch helpers', () => {
-	it('maps transcript language options for YouTube transcript fetches', () => {
-		expect(getTranscriptFetchOptions(makeOptions())).toEqual({
-			languageMode: 'preferred',
-			preferredLanguageCode: 'fr',
-		});
-	});
-
 	it('fetches transcripts for transcript-producing runs', async () => {
 		const transcriptResult = { transcript: { title: 'Video', lines: [], url: 'url', videoId: 'id' }, languageCode: 'en' };
 		const youtubeService = {

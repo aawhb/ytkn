@@ -15,6 +15,21 @@ describe('YouTube captions helpers', () => {
 			]);
 	});
 
+	it('skips empty caption segments and segments without offsets', () => {
+		expect(parseCaptionXml([
+			'<doc>',
+			'<p t="0">  </p>',
+			'<p t="100">Valid caption</p>',
+			'<p>No offset</p>',
+			'<p t="200"><tag></tag></p>',
+			'</doc>',
+		].join(''))).toEqual([{ text: 'Valid caption', offset: 100 }]);
+	});
+
+	it('rejects XML without usable caption segments', () => {
+		expect(() => parseCaptionXml('<doc></doc>')).toThrow(/no caption segments found/);
+	});
+
 	it('selects exact, variant, prefix, or first caption tracks', () => {
 		const tracks = [
 			{ baseUrl: 'en-url', languageCode: 'en' },
@@ -30,7 +45,7 @@ describe('YouTube captions helpers', () => {
 
 	it('normalizes preferred transcript language requests', () => {
 		expect(requestedTranscriptLanguage('preferred', ' EN-us ')).toBe('en-us');
-		expect(requestedTranscriptLanguage('default', 'fr')).toBeNull();
+		expect(requestedTranscriptLanguage('auto', 'fr')).toBeNull();
 		expect(requestedTranscriptLanguage('preferred', '  ')).toBeNull();
 	});
 });

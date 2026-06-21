@@ -1,6 +1,7 @@
-import { App, Modal, Setting } from 'obsidian';
-import { QueuedRun, RunQueueService } from '../../queue/runQueueService';
-import { QueueRunReportEntry } from '../../types';
+import type { App } from 'obsidian';
+import { Modal, Setting } from 'obsidian';
+import type { QueuedRun, RunQueueService } from '../../queue/runQueueService';
+import type { QueueRunReportEntry } from '../../types';
 import { createSettingsCard } from '../shared/cards';
 
 export class QueueModal extends Modal {
@@ -60,7 +61,6 @@ export class QueueModal extends Modal {
 			.addButton((btn) =>
 				btn
 					.setButtonText('Cancel all')
-					// setWarning() keeps compatibility with minAppVersion 1.11.4; setDestructive() requires Obsidian 1.13.0.
 					.setWarning()
 					.setDisabled(!hasWork)
 					.onClick(() => {
@@ -73,9 +73,6 @@ export class QueueModal extends Modal {
 		const row = container.createDiv({ cls: 'ytkn-queue-modal__row' });
 		const info = row.createDiv({ cls: 'ytkn-queue-modal__row-info' });
 		info.createSpan({ text: run.displayTitle, cls: 'ytkn-queue-modal__run-title' });
-		if (run.statusMessage) {
-			info.createSpan({ text: run.statusMessage, cls: 'ytkn-queue-modal__run-status' });
-		}
 		row.createSpan({ text: 'Running', cls: 'ytkn-queue__badge ytkn-queue__badge--running' });
 		row.createEl('button', { text: 'Cancel', cls: 'ytkn-queue-modal__cancel-btn' })
 			.addEventListener('click', () => this.runQueue.cancelRun(run.id));

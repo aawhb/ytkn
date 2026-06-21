@@ -1,5 +1,6 @@
 import type { App } from 'obsidian';
 import { Modal, Setting } from 'obsidian';
+import { setDestructiveButton } from '../shared/buttonStyles';
 
 export class ConfirmModal extends Modal {
 	constructor(
@@ -26,9 +27,7 @@ export class ConfirmModal extends Modal {
 				button.setButtonText('Cancel').onClick(() => this.close()),
 			)
 			.addButton((button) =>
-				button
-					.setButtonText(this.confirmText)
-					.setWarning()
+				setDestructiveButton(button.setButtonText(this.confirmText))
 					.onClick(async () => {
 						try {
 							await this.onConfirm();

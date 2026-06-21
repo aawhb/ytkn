@@ -1,5 +1,6 @@
 import type { PlaylistEntry } from '../types';
-import { bestProvidedThumbnailUrl, normalizeHtmlText, Thumbnail } from './metadata';
+import type { Thumbnail } from './metadata';
+import { bestProvidedThumbnailUrl, normalizeHtmlText } from './metadata';
 
 type JsonObject = Record<string, unknown>;
 

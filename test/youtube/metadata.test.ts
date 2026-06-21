@@ -9,7 +9,8 @@ import {
 
 describe('YouTube metadata helpers', () => {
 	it('normalizes HTML text and thumbnail URLs', () => {
-		expect(normalizeHtmlText('Tom &amp; Jerry\\n  test')).toBe('Tom & Jerry test');
+		expect(normalizeHtmlText('Tom &amp; Jerry\\n&nbsp;test &#x27;ok&#x27;')).toBe('Tom & Jerry test \'ok\'');
+		expect(thumbnailUrlForQuality('abc', 'medium')).toBe('https://img.youtube.com/vi/abc/mqdefault.jpg');
 		expect(thumbnailUrlForQuality('abc', 'high')).toBe('https://img.youtube.com/vi/abc/hqdefault.jpg');
 		expect(bestProvidedThumbnailUrl([
 			{ url: 'small.jpg', width: 120, height: 90 },
