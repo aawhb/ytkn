@@ -108,10 +108,11 @@ export class GenerationOptionsModal extends Modal {
 		const brandIcon = brand.createDiv({ cls: 'ytkn-brand-mark' });
 		setIcon(brandIcon, 'play');
 		const brandCopy = brand.createDiv({ cls: 'ytkn-modal__brand-copy ytkn-brand-copy ytkn-brand-copy--modal' });
-		brandCopy.createEl('h2', {
+		const brandTitle = brandCopy.createEl('h2', {
 			text: 'YT Knowledge Notes',
 			cls: 'ytkn-modal__title ytkn-brand-title',
 		});
+		brandTitle.setAttribute('data-mobile-title', 'YTKN');
 		renderBrandActions(brandCopy, this.getBrandActions());
 		this.renderActionRow(headerWrap);
 

@@ -31,6 +31,69 @@
 			transparent);
 }
 
+.is-phone .ytkn-modal__header-wrap {
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.is-phone .ytkn-modal__brand {
+	flex: 1 1 auto;
+	min-width: 0;
+	gap: var(--size-4-2);
+}
+
+.is-phone .ytkn-modal__brand-copy {
+	flex: 1 1 auto;
+	align-items: flex-start;
+	gap: 0;
+	min-width: 0;
+}
+
+.is-phone .ytkn-modal__brand>.ytkn-brand-mark {
+	--ytkn-brand-mark-size: 40px;
+	--ytkn-brand-mark-radius: calc(var(--ytkn-brand-mark-size) * 0.333333);
+	--ytkn-brand-icon-size: calc(var(--ytkn-brand-mark-size) * 0.583333);
+	width: var(--ytkn-brand-mark-size);
+	height: var(--ytkn-brand-mark-size);
+	min-width: var(--ytkn-brand-mark-size);
+	min-height: var(--ytkn-brand-mark-size);
+	max-width: var(--ytkn-brand-mark-size);
+	max-height: var(--ytkn-brand-mark-size);
+	border-radius: var(--ytkn-brand-mark-radius);
+}
+
+.is-phone .ytkn-modal__brand .ytkn-modal__title {
+	width: 100%;
+	min-width: 0;
+	overflow: hidden;
+	font-size: 0;
+	white-space: nowrap;
+}
+
+.is-phone .ytkn-modal__brand .ytkn-modal__title::after {
+	content: attr(data-mobile-title);
+	font-size: var(--font-ui-small);
+}
+
+.is-phone .ytkn-modal__brand-copy>.ytkn-brand-actions {
+	--ytkn-brand-action-size: 22px;
+	--ytkn-brand-action-icon-size: 17px;
+	--ytkn-brand-action-gap: var(--size-4-1);
+	align-self: flex-start;
+	justify-content: flex-start;
+}
+
+.is-phone .ytkn-modal__actions {
+	flex: 0 0 auto;
+}
+
+.is-phone .ytkn-modal__actions button {
+	height: 32px;
+	min-height: 32px;
+	padding-inline: var(--size-4-2);
+	font-size: var(--font-ui-small);
+}
+
 .ytkn {
 	display: flex;
 	flex-direction: column;
@@ -81,455 +144,8 @@
 	border-radius: var(--radius-m);
 }
 
-.ytkn-settings__empty-panel {
-	margin-top: var(--size-4-4);
-	padding: var(--size-4-4);
-	border: 1px dashed var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	background: var(--background-primary);
-	color: var(--text-muted);
-}
-
-.ytkn-modal__stretch-input .setting-item-info {
-	flex: 0 0 auto;
-}
-
-.ytkn-modal__stretch-input .setting-item-control {
-	flex: 1 1 0%;
-}
-
-.ytkn-modal__stretch-input .setting-item-control input[type='text'] {
-	width: 100%;
-}
-
-/* Obsidian modal content adds padding in normal and settings modals. Keep this
-	scoped bridge instead of using global modal resets. */
-.modal.mod-settings .modal-content.ytkn-modal-scroll-container,
-.modal .modal-content.ytkn-modal-scroll-container {
-	padding: 0;
-}
-
-.ytkn-modal {
-	position: relative;
-	padding: 0 var(--size-4-6) var(--size-4-6);
-}
-
-.ytkn-modal__scroll-sentinel {
-	position: absolute;
-	top: 0;
-	height: 1px;
-	width: 1px;
-	pointer-events: none;
-	visibility: hidden;
-}
-
-.ytkn-modal__header-wrap {
-	position: sticky;
-	top: 0;
-	z-index: 100;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: var(--size-4-5) 0 var(--size-4-4);
-	margin-bottom: var(--size-4-2);
-	background-color: var(--background-primary);
-	border-bottom: 1px solid transparent;
-	transition: background-color 0.15s ease, border-bottom-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.ytkn-modal__header-wrap.is-scrolled {
-	background-color: var(--background-primary-alt);
-	border-bottom-color: var(--background-modifier-border);
-	box-shadow: var(--ytkn-surface-shadow);
-	margin-left: calc(var(--size-4-6) * -1);
-	margin-right: calc(var(--size-4-6) * -1);
-	padding-left: var(--size-4-6);
-	padding-right: var(--size-4-6);
-}
-
-.ytkn-modal__url-input {
-	font-size: var(--font-ui-medium);
-	padding: var(--size-4-3) var(--size-4-3);
-	margin-bottom: 0;
-	border-radius: var(--radius-m);
-}
-
-.ytkn-modal .setting-item.ytkn-modal__url-setting {
-	margin-bottom: 0;
-	padding-bottom: var(--size-4-1);
-}
-
-.ytkn-modal__section:first-of-type {
-	padding-top: 0;
-	margin-top: 0;
-}
-
-.ytkn-modal .setting-item {
-	border: none;
-	padding: var(--size-4-2) 0;
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	gap: var(--size-4-2);
-}
-
-/* Specificity bridge for Obsidian/theme `.setting-item` borders in modals and
-   plugin settings. Keep scoped and explicit so normal Obsidian settings remain untouched. */
-.modal .ytkn-modal .setting-item.setting-item,
-.mod-settings .ytkn-settings .setting-item.setting-item {
-	border: none;
-}
-
-.ytkn-modal .setting-item.mod-toggle {
-	flex-direction: row;
-	align-items: center;
-	justify-content: space-between;
-}
-
-.ytkn-modal .setting-item-info {
-	width: 100%;
-	padding-right: 0;
-}
-
-.ytkn-modal .setting-item.mod-toggle .setting-item-info {
-	flex: 1 1 auto;
-	width: auto;
-	padding-right: var(--size-4-4);
-}
-
-.ytkn-modal .setting-item-control {
-	margin-inline-start: 0;
-	width: 100%;
-}
-
-.ytkn-modal .setting-item-control select,
-.ytkn-modal .setting-item-control textarea,
-.ytkn-modal .setting-item-control input[type='text'],
-.ytkn-modal .setting-item-control input[type='number'] {
-	width: 100%;
-}
-
-.ytkn-modal .setting-item.mod-toggle .setting-item-control {
-	width: auto;
-	flex: 0 0 auto;
-}
-
-.ytkn-modal__section-description,
-.ytkn-modal__helper-text {
-	margin: 0;
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-}
-
-.ytkn-modal__intro {
-	margin-bottom: var(--size-4-4);
-}
-
-.ytkn-modal .setting-item.ytkn-modal__input-only {
-	gap: 0;
-}
-
-.ytkn-modal .setting-item.ytkn-modal__input-only .setting-item-info {
-	display: none;
-}
-
-.ytkn-modal .setting-item.ytkn-modal__input-only .setting-item-control {
-	width: 100%;
-}
-
-.ytkn-modal__helper-text+.ytkn-modal__helper-text {
-	margin-top: var(--size-4-2);
-}
-
-/* Re-stamp pill chrome inside modal cards so `.ytkn-modal .setting-item`
-   doesn't zero out horizontal padding for toggles. */
-.ytkn-modal .ytkn-card__body {
-	gap: var(--size-4-1);
-}
-
-.ytkn-modal .ytkn-card__body .setting-item {
-	padding: var(--size-4-1) var(--size-4-2);
-	background: var(--background-secondary);
-	border-radius: var(--radius-m);
-	border: none;
-}
-
-
-.ytkn-settings__provider-accordions {
-	display: flex;
-	flex-direction: column;
-	gap: var(--size-4-2);
-	margin-top: var(--size-4-3);
-}
-
-.ytkn-settings__provider-accordion {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	background-color: var(--background-primary);
-	overflow: hidden;
-}
-
-.is-phone .ytkn-settings .ytkn-settings__models-list .setting-item.setting-model {
-	flex-direction: row;
-}
-
-.is-phone .ytkn-settings .ytkn-settings__models-list .setting-item.setting-model .setting-item-control {
-	margin-top: 0;
-	width: auto;
-}
-
-.is-phone .ytkn-settings .setting-item.setting-model .setting-item-control button {
-	padding: 0;
-}
-
-.ytkn-settings__provider-accordion .clickable-icon {
-	padding: 0;
-	width: var(--size-4-6);
-	height: var(--size-4-6);
-	cursor: pointer;
-}
-
-.ytkn-settings__provider-header.setting-item {
-	cursor: pointer;
-	background: var(--background-primary);
-}
-
-.ytkn-settings__provider-header .clickable-icon {
-	opacity: 0;
-}
-
-.ytkn-settings__provider-accordion.is-expanded .clickable-icon,
-.ytkn-settings__provider-header:hover .clickable-icon {
-	opacity: 1;
-}
-
-.ytkn-settings__provider-controls {
-	display: flex;
-	align-items: center;
-	gap: var(--size-4-2);
-	flex-direction: row;
-	flex: 0 0 auto;
-}
-
-.ytkn-settings__provider-fetch {
-	color: var(--interactive-accent);
-}
-
-.ytkn-settings__collapse-icon {
-	transition: transform 0.2s ease;
-	width: var(--size-4-6);
-	height: var(--size-4-6);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.is-expanded .ytkn-settings__collapse-icon {
-	transform: rotate(180deg);
-}
-
-.ytkn-settings__provider-content {
-	padding: 0 var(--size-4-3) var(--size-4-3);
-	display: none;
-}
-
-.ytkn-settings__provider-accordion.is-expanded .ytkn-settings__provider-content {
-	display: flex;
-	flex-direction: column;
-	gap: var(--size-4-2);
-}
-
-.ytkn-settings__provider-fields,
-.ytkn-settings__models-section {
-	display: flex;
-	flex-direction: column;
-	gap: var(--size-4-1);
-	padding: var(--size-4-2);
-	border-radius: var(--radius-m);
-	background: var(--background-secondary);
-}
-
-.ytkn-settings__models-list {
-	max-height: var(--ytkn-model-list-max-height);
-	overflow-y: auto;
-	display: flex;
-	flex-direction: column;
-	gap: var(--size-4-1);
-}
-
-.ytkn-settings__models-section .setting-item.setting-model {
-	display: flex;
-	flex-direction: row;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--size-4-2);
-	padding: var(--size-4-2) var(--size-4-3);
-	margin: 0;
-	border: none;
-	background: var(--background-primary);
-	border-radius: var(--radius-m);
-}
-
-.ytkn-settings__models-list .setting-item.setting-model .setting-item-info {
-	flex: 1 1 auto;
-	min-width: 0;
-	width: auto;
-	padding-right: var(--size-4-2);
-}
-
-.ytkn-settings__models-list .setting-item.setting-model .setting-item-name {
-	line-height: var(--line-height-tight);
-	word-break: break-word;
-}
-
-.ytkn-settings__models-list .setting-item.setting-model .setting-item-control {
-	flex: 0 0 auto;
-	width: auto;
-	margin-inline-start: 0;
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	gap: var(--size-4-2);
-}
-
-.ytkn-settings__empty-state {
-	padding: var(--size-4-2) 0;
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-}
-
-.ytkn-settings__modal input[disabled] {
-	color: var(--text-faint);
-}
-
-.ytkn-settings__modal-message {
-	margin-bottom: var(--size-4-4);
-}
-
-.ytkn-settings__summary-prompt {
-	width: 100%;
-	min-height: var(--ytkn-summary-prompt-min-height);
-	font-family: var(--font-monospace);
-	padding: var(--size-4-2);
-	border-radius: var(--radius-s);
-	border: 1px solid var(--background-modifier-border);
-	background-color: var(--background-primary);
-	color: var(--text-normal);
-	resize: vertical;
-}
-
-.ytkn-settings__providers-header {
-	margin-top: var(--size-4-3);
-}
-
 .ytkn-status-bar--clickable {
 	cursor: var(--cursor);
-}
-
-/* ── Queue modal ─────────────────────────────────────────────────────────── */
-
-.ytkn-queue-modal__row {
-	display: flex;
-	align-items: center;
-	gap: var(--size-4-2);
-	padding: var(--size-4-2) 0;
-	border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.ytkn-queue-modal__row:last-child {
-	border-bottom: none;
-}
-
-.ytkn-queue-modal__row-info {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	gap: var(--size-2-1);
-	overflow: hidden;
-}
-
-.ytkn-queue-modal__run-title {
-	flex: 1;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.ytkn-queue-modal__run-status {
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-}
-
-.ytkn-queue__badge {
-	padding: var(--size-2-1) var(--size-4-1);
-	border-radius: var(--radius-s);
-	font-size: var(--font-ui-small);
-	font-weight: var(--font-semibold);
-	white-space: nowrap;
-}
-
-.ytkn-queue__badge--running {
-	color: var(--interactive-accent);
-}
-
-.ytkn-queue__badge--queued {
-	color: var(--text-muted);
-}
-
-.ytkn-queue__badge--completed {
-	color: var(--text-success);
-}
-
-.ytkn-queue__badge--failed {
-	color: var(--text-error);
-}
-
-.ytkn-queue__badge--canceled {
-	color: var(--text-muted);
-}
-
-.ytkn-queue__badge--skipped {
-	color: var(--text-muted);
-}
-
-.ytkn-queue-modal__cancel-btn {
-	background: transparent;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
-	padding: var(--size-2-1) var(--size-4-2);
-	cursor: pointer;
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-}
-
-.ytkn-queue-modal__cancel-btn:hover {
-	color: var(--text-error);
-	border-color: var(--text-error);
-}
-
-.ytkn-queue-modal__empty {
-	color: var(--text-muted);
-	text-align: center;
-	padding: var(--size-4-4);
-}
-
-.ytkn-queue-modal__footer {
-	margin-top: var(--size-4-3);
-	padding-top: var(--size-4-3);
-	border-top: 1px solid var(--background-modifier-border);
-}
-
-.ytkn-queue-modal__reason {
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-}
-
-/* Obsidian settings can restore roomy `.setting-item` chrome; keep direct card
-   rows compact without affecting nested template-card rows. */
-.ytkn-settings.ytkn-settings .ytkn-card__body>.setting-item.setting-item {
-	padding: var(--size-4-3);
-	margin: 0;
-	border: none;
 }
 
 .ytkn-card__body .setting-item-info,
@@ -564,51 +180,6 @@
 	flex: 0 0 auto;
 }
 
-.ytkn-card__body .setting-item.ytkn-settings__provider-field,
-.ytkn-settings__models-section .setting-item.ytkn-settings__models-header {
-	flex-direction: row;
-	align-items: center;
-	gap: var(--size-4-2);
-}
-
-.ytkn-settings__provider-fields .setting-item.ytkn-settings__provider-field,
-.ytkn-settings__models-section .setting-item.ytkn-settings__models-header {
-	padding: var(--size-4-2);
-	background: transparent;
-	border-radius: var(--radius-s);
-}
-
-.ytkn-card__body .setting-item.ytkn-settings__provider-field .setting-item-info,
-.ytkn-settings__models-section .setting-item.ytkn-settings__models-header .setting-item-info {
-	flex: 1 1 auto;
-	width: auto;
-	min-width: 0;
-	padding-right: var(--size-4-2);
-}
-
-.ytkn-card__body .setting-item.ytkn-settings__provider-field .setting-item-control {
-	flex: 0 1 auto;
-	width: min(320px, 45%);
-	margin-inline-start: 0;
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	gap: var(--size-4-2);
-}
-
-.ytkn-settings__models-section .setting-item.ytkn-settings__models-header .setting-item-control {
-	flex: 0 0 auto;
-	width: auto;
-	margin-inline-start: 0;
-	display: flex;
-	align-items: center;
-	justify-content: flex-end;
-	gap: var(--size-4-2);
-	flex-wrap: wrap;
-}
-
-/* Control rows stack by default for narrow/mobile layouts. Desktop
-   fit-to-content behavior is opt-in below so mobile no longer needs reversals. */
 .ytkn-setting-row--fit-control.setting-item,
 .ytkn-setting-row--stacked.setting-item {
 	flex-direction: column;
@@ -633,146 +204,6 @@
 .ytkn-setting-row--stacked.ytkn-setting-row--number>.setting-item-control>input[type='number'] {
 	width: 100%;
 	max-width: none;
-}
-
-@media (min-width: 721px) {
-
-	/* Fit-control rows: let text wrap while the control hugs its content. */
-	.ytkn-setting-row--fit-control.setting-item {
-		flex-direction: row;
-		align-items: center;
-		gap: var(--size-4-2);
-	}
-
-	.ytkn-setting-row--fit-control>.setting-item-info {
-		flex: 1 1 auto;
-		width: auto;
-		min-width: 0;
-		padding-right: var(--size-4-2);
-	}
-
-	.ytkn-setting-row--fit-control>.setting-item-control {
-		flex: 0 0 auto;
-		width: auto;
-	}
-
-	.ytkn-setting-row--fit-control.ytkn-setting-row--select>.setting-item-control>select {
-		width: auto;
-		max-width: 100%;
-	}
-
-	.ytkn-setting-row--fit-control.ytkn-setting-row--number>.setting-item-control>input[type='number'] {
-		width: var(--ytkn-number-input-width);
-		max-width: 100%;
-	}
-}
-
-/* `.ytkn-setting-row--stacked` is stamped for deliberate desktop-stacked
-   exceptions: narrow quick-grid controls and the long model selector row. */
-
-.ytkn-settings__template-description {
-	margin: 0;
-	color: var(--text-muted);
-	font-size: var(--font-ui-small);
-	font-style: italic;
-}
-
-.ytkn-settings__template-card {
-	display: flex;
-	flex-direction: column;
-	gap: var(--size-4-2);
-	padding: var(--size-4-3);
-	background: var(--background-secondary);
-	border-radius: var(--radius-m);
-	margin-bottom: var(--size-4-3);
-}
-
-.ytkn-card__body .ytkn-settings__template-card .setting-item {
-	padding: 0;
-	background: transparent;
-	border: none;
-}
-
-/* Nested template controls intentionally opt out of settings-card row chrome;
-   this mirrors the scoped specificity used for direct card rows above. */
-.ytkn-settings.ytkn-settings .ytkn-card__body .ytkn-settings__template-card .setting-item.setting-item {
-	padding: 0;
-	border: none;
-	background: transparent;
-}
-
-.ytkn-settings__template-preview {
-	margin-top: var(--size-4-2);
-	background: var(--background-secondary-alt);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-s);
-	padding: var(--size-4-3);
-	font-size: var(--font-ui-smaller);
-	color: var(--text-muted);
-}
-
-.ytkn-settings__template-preview-h2 {
-	font-weight: var(--font-bold);
-	color: var(--text-normal);
-	margin-top: var(--size-4-2);
-	margin-bottom: var(--size-4-1);
-}
-
-.ytkn-settings__template-preview-h2:first-child {
-	margin-top: 0;
-}
-
-.ytkn-settings__template-preview-li {
-	padding-left: var(--size-4-2);
-	color: var(--text-muted);
-}
-
-.ytkn-settings__collapsible>details>summary {
-	cursor: pointer;
-	font-weight: var(--font-medium);
-	color: var(--text-normal);
-	list-style: none;
-	display: flex;
-	align-items: center;
-	gap: var(--size-4-2);
-	user-select: none;
-}
-
-.ytkn-settings__collapsible>details>summary::-webkit-details-marker {
-	display: none;
-}
-
-.ytkn-settings__collapsible>details>summary::before {
-	content: '▶';
-	font-size: var(--font-ui-smaller);
-	transition: transform 0.15s ease;
-	color: var(--text-muted);
-}
-
-.ytkn-settings__collapsible>details[open]>summary::before {
-	transform: rotate(90deg);
-}
-
-.ytkn-modal__actions .setting-item {
-	border: none;
-	padding: 0;
-	flex-direction: row;
-	justify-content: flex-end;
-	align-items: center;
-}
-
-.ytkn-modal__actions .setting-item-info {
-	display: none;
-}
-
-.ytkn-modal__actions .setting-item-control {
-	gap: var(--size-4-2);
-	margin-inline-start: 0;
-}
-
-.is-phone .ytkn-settings__provider-header .clickable-icon,
-.is-phone .ytkn-settings__provider-accordion .clickable-icon {
-	opacity: 1;
 }
 
 .ytkn-tabs {
@@ -993,6 +424,271 @@
 	height: var(--ytkn-brand-action-icon-size);
 }
 
+.ytkn-settings__empty-panel {
+	margin-top: var(--size-4-4);
+	padding: var(--size-4-4);
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-primary);
+	color: var(--text-muted);
+}
+
+.ytkn-settings__provider-accordions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	margin-top: var(--size-4-3);
+}
+
+.ytkn-settings__provider-accordion {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background-color: var(--background-primary);
+	overflow: hidden;
+}
+
+.ytkn-settings__provider-accordion .clickable-icon {
+	padding: 0;
+	width: var(--size-4-6);
+	height: var(--size-4-6);
+	cursor: pointer;
+}
+
+.ytkn-settings__provider-header.setting-item {
+	cursor: pointer;
+	background: var(--background-primary);
+}
+
+.ytkn-settings__provider-header .clickable-icon {
+	opacity: 0;
+}
+
+.ytkn-settings__provider-accordion.is-expanded .clickable-icon,
+.ytkn-settings__provider-header:hover .clickable-icon {
+	opacity: 1;
+}
+
+.ytkn-settings__provider-controls {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	flex-direction: row;
+	flex: 0 0 auto;
+}
+
+.ytkn-settings__provider-fetch {
+	color: var(--interactive-accent);
+}
+
+.ytkn-settings__collapse-icon {
+	transition: transform 0.2s ease;
+	width: var(--size-4-6);
+	height: var(--size-4-6);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.is-expanded .ytkn-settings__collapse-icon {
+	transform: rotate(180deg);
+}
+
+.ytkn-settings__provider-content {
+	padding: 0 var(--size-4-3) var(--size-4-3);
+	display: none;
+}
+
+.ytkn-settings__provider-accordion.is-expanded .ytkn-settings__provider-content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.ytkn-settings__provider-fields,
+.ytkn-settings__models-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-1);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-m);
+	background: var(--background-secondary);
+}
+
+.ytkn-settings__models-list {
+	max-height: var(--ytkn-model-list-max-height);
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-1);
+}
+
+.ytkn-settings__models-section .setting-item.setting-model {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) var(--size-4-3);
+	margin: 0;
+	border: none;
+	background: var(--background-primary);
+	border-radius: var(--radius-m);
+}
+
+.ytkn-settings__models-list .setting-item.setting-model .setting-item-info {
+	flex: 1 1 auto;
+	min-width: 0;
+	width: auto;
+	padding-right: var(--size-4-2);
+}
+
+.ytkn-settings__models-list .setting-item.setting-model .setting-item-name {
+	line-height: var(--line-height-tight);
+	word-break: break-word;
+}
+
+.ytkn-settings__models-list .setting-item.setting-model .setting-item-control {
+	flex: 0 0 auto;
+	width: auto;
+	margin-inline-start: 0;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--size-4-2);
+}
+
+.ytkn-settings__empty-state {
+	padding: var(--size-4-2) 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ytkn-settings__modal input[disabled] {
+	color: var(--text-faint);
+}
+
+.ytkn-settings__modal-message {
+	margin-bottom: var(--size-4-4);
+}
+
+.ytkn-settings__summary-prompt {
+	width: 100%;
+	min-height: var(--ytkn-summary-prompt-min-height);
+	font-family: var(--font-monospace);
+	padding: var(--size-4-2);
+	border-radius: var(--radius-s);
+	border: 1px solid var(--background-modifier-border);
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	resize: vertical;
+}
+
+.ytkn-settings__providers-header {
+	margin-top: var(--size-4-3);
+}
+
+.ytkn-card__body .setting-item.ytkn-settings__provider-field,
+.ytkn-settings__models-section .setting-item.ytkn-settings__models-header {
+	flex-direction: row;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.ytkn-settings__provider-fields .setting-item.ytkn-settings__provider-field,
+.ytkn-settings__models-section .setting-item.ytkn-settings__models-header {
+	padding: var(--size-4-2);
+	background: transparent;
+	border-radius: var(--radius-s);
+}
+
+.ytkn-card__body .setting-item.ytkn-settings__provider-field .setting-item-info,
+.ytkn-settings__models-section .setting-item.ytkn-settings__models-header .setting-item-info {
+	flex: 1 1 auto;
+	width: auto;
+	min-width: 0;
+	padding-right: var(--size-4-2);
+}
+
+.ytkn-card__body .setting-item.ytkn-settings__provider-field .setting-item-control {
+	flex: 0 1 auto;
+	width: min(320px, 45%);
+	margin-inline-start: 0;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--size-4-2);
+}
+
+.ytkn-settings__models-section .setting-item.ytkn-settings__models-header .setting-item-control {
+	flex: 0 0 auto;
+	width: auto;
+	margin-inline-start: 0;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--size-4-2);
+	flex-wrap: wrap;
+}
+
+.ytkn-settings__template-description {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-style: italic;
+}
+
+.ytkn-settings__template-preview {
+	margin-top: var(--size-4-2);
+	background: var(--background-secondary-alt);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-4-3);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.ytkn-settings__template-preview-h2 {
+	font-weight: var(--font-bold);
+	color: var(--text-normal);
+	margin-top: var(--size-4-2);
+	margin-bottom: var(--size-4-1);
+}
+
+.ytkn-settings__template-preview-h2:first-child {
+	margin-top: 0;
+}
+
+.ytkn-settings__template-preview-li {
+	padding-left: var(--size-4-2);
+	color: var(--text-muted);
+}
+
+.ytkn-settings__collapsible>details>summary {
+	cursor: pointer;
+	font-weight: var(--font-medium);
+	color: var(--text-normal);
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	user-select: none;
+}
+
+.ytkn-settings__collapsible>details>summary::-webkit-details-marker {
+	display: none;
+}
+
+.ytkn-settings__collapsible>details>summary::before {
+	content: '▶';
+	font-size: var(--font-ui-smaller);
+	transition: transform 0.15s ease;
+	color: var(--text-muted);
+}
+
+.ytkn-settings__collapsible>details[open]>summary::before {
+	transform: rotate(90deg);
+}
+
 .ytkn-settings {
 	max-width: var(--ytkn-settings-max-width);
 	margin: 0 auto;
@@ -1010,6 +706,171 @@
 	padding: 0;
 	border: none;
 	background: transparent;
+}
+
+.ytkn-modal__stretch-input .setting-item-info {
+	flex: 0 0 auto;
+}
+
+.ytkn-modal__stretch-input .setting-item-control {
+	flex: 1 1 0%;
+}
+
+.ytkn-modal__stretch-input .setting-item-control input[type='text'] {
+	width: 100%;
+}
+
+.ytkn-modal {
+	position: relative;
+	padding: 0 var(--size-4-6) var(--size-4-6);
+}
+
+.ytkn-modal__scroll-sentinel {
+	position: absolute;
+	top: 0;
+	height: 1px;
+	width: 1px;
+	pointer-events: none;
+	visibility: hidden;
+}
+
+.ytkn-modal__header-wrap {
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--size-4-5) 0 var(--size-4-4);
+	margin-bottom: var(--size-4-2);
+	background-color: var(--background-primary);
+	border-bottom: 1px solid transparent;
+	transition: background-color 0.15s ease, border-bottom-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ytkn-modal__header-wrap.is-scrolled {
+	background-color: var(--background-primary-alt);
+	border-bottom-color: var(--background-modifier-border);
+	box-shadow: var(--ytkn-surface-shadow);
+	margin-left: calc(var(--size-4-6) * -1);
+	margin-right: calc(var(--size-4-6) * -1);
+	padding-left: var(--size-4-6);
+	padding-right: var(--size-4-6);
+}
+
+.ytkn-modal__url-input {
+	font-size: var(--font-ui-medium);
+	padding: var(--size-4-3) var(--size-4-3);
+	margin-bottom: 0;
+	border-radius: var(--radius-m);
+}
+
+.ytkn-modal .setting-item.ytkn-modal__url-setting {
+	margin-bottom: 0;
+	padding-bottom: var(--size-4-1);
+}
+
+.ytkn-modal__section:first-of-type {
+	padding-top: 0;
+	margin-top: 0;
+}
+
+.ytkn-modal .setting-item {
+	border: none;
+	padding: var(--size-4-2) 0;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-2);
+}
+
+.ytkn-modal .setting-item.mod-toggle {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.ytkn-modal .setting-item-info {
+	width: 100%;
+	padding-right: 0;
+}
+
+.ytkn-modal .setting-item.mod-toggle .setting-item-info {
+	flex: 1 1 auto;
+	width: auto;
+	padding-right: var(--size-4-4);
+}
+
+.ytkn-modal .setting-item-control {
+	margin-inline-start: 0;
+	width: 100%;
+}
+
+.ytkn-modal .setting-item-control select,
+.ytkn-modal .setting-item-control textarea,
+.ytkn-modal .setting-item-control input[type='text'],
+.ytkn-modal .setting-item-control input[type='number'] {
+	width: 100%;
+}
+
+.ytkn-modal .setting-item.mod-toggle .setting-item-control {
+	width: auto;
+	flex: 0 0 auto;
+}
+
+.ytkn-modal__section-description,
+.ytkn-modal__helper-text {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ytkn-modal__intro {
+	margin-bottom: var(--size-4-4);
+}
+
+.ytkn-modal .setting-item.ytkn-modal__input-only {
+	gap: 0;
+}
+
+.ytkn-modal .setting-item.ytkn-modal__input-only .setting-item-info {
+	display: none;
+}
+
+.ytkn-modal .setting-item.ytkn-modal__input-only .setting-item-control {
+	width: 100%;
+}
+
+.ytkn-modal__helper-text+.ytkn-modal__helper-text {
+	margin-top: var(--size-4-2);
+}
+
+.ytkn-modal .ytkn-card__body {
+	gap: var(--size-4-1);
+}
+
+.ytkn-modal .ytkn-card__body .setting-item {
+	padding: var(--size-4-1) var(--size-4-2);
+	background: var(--background-secondary);
+	border-radius: var(--radius-m);
+	border: none;
+}
+
+.ytkn-modal__actions .setting-item {
+	border: none;
+	padding: 0;
+	flex-direction: row;
+	justify-content: flex-end;
+	align-items: center;
+}
+
+.ytkn-modal__actions .setting-item-info {
+	display: none;
+}
+
+.ytkn-modal__actions .setting-item-control {
+	gap: var(--size-4-2);
+	margin-inline-start: 0;
 }
 
 .ytkn-card__body .setting-item-name,
@@ -1053,16 +914,6 @@
 	margin-bottom: var(--size-4-6);
 	padding-bottom: 0;
 	border-bottom: none;
-}
-
-/* Match `.ytkn-modal__section:first-of-type` specificity so its
-   `padding-top: 0` doesn't crush the card's intended top padding. */
-.ytkn-modal .ytkn-modal__quick-card {
-	padding: var(--size-4-4) var(--size-4-6);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--ytkn-quick-card-radius);
-	background: var(--background-primary);
-	box-shadow: var(--ytkn-surface-shadow);
 }
 
 .ytkn-modal__section-header {
@@ -1117,15 +968,6 @@
 }
 
 .ytkn-modal .ytkn-modal__quick-grid .setting-item {
-	padding: 0;
-	border: none;
-	margin: 0;
-	min-width: 0;
-}
-
-/* Mirror the quick-grid reset at modal specificity so Obsidian's setting row
-   padding cannot reappear inside the compact two-column card. */
-.modal .ytkn-modal .ytkn-modal__quick-grid .setting-item.setting-item {
 	padding: 0;
 	border: none;
 	margin: 0;
@@ -1214,16 +1056,170 @@
 	min-width: 0;
 }
 
-/* Template control rows are rendered after dynamic updates; this scoped reset
-   keeps generated controls compact regardless of Obsidian modal defaults. */
-.modal .ytkn-modal .ytkn-modal__controls-area .setting-item.setting-item {
-	padding: 0;
-	border: none;
-	margin: 0;
-	min-width: 0;
+.ytkn-modal__manual-prompt {
+	min-height: var(--ytkn-textarea-min-height);
+	resize: vertical;
 }
 
-/* ── What's new modal ────────────────────────────────────────────────────── */
+.ytkn-modal__advanced-title {
+	margin: 0 0 var(--size-4-3) 0;
+	font-size: var(--h4-size, 1.08em);
+	font-weight: var(--font-semibold);
+	letter-spacing: -0.01em;
+}
+
+.ytkn-control-row--textarea.setting-item,
+.ytkn-modal .setting-item.ytkn-control-row--textarea {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-1);
+	justify-content: flex-start;
+}
+
+.ytkn-control-row--textarea .setting-item-info,
+.ytkn-control-row--textarea .setting-item-control,
+.ytkn-modal .setting-item.ytkn-control-row--textarea .setting-item-info,
+.ytkn-modal .setting-item.ytkn-control-row--textarea .setting-item-control {
+	width: 100%;
+	padding-right: 0;
+	flex: unset;
+}
+
+.ytkn-control-row--textarea .setting-item-description,
+.ytkn-modal .setting-item.ytkn-control-row--textarea .setting-item-description {
+	margin: 0;
+}
+
+.ytkn-control-row__textarea {
+	width: 100%;
+	min-height: var(--ytkn-textarea-min-height);
+	resize: vertical;
+	font-family: var(--font-text);
+}
+
+.setting-item.ytkn-control-row:not(.ytkn-control-row--textarea) {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 0 var(--size-4-3);
+	align-items: start;
+}
+
+.setting-item.ytkn-control-row:not(.ytkn-control-row--textarea) .setting-item-info {
+	grid-column: 1;
+	padding-right: 0;
+}
+
+.setting-item.ytkn-control-row:not(.ytkn-control-row--textarea) .setting-item-control {
+	grid-column: 2;
+	margin-inline-start: 0;
+}
+
+.setting-item.ytkn-control-row--textarea {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--size-4-1);
+}
+
+.setting-item.ytkn-control-row--textarea .setting-item-info,
+.setting-item.ytkn-control-row--textarea .setting-item-control {
+	width: 100%;
+	padding-right: 0;
+}
+
+.setting-item.ytkn-control-row--textarea .setting-item-control textarea {
+	width: 100%;
+}
+
+.ytkn-queue-modal__row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-2) 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ytkn-queue-modal__row:last-child {
+	border-bottom: none;
+}
+
+.ytkn-queue-modal__row-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-1);
+	overflow: hidden;
+}
+
+.ytkn-queue-modal__run-title {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ytkn-queue__badge {
+	padding: var(--size-2-1) var(--size-4-1);
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+	font-weight: var(--font-semibold);
+	white-space: nowrap;
+}
+
+.ytkn-queue__badge--running {
+	color: var(--interactive-accent);
+}
+
+.ytkn-queue__badge--queued {
+	color: var(--text-muted);
+}
+
+.ytkn-queue__badge--completed {
+	color: var(--text-success);
+}
+
+.ytkn-queue__badge--failed {
+	color: var(--text-error);
+}
+
+.ytkn-queue__badge--canceled {
+	color: var(--text-muted);
+}
+
+.ytkn-queue__badge--skipped {
+	color: var(--text-muted);
+}
+
+.ytkn-queue-modal__cancel-btn {
+	background: transparent;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-2-1) var(--size-4-2);
+	cursor: pointer;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ytkn-queue-modal__cancel-btn:hover {
+	color: var(--text-error);
+	border-color: var(--text-error);
+}
+
+.ytkn-queue-modal__empty {
+	color: var(--text-muted);
+	text-align: center;
+	padding: var(--size-4-4);
+}
+
+.ytkn-queue-modal__footer {
+	margin-top: var(--size-4-3);
+	padding-top: var(--size-4-3);
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.ytkn-queue-modal__reason {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
 
 .ytkn-whats-new-modal {
 	display: flex;
@@ -1358,87 +1354,95 @@
 	justify-content: flex-end;
 }
 
-
-.ytkn-modal__manual-prompt {
-	min-height: var(--ytkn-textarea-min-height);
-	resize: vertical;
+.modal.mod-settings .modal-content.ytkn-modal-scroll-container,
+.modal .modal-content.ytkn-modal-scroll-container {
+	padding: 0;
 }
 
-.ytkn-modal__advanced-title {
-	margin: 0 0 var(--size-4-3) 0;
-	font-size: var(--h4-size, 1.08em);
-	font-weight: var(--font-semibold);
-	letter-spacing: -0.01em;
+.modal .ytkn-modal .setting-item.setting-item,
+.mod-settings .ytkn-settings .setting-item.setting-item {
+	border: none;
 }
 
-.ytkn-control-row--textarea.setting-item,
-.ytkn-modal .setting-item.ytkn-control-row--textarea {
-	flex-direction: column;
-	align-items: stretch;
-	gap: var(--size-4-1);
-	justify-content: flex-start;
+.is-phone .ytkn-settings .ytkn-settings__models-list .setting-item.setting-model {
+	flex-direction: row;
 }
 
-.ytkn-control-row--textarea .setting-item-info,
-.ytkn-control-row--textarea .setting-item-control,
-.ytkn-modal .setting-item.ytkn-control-row--textarea .setting-item-info,
-.ytkn-modal .setting-item.ytkn-control-row--textarea .setting-item-control {
-	width: 100%;
-	padding-right: 0;
-	flex: unset;
+.is-phone .ytkn-settings .ytkn-settings__models-list .setting-item.setting-model .setting-item-control {
+	margin-top: 0;
+	width: auto;
 }
 
-.ytkn-control-row--textarea .setting-item-description,
-.ytkn-modal .setting-item.ytkn-control-row--textarea .setting-item-description {
+.is-phone .ytkn-settings .setting-item.setting-model .setting-item-control button {
+	padding: 0;
+}
+
+.ytkn-settings.ytkn-settings .ytkn-card__body>.setting-item.setting-item {
+	padding: var(--size-4-3);
 	margin: 0;
-}
-
-.ytkn-control-row__textarea {
-	width: 100%;
-	min-height: var(--ytkn-textarea-min-height);
-	resize: vertical;
-	font-family: var(--font-text);
-}
-
-/* Enum control rows in template card: grid so description gets
-   full 1fr width and dropdown stays top-right without moving to next line */
-.ytkn-settings__template-card .setting-item.ytkn-control-row:not(.ytkn-control-row--textarea) {
-	display: grid;
-	grid-template-columns: 1fr auto;
-	gap: 0 var(--size-4-3);
-	align-items: start;
-}
-
-.ytkn-settings__template-card .setting-item.ytkn-control-row:not(.ytkn-control-row--textarea) .setting-item-info {
-	grid-column: 1;
-	padding-right: 0;
-}
-
-.ytkn-settings__template-card .setting-item.ytkn-control-row:not(.ytkn-control-row--textarea) .setting-item-control {
-	grid-column: 2;
-	margin-inline-start: 0;
-}
-
-.ytkn-settings__template-card .setting-item.ytkn-control-row--textarea {
-	flex-direction: column;
-	align-items: stretch;
-	gap: var(--size-4-1);
-}
-
-.ytkn-settings__template-card .setting-item.ytkn-control-row--textarea .setting-item-info,
-.ytkn-settings__template-card .setting-item.ytkn-control-row--textarea .setting-item-control {
-	width: 100%;
-	padding-right: 0;
-}
-
-.ytkn-settings__template-card .setting-item.ytkn-control-row--textarea .setting-item-control textarea {
-	width: 100%;
+	border: none;
 }
 
 @media (min-width: 721px) {
 
-	/* Obsidian restores roomy desktop `.setting-item` spacing inside settings
-	   dialogs; keep our card rows compact on desktop while leaving mobile alone. */
+	.ytkn-setting-row--fit-control.setting-item {
+		flex-direction: row;
+		align-items: center;
+		gap: var(--size-4-2);
+	}
+
+	.ytkn-setting-row--fit-control>.setting-item-info {
+		flex: 1 1 auto;
+		width: auto;
+		min-width: 0;
+		padding-right: var(--size-4-2);
+	}
+
+	.ytkn-setting-row--fit-control>.setting-item-control {
+		flex: 0 0 auto;
+		width: auto;
+	}
+
+	.ytkn-setting-row--fit-control.ytkn-setting-row--select>.setting-item-control>select {
+		width: auto;
+		max-width: 100%;
+	}
+
+	.ytkn-setting-row--fit-control.ytkn-setting-row--number>.setting-item-control>input[type='number'] {
+		width: var(--ytkn-number-input-width);
+		max-width: 100%;
+	}
+}
+
+.is-phone .ytkn-settings__provider-header .clickable-icon,
+.is-phone .ytkn-settings__provider-accordion .clickable-icon {
+	opacity: 1;
+}
+
+.ytkn-modal .ytkn-modal__quick-card {
+	padding: var(--size-4-4) var(--size-4-6);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--ytkn-quick-card-radius);
+	background: var(--background-primary);
+	box-shadow: var(--ytkn-surface-shadow);
+}
+
+.modal .ytkn-modal .ytkn-modal__quick-grid .setting-item.setting-item {
+	padding: 0;
+	border: none;
+	margin: 0;
+	min-width: 0;
+}
+
+.modal .ytkn-modal .ytkn-modal__controls-area .setting-item.setting-item {
+	padding: 0;
+	border: none;
+	margin: 0;
+	min-width: 0;
+}
+
+@media (min-width: 721px) {
+
 	.ytkn-card__body {
 		gap: var(--size-4-1);
 	}
@@ -1448,8 +1452,6 @@
 		margin: 0;
 	}
 
-	/* Desktop settings modals reintroduce roomier `.setting-item` spacing; match
-	   their specificity so card rows stay compact on wider viewports. */
 	.ytkn-settings.ytkn-settings .ytkn-card__body>.setting-item.setting-item {
 		padding: var(--size-4-2);
 		margin: 0;
@@ -1466,8 +1468,6 @@
 		padding: var(--size-4-1) var(--size-4-2);
 	}
 
-	/* Modal cards reuse the generic card body class; keep the modal variant's
-	   tighter desktop padding even when Obsidian modal rows add their own spacing. */
 	.modal .ytkn-modal .ytkn-card__body>.setting-item.setting-item {
 		padding: var(--size-4-1) var(--size-4-2);
 		border: none;
