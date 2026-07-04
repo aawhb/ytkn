@@ -32,15 +32,16 @@ export async function generateSingleVideoToTarget(
 
 	const thumbnailUrl = transcript.thumbnailUrl ?? thumbnailUrlForQuality(transcript.videoId, 'medium');
 	const generateSummary = shouldGenerateAiSummary(effectiveOptions);
-	const summary = aiContext
+	const aiResult = aiContext
 		? await generateAiText(context, aiContext, transcript, url, target, progressState, signal, generateSummary)
 		: null;
 
 	const template = generateSummary && effectiveOptions.instructionMode !== 'manual'
 		? getTemplate(effectiveOptions.instructionTemplate)
 		: null;
-	const { content, warnings } = renderVideoNote(transcript, thumbnailUrl, url, summary, effectiveOptions, template, isAppendMode ? 'fragment' : 'standalone');
-	for (const warning of warnings) {
+	const { content, warnings: renderWarnings } = renderVideoNote(transcript, thumbnailUrl, url, aiResult?.text ?? null, effectiveOptions, template, isAppendMode ? 'fragment' : 'standalone');
+	const warnings = [...(aiResult?.warnings ?? []), ...renderWarnings];
+	for (const warning of renderWarnings) {
 		if (/\b(?:required|requested) section\b/i.test(warning)) {
 			new Notice(`Note generated with warning: ${warning}`);
 		}

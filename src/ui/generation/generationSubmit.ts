@@ -46,7 +46,7 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 		return failure('Enter a destination folder, or switch to "current note".', duplicateCount);
 	}
 
-	if (effectiveUseAi && !state.modelId) {
+	if (effectiveUseAi && state.modelIds.length === 0) {
 		return failure('Select an AI model, or turn off AI for transcript-only output.', duplicateCount);
 	}
 
@@ -96,7 +96,8 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 			sourceSectionPosition: state.sourceSectionPosition,
 			linkTimestamps: state.linkTimestamps,
 			tldrCalloutAtTop: state.tldrCalloutAtTop,
-			modelId: state.modelId,
+			modelIds: state.modelIds,
+			modelId: state.modelIds[0],
 			instructionMode: state.instructionMode,
 			instructionTemplate: state.instructionTemplate,
 			manualInstructions: trimmedManualInstructions,

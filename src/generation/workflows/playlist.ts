@@ -22,7 +22,7 @@ import {
 	countPlaylistOutcomes,
 } from '../reportEntries';
 import type { NoteInsertionTarget, ProgressState } from '../targets/noteTargets';
-import { generateAiText, type AiContentContext } from './aiContent';
+import { generateAiCompletion, generateAiText, type AiContentContext } from './aiContent';
 import type { GenerationWorkflowContext } from './context';
 import { generateSingleVideoToTarget } from './singleVideo';
 
@@ -256,6 +256,7 @@ async function generateCombinedPlaylistNote(
 	const targetInfo = await resolveCombinedTarget(context, playlist, initialTarget, effectiveOptions);
 	const generateSummary = shouldGenerateAiSummary(effectiveOptions);
 	const videoSummaries: Array<{ transcript: TranscriptResponse; summary: string }> = [];
+	const aiWarnings: string[] = [];
 	const { transcripts, reportEntries } = await fetchCombinedPlaylistTranscripts(
 		context,
 		playlist,
@@ -277,11 +278,12 @@ async function generateCombinedPlaylistNote(
 			context.onStatusBar(generateSummary
 				? `Summarizing playlist video ${index + 1}/${playlist.entries.length}...`
 				: `Extracting playlist add-ons ${index + 1}/${playlist.entries.length}...`);
-			const summary = await generateAiText(
+			const aiResult = await generateAiText(
 				context, aiContext, transcript, entry.url, targetInfo.target, progressState, signal, generateSummary,
 			);
 
-			videoSummaries.push({ transcript, summary });
+			aiWarnings.push(...aiResult.warnings);
+			videoSummaries.push({ transcript, summary: aiResult.text });
 		},
 	);
 
@@ -303,12 +305,15 @@ async function generateCombinedPlaylistNote(
 	let summary: string;
 	try {
 		const playlistWithTranscripts: PlaylistTranscriptResponse = { ...playlist, transcripts };
-		summary = await aiContext.provider.summarizeVideo(
+		const synthesis = await generateAiCompletion(
+			aiContext,
 			generateSummary
 				? aiContext.promptService.buildPlaylistSynthesisPrompt(playlistWithTranscripts, videoSummaries)
 				: aiContext.promptService.buildPlaylistAddonsSynthesisPrompt(playlistWithTranscripts, videoSummaries),
 			signal,
 		);
+		summary = synthesis.text;
+		aiWarnings.push(...synthesis.warnings);
 	} catch (error) {
 		if (isAbortError(error, signal)) {
 			return cancelCombinedPlaylist(context, targetInfo.target, reportEntries);
@@ -321,8 +326,8 @@ async function generateCombinedPlaylistNote(
 	const template = generateSummary && effectiveOptions.instructionMode !== 'manual'
 		? getTemplate(effectiveOptions.instructionTemplate)
 		: null;
-	const { content, warnings } = renderPlaylistNote(playlistWithTranscripts, thumbnailUrl, summary, effectiveOptions, template, targetInfo.isAppendMode ? 'fragment' : 'standalone');
-	notifyRenderWarnings(warnings);
+	const { content, warnings: renderWarnings } = renderPlaylistNote(playlistWithTranscripts, thumbnailUrl, summary, effectiveOptions, template, targetInfo.isAppendMode ? 'fragment' : 'standalone');
+	notifyRenderWarnings(renderWarnings);
 	if (targetInfo.isAppendMode) {
 		context.onStatusBar('Rendering note...');
 	}
@@ -330,7 +335,7 @@ async function generateCombinedPlaylistNote(
 	const finalEntries = reportEntries.map((e) => (e.outcome === 'completed' ? { ...e, notePath } : e));
 	const { completed, skipped, failed } = countPlaylistOutcomes(finalEntries);
 	new Notice(`Playlist note generated (${completed} completed, ${skipped} skipped, ${failed} failed).`);
-	return { notePath, entries: finalEntries, warnings };
+	return { notePath, entries: finalEntries, warnings: [...aiWarnings, ...renderWarnings] };
 }
 
 async function generatePerVideoPlaylistNotes(

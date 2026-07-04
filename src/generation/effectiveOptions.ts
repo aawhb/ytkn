@@ -34,6 +34,7 @@ export interface EffectiveGenerationOptions extends GenerationOptions {
 	useVideoTitleAsNoteName: boolean;
 	noteDestinationMode: NoteDestinationMode;
 	noteDestinationFolder: string;
+	modelIds: string[];
 	temperature: number;
 	requestTimeoutMs: number;
 	includeFrontmatter: boolean;
@@ -72,6 +73,7 @@ export function resolveEffectiveGenerationOptions(
 		useVideoTitleAsNoteName: options.useVideoTitleAsNoteName ?? outputDefaults.useVideoTitleAsNoteName,
 		noteDestinationMode: options.noteDestinationMode ?? outputDefaults.noteDestinationMode,
 		noteDestinationFolder: options.noteDestinationFolder ?? outputDefaults.noteDestinationFolder,
+		modelIds: options.modelIds ?? (options.modelId ? [options.modelId] : settings.getModelIds()),
 		temperature: options.temperature ?? settings.getTemperature(),
 		requestTimeoutMs: options.requestTimeoutMs ?? settings.getRequestTimeoutMs(),
 		includeFrontmatter: options.includeFrontmatter ?? outputDefaults.includeFrontmatter,

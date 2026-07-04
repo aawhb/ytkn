@@ -17,7 +17,6 @@ import { GenerationOptionsModal } from './ui/generation/generationOptionsModal';
 import { QueueModal } from './ui/queue/queueModal';
 import { WhatsNewModal } from './ui/releaseNotes/whatsNewModal';
 import { resolveReleaseNotesStartupAction } from './releaseNotes';
-import { buildModelId } from './modelId';
 import { createJobId } from './utils';
 import type {
 	BatchTargetPolicy,
@@ -149,7 +148,7 @@ export class YTKN extends Plugin {
 	private getInitialGenerationOptions(): GenerationOptions {
 		const outputDefaults = this.settings.getOutputDefaults();
 		const instructionConfig = this.settings.getInstructionConfig();
-		const selectedModel = this.settings.getSelectedModel();
+		const modelIds = this.settings.getModelIds();
 
 		return {
 			useAi: outputDefaults.useAi,
@@ -171,7 +170,8 @@ export class YTKN extends Plugin {
 			sourceSectionPosition: outputDefaults.sourceSectionPosition,
 			linkTimestamps: outputDefaults.linkTimestamps,
 			tldrCalloutAtTop: outputDefaults.tldrCalloutAtTop,
-			modelId: selectedModel ? buildModelId(selectedModel) : undefined,
+			modelIds,
+			modelId: modelIds[0],
 			instructionMode: instructionConfig.mode,
 			instructionTemplate: instructionConfig.template,
 			manualInstructions: instructionConfig.manualInstructions,

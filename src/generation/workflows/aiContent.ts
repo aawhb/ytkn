@@ -1,12 +1,28 @@
+import { Notice } from 'obsidian';
 import type { AIModelProvider, ModelConfig, TranscriptResponse } from '../../types';
 import type { PromptService } from '../../ai/promptService';
+import { createProvider } from '../../ai/providers/factory';
+import { isAbortError } from '../../queue/progress';
+import { classifyAiError, describeAiErrorCause } from '../aiErrorClassifier';
 import type { NoteInsertionTarget, ProgressState } from '../targets/noteTargets';
 import type { GenerationWorkflowContext } from './context';
 
+export interface AiModelChain {
+	/** Models in fallback order; `index` is the sticky pointer for the whole run. */
+	candidates: ModelConfig[];
+	index: number;
+	temperature: number;
+	requestTimeoutMs: number;
+}
+
 export interface AiContentContext {
-	selectedModel: ModelConfig;
-	provider: AIModelProvider;
+	chain: AiModelChain;
 	promptService: PromptService;
+}
+
+export interface AiContentResult {
+	text: string;
+	warnings: string[];
 }
 
 interface AiContentProgress {
@@ -24,21 +40,81 @@ interface GenerateAiContentInput {
 	generateSummary: boolean;
 }
 
-export async function generateAiContent({
-	aiContext,
-	transcript,
-	url,
-	progress,
-	signal,
-	generateSummary,
-}: GenerateAiContentInput): Promise<string> {
+export async function generateAiContent(input: GenerateAiContentInput): Promise<AiContentResult> {
+	return runWithModelChain(
+		input.aiContext.chain,
+		input.signal,
+		(provider, model) => generateWithModel(provider, model, input),
+		(message) => input.progress.updateStatus(message),
+	);
+}
+
+/** Runs a single fixed prompt through the chain — used for playlist synthesis calls. */
+export async function generateAiCompletion(
+	aiContext: AiContentContext,
+	prompt: string,
+	signal: AbortSignal,
+): Promise<AiContentResult> {
+	return runWithModelChain(
+		aiContext.chain,
+		signal,
+		(provider) => provider.summarizeVideo(prompt, signal),
+	);
+}
+
+async function runWithModelChain(
+	chain: AiModelChain,
+	signal: AbortSignal,
+	attempt: (provider: AIModelProvider, model: ModelConfig) => Promise<string>,
+	onStatus?: (message: string) => void,
+): Promise<AiContentResult> {
+	const warnings: string[] = [];
+
+	for (;;) {
+		const model = chain.candidates[chain.index];
+		try {
+			assertModelUsable(model);
+			const provider = createProvider(model, chain.temperature, chain.requestTimeoutMs);
+			const text = await attempt(provider, model);
+			return { text, warnings };
+		} catch (error) {
+			if (isAbortError(error, signal)) {
+				throw error;
+			}
+			const next = chain.candidates[chain.index + 1];
+			if (!next) {
+				throw error;
+			}
+			chain.index += 1;
+			const message = `${modelLabel(model)} (${model.provider.name}) ${describeAiErrorCause(classifyAiError(error))} — falling back to ${modelLabel(next)} (${next.provider.name}).`;
+			new Notice(message);
+			warnings.push(message);
+			onStatus?.(`Falling back to ${modelLabel(next)}…`);
+		}
+	}
+}
+
+function modelLabel(model: ModelConfig): string {
+	return model.displayName || model.name;
+}
+
+function assertModelUsable(model: ModelConfig): void {
+	if (!model.provider.apiKey && model.provider.type !== 'openai-compatible') {
+		throw Object.assign(
+			new Error(`${model.provider.name} requires an API key. Please select an existing Obsidian secret in the plugin settings.`),
+			{ status: 401 },
+		);
+	}
+}
+
+async function generateWithModel(
+	provider: AIModelProvider,
+	model: ModelConfig,
+	{ aiContext, transcript, url, progress, signal, generateSummary }: GenerateAiContentInput,
+): Promise<string> {
 	const chunks = generateSummary
-		? aiContext.promptService.splitTranscript(transcript, url, {
-			model: aiContext.selectedModel,
-		})
-		: aiContext.promptService.splitTranscriptForAddons(transcript, url, {
-			model: aiContext.selectedModel,
-		});
+		? aiContext.promptService.splitTranscript(transcript, url, { model })
+		: aiContext.promptService.splitTranscriptForAddons(transcript, url, { model });
 
 	if (chunks.length <= 1) {
 		if (signal.aborted) throw signal.reason;
@@ -46,7 +122,7 @@ export async function generateAiContent({
 			await progress.updateProgress(generateSummary ? 'Generating summary...' : 'Generating AI add-ons...');
 		}
 		progress.updateStatus(generateSummary ? 'Generating summary...' : 'Generating AI add-ons...');
-		return aiContext.provider.summarizeVideo(
+		return provider.summarizeVideo(
 			generateSummary
 				? aiContext.promptService.buildPrompt(transcript, url)
 				: aiContext.promptService.buildAddonsPrompt(transcript, url),
@@ -66,7 +142,7 @@ export async function generateAiContent({
 			? `Summarizing chunk ${index + 1}/${chunks.length}...`
 			: `Extracting add-on material ${index + 1}/${chunks.length}...`);
 		chunkSummaries.push(
-			await aiContext.provider.summarizeVideo(
+			await provider.summarizeVideo(
 				generateSummary
 					? aiContext.promptService.buildChunkPrompt(transcript, url, chunk, index + 1, chunks.length)
 					: aiContext.promptService.buildAddonsChunkPrompt(transcript, url, chunk, index + 1, chunks.length),
@@ -80,7 +156,7 @@ export async function generateAiContent({
 		await progress.updateProgress(generateSummary ? 'Combining chunk summaries...' : 'Creating AI add-ons...');
 	}
 	progress.updateStatus(generateSummary ? 'Combining chunk summaries...' : 'Creating AI add-ons...');
-	return aiContext.provider.summarizeVideo(
+	return provider.summarizeVideo(
 		generateSummary
 			? aiContext.promptService.buildSynthesisPrompt(transcript, url, chunkSummaries)
 			: aiContext.promptService.buildAddonsSynthesisPrompt(transcript, url, chunkSummaries),
@@ -97,7 +173,7 @@ export async function generateAiText(
 	progressState: ProgressState,
 	signal: AbortSignal,
 	generateSummary: boolean,
-): Promise<string> {
+): Promise<AiContentResult> {
 	return generateAiContent({
 		aiContext,
 		transcript,

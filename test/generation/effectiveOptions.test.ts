@@ -38,6 +38,9 @@ function createSettings(overrides: Partial<PluginSettings> = {}): PluginSettings
 			linkTimestamps: true,
 			tldrCalloutAtTop: true,
 		}),
+		getModelIds: () => [],
+		getSelectedModels: () => [],
+		updateModelIds: async () => undefined,
 		getTemperature: () => 0.4,
 		getRequestTimeoutMs: () => 60000,
 		getLastSeenReleaseNotesVersion: () => null,
@@ -97,5 +100,16 @@ describe('resolveEffectiveGenerationOptions', () => {
 		expect(effective.noteDestinationMode).toBe('current-note');
 		expect(effective.temperature).toBe(1.2);
 		expect(effective.requestTimeoutMs).toBe(1000);
+	});
+
+	it('resolves the model chain from per-run list, legacy single model, then settings', () => {
+		const settings = createSettings({
+			getModelIds: () => ['A:one', 'B:two'],
+		} as never);
+
+		expect(resolveEffectiveGenerationOptions({}, settings).modelIds).toEqual(['A:one', 'B:two']);
+		expect(resolveEffectiveGenerationOptions({ modelIds: ['B:two'] }, settings).modelIds).toEqual(['B:two']);
+		expect(resolveEffectiveGenerationOptions({ modelId: 'C:three' }, settings).modelIds).toEqual(['C:three']);
+		expect(resolveEffectiveGenerationOptions({ modelIds: ['A:one'], modelId: 'C:three' }, settings).modelIds).toEqual(['A:one']);
 	});
 });

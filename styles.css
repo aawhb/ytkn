@@ -180,6 +180,59 @@
 	flex: 0 0 auto;
 }
 
+.ytkn-model-chain__row.setting-item,
+.ytkn-model-chain__add-row.setting-item {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+}
+
+.ytkn-model-chain__row.setting-item>.setting-item-info,
+.ytkn-model-chain__add-row.setting-item>.setting-item-info {
+	flex: 1 1 auto;
+	width: auto;
+	min-width: 0;
+	padding-right: var(--size-4-2);
+}
+
+.ytkn-model-chain__row .setting-item-name {
+	overflow-wrap: anywhere;
+}
+
+.ytkn-settings__model-chain .ytkn-model-chain__row.setting-item,
+.ytkn-settings__model-chain .ytkn-model-chain__add-row.setting-item {
+	padding: var(--size-4-2) var(--size-4-3);
+}
+
+.ytkn-model-chain__row .setting-item-control button {
+	padding: var(--size-2-2) var(--size-4-2);
+}
+
+.ytkn-model-chain__row.setting-item>.setting-item-control,
+.ytkn-model-chain__add-row.setting-item>.setting-item-control {
+	width: auto;
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+}
+
+.ytkn-model-chain__row.setting-item>.setting-item-control {
+	flex: 0 0 auto;
+}
+
+.ytkn-model-chain__add-row.setting-item>.setting-item-control {
+	flex: 1 1 auto;
+	min-width: 0;
+	justify-content: flex-end;
+}
+
+.ytkn-model-chain__add-row .setting-item-control select {
+	flex: 1 1 auto;
+	width: auto;
+	min-width: 0;
+}
+
 .ytkn-setting-row--fit-control.setting-item,
 .ytkn-setting-row--stacked.setting-item {
 	flex-direction: column;
@@ -818,6 +871,40 @@
 	flex: 0 0 auto;
 }
 
+.ytkn-modal .setting-item.ytkn-model-chain__row,
+.ytkn-modal .setting-item.ytkn-model-chain__add-row {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+}
+
+.ytkn-modal .setting-item.ytkn-model-chain__row .setting-item-info,
+.ytkn-modal .setting-item.ytkn-model-chain__add-row .setting-item-info {
+	flex: 1 1 auto;
+	width: auto;
+	min-width: 0;
+	padding-right: var(--size-4-4);
+}
+
+.ytkn-modal .setting-item.ytkn-model-chain__row .setting-item-control {
+	width: auto;
+	flex: 0 0 auto;
+}
+
+.ytkn-modal .setting-item.ytkn-model-chain__add-row .setting-item-control {
+	width: auto;
+	flex: 1 1 auto;
+	min-width: 0;
+	justify-content: flex-end;
+}
+
+.ytkn-modal .setting-item.ytkn-model-chain__add-row .setting-item-control select {
+	width: auto;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
 .ytkn-modal__section-description,
 .ytkn-modal__helper-text {
 	margin: 0;
@@ -853,6 +940,12 @@
 	padding: var(--size-4-1) var(--size-4-2);
 	background: var(--background-secondary);
 	border-radius: var(--radius-m);
+	border: none;
+}
+
+.modal .ytkn-modal .ytkn-card__body .ytkn-modal__model-chain>.setting-item.setting-item {
+	padding: var(--size-4-1) var(--size-4-2);
+	margin: 0;
 	border: none;
 }
 

@@ -23,7 +23,7 @@ import { GenerationOptionsModal } from '../../../src/ui/generation/generationOpt
 import type { GenerationOptions, ModelConfig } from '../../../src/types';
 
 const REQUIRED_COPY_KEYS: Array<keyof typeof SETTING_COPY> = [
-	'aiModel',
+	'aiModels',
 	'useAi',
 	'aiSummary',
 	'instructionStyle',
@@ -62,6 +62,9 @@ const sampleModel: ModelConfig = {
 function makeFakeSettings() {
 	return {
 		getModels: vi.fn().mockReturnValue([sampleModel]),
+		getModelIds: vi.fn().mockReturnValue(['OpenAI:gpt-4']),
+		getSelectedModels: vi.fn().mockReturnValue([sampleModel]),
+		updateModelIds: vi.fn().mockResolvedValue(undefined),
 		getSelectedModel: vi.fn().mockReturnValue(sampleModel),
 		getProviders: vi.fn().mockReturnValue([]),
 		getOutputDefaults: vi.fn().mockReturnValue({

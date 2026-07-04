@@ -60,6 +60,7 @@ function makePlaylist(entries: PlaylistResponse['entries'] = [
 function makeSettings(): PluginSettings {
 	return {
 		getModels: vi.fn(() => []),
+		getModelIds: vi.fn(() => []),
 		getOutputDefaults: vi.fn(() => ({ useAi: false, generateAiSummary: false })),
 		getInstructionConfig: vi.fn(() => ({
 			mode: 'template',
@@ -76,6 +77,7 @@ function makeSettings(): PluginSettings {
 function makeAiSettings(): PluginSettings {
 	return {
 		getModels: vi.fn(() => [sampleModel]),
+		getModelIds: vi.fn(() => ['Ollama:local-model']),
 		getOutputDefaults: vi.fn(() => ({ useAi: true, generateAiSummary: false, tldrCalloutAtTop: true })),
 		getInstructionConfig: vi.fn(() => ({
 			mode: 'template',

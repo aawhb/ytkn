@@ -20,12 +20,11 @@ type SettingFieldCopy<
 };
 
 type SharedSettingCopy = {
-	aiModel: {
+	aiModels: {
 		name: string;
-		defaultDesc: string;
+		desc: string;
 		unavailableDesc: string;
-		noModelsOption: string;
-		pluginDefaultOption: string;
+		addLabel: string;
 	};
 	useAi: SettingFieldCopy;
 	aiSummary: SettingFieldCopy;
@@ -57,12 +56,11 @@ type SharedSettingCopy = {
 };
 
 export const SETTING_COPY: SharedSettingCopy = {
-	aiModel: {
-		name: 'AI model',
-		defaultDesc: 'Used by every generation unless overridden per run.',
+	aiModels: {
+		name: 'AI models',
+		desc: 'Tried in order: the first model starts each run; later models take over if it fails.',
 		unavailableDesc: 'Add a provider and at least one model to enable AI generation.',
-		noModelsOption: 'No models available',
-		pluginDefaultOption: 'Plugin default',
+		addLabel: 'Add model',
 	},
 	useAi: {
 		name: 'Use AI',

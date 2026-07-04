@@ -23,7 +23,25 @@ describe('buildGenerationFormState', () => {
 
 		expect(state.url).toBe('https://youtu.be/abc12345678');
 		expect(state.noteDestinationMode).toBe('current-note');
-		expect(state.modelId).toBe('OpenAI:gpt-test');
+		expect(state.modelIds).toEqual(['OpenAI:gpt-test']);
+	});
+
+	it('seeds the model chain from saved options, falling back to the legacy single model', () => {
+		const fromChain = buildGenerationFormState({
+			initialUrl: '',
+			availableModels: [model],
+			initialOptions: { modelIds: ['A:one', 'B:two'] },
+			hasActiveNote: true,
+		});
+		const fromLegacy = buildGenerationFormState({
+			initialUrl: '',
+			availableModels: [model],
+			initialOptions: { modelId: 'C:three' },
+			hasActiveNote: true,
+		});
+
+		expect(fromChain.modelIds).toEqual(['A:one', 'B:two']);
+		expect(fromLegacy.modelIds).toEqual(['C:three']);
 	});
 
 	it('forces folder destination when no active note exists', () => {
@@ -35,7 +53,7 @@ describe('buildGenerationFormState', () => {
 		});
 
 		expect(state.noteDestinationMode).toBe('folder');
-		expect(state.modelId).toBe('');
+		expect(state.modelIds).toEqual([]);
 	});
 
 	it('fills missing template control defaults', () => {

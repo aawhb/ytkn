@@ -60,7 +60,7 @@ export interface GenerationFormState {
 	sourceSectionPosition: SourceSectionPosition;
 	linkTimestamps: boolean;
 	tldrCalloutAtTop: boolean;
-	modelId: string;
+	modelIds: string[];
 	instructionMode: InstructionMode;
 	instructionTemplate: InstructionTemplate;
 	manualInstructions: string;
@@ -124,7 +124,8 @@ export function buildGenerationFormState({
 		sourceSectionPosition: init.sourceSectionPosition ?? DEFAULT_SOURCE_SECTION_POSITION,
 		linkTimestamps: init.linkTimestamps ?? DEFAULT_LINK_TIMESTAMPS,
 		tldrCalloutAtTop: init.tldrCalloutAtTop ?? DEFAULT_TLDR_CALLOUT_AT_TOP,
-		modelId: init.modelId ?? (availableModels[0] ? buildModelId(availableModels[0]) : ''),
+		modelIds: init.modelIds
+			?? (init.modelId ? [init.modelId] : availableModels[0] ? [buildModelId(availableModels[0])] : []),
 		instructionMode: init.instructionMode ?? DEFAULT_INSTRUCTION_MODE,
 		instructionTemplate,
 		manualInstructions: init.manualInstructions ?? '',

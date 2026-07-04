@@ -33,6 +33,7 @@ function makeOptions(overrides: Partial<EffectiveGenerationOptions> = {}): Effec
 		useVideoTitleAsNoteName: true,
 		noteDestinationMode: 'folder',
 		noteDestinationFolder: '',
+		modelIds: [],
 		temperature: 0.3,
 		requestTimeoutMs: 60000,
 		includeFrontmatter: true,
@@ -106,6 +107,49 @@ describe('single video workflow', () => {
 		expect(context.targets.finalizeTargetNote).not.toHaveBeenCalled();
 		expect(target.finalized).toBe(true);
 		expect(progressState.hasProgressContent).toBe(false);
+	});
+
+	it('asks to open the created folder note as soon as it is created, before finalizing', async () => {
+		const context = makeContext();
+		const maybeOpenCreatedNote = vi.fn(async () => undefined);
+		context.maybeOpenCreatedNote = maybeOpenCreatedNote;
+		const progressState: ProgressState = { target: null, url: transcript.url, hasProgressContent: false };
+
+		await generateSingleVideoNote(
+			context,
+			transcript.url,
+			null,
+			makeOptions({ noteDestinationMode: 'folder' }),
+			null,
+			progressState,
+			new AbortController().signal,
+		);
+
+		expect(maybeOpenCreatedNote).toHaveBeenCalledTimes(1);
+		const openOrder = maybeOpenCreatedNote.mock.invocationCallOrder[0];
+		const finalizeOrder = vi.mocked(context.targets.finalizeTargetNote).mock.invocationCallOrder[0];
+		expect(openOrder).toBeLessThan(finalizeOrder);
+	});
+
+	it('does not ask to open notes in append mode', async () => {
+		const context = makeContext();
+		const maybeOpenCreatedNote = vi.fn(async () => undefined);
+		context.maybeOpenCreatedNote = maybeOpenCreatedNote;
+		const progressState: ProgressState = { target: null, url: transcript.url, hasProgressContent: false };
+
+		await generateSingleVideoToTarget(
+			context,
+			transcript.url,
+			makeTarget(),
+			transcript,
+			makeOptions({ noteDestinationMode: 'append-to-active-note' }),
+			null,
+			progressState,
+			null,
+			new AbortController().signal,
+		);
+
+		expect(maybeOpenCreatedNote).not.toHaveBeenCalled();
 	});
 
 	it('requires an initial target for current-note runs', async () => {

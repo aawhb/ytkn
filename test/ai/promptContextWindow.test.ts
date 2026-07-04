@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { PromptService } from '../../src/ai/promptService';
-import { TranscriptResponse } from '../../src/types';
+import type { TranscriptResponse } from '../../src/types';
 
 // Budget for openai-compatible fallback (64000 token window):
 //   safetyMargin = round(64000 * 0.1) = 6400
 //   reservedOutput = round(64000 * 0.2) = 12800
 //   budget ≈ 64000 - 6400 - 12800 - ~500 ≈ 44300 tokens
 //
-// We generate ~30000 tokens of transcript text (30000 * 4 = 120000 chars),
-// spread across many lines so chunkTranscriptLines can split at line boundaries.
-// 30000 < 44300 → no chunking needed under openai-compatible fallback
+// The regular fixture is ~30000 tokens, below the fallback budget. The larger
+// fixture is ~60000 tokens: above the fallback budget, but below the explicit
+// 262144-token model budget.
 
-const LINE_TEXT = 'word '.repeat(400).trim(); // 2000 chars ≈ 500 tokens per line
-// 60 lines × 500 tokens = 30000 tokens total
+const LINE_TEXT = 'word '.repeat(400).trim();
 const MANY_LINES = Array.from({ length: 60 }, (_, i) => ({ text: LINE_TEXT, offset: i }));
+const LARGER_CONTEXT_LINES = Array.from({ length: 120 }, (_, i) => ({ text: LINE_TEXT, offset: i }));
 
 function makeTranscript(lines: TranscriptResponse['lines']): TranscriptResponse {
 	return {
@@ -87,8 +87,20 @@ describe('getContextWindowTokens — provider-type fallback paths', () => {
 	});
 
 	it('explicit contextWindow is honored for OpenAI-compatible endpoints', () => {
-		const chunks = service.splitTranscript(
-			makeTranscript(MANY_LINES),
+		const transcript = makeTranscript(LARGER_CONTEXT_LINES);
+		const fallbackChunks = service.splitTranscript(
+			transcript,
+			'https://youtube.com/watch?v=abc',
+			{
+				model: {
+					name: 'qwen3',
+					displayName: 'Qwen 3',
+					provider: { name: 'Ollama', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1' },
+				},
+			},
+		);
+		const explicitWindowChunks = service.splitTranscript(
+			transcript,
 			'https://youtube.com/watch?v=abc',
 			{
 				model: {
@@ -100,6 +112,7 @@ describe('getContextWindowTokens — provider-type fallback paths', () => {
 			},
 		);
 
-		expect(chunks).toHaveLength(1);
+		expect(fallbackChunks.length).toBeGreaterThan(1);
+		expect(explicitWindowChunks).toHaveLength(1);
 	});
 });

@@ -27,14 +27,13 @@ import {
 } from '../shared/tabs';
 import { ConfirmModal } from './confirmModal';
 import { WhatsNewModal } from '../releaseNotes/whatsNewModal';
-import { ACTIVE_MODEL_SELECT_CLASS } from '../../defaults';
+import { renderModelChainRows } from '../shared/modelChainRows';
 import {
 	DOCUMENTATION_LINK,
 	SUPPORT_LINKS,
 	getRecentReleaseNotes,
 } from '../../releaseNotes';
 import { getErrorMessage } from '../../utils';
-import { buildModelId } from '../../modelId';
 import {
 	findTemplateChoice,
 	getTemplate,
@@ -187,8 +186,6 @@ export class SettingsTab extends PluginSettingTab {
 
 	private displayAiProvidersSection(containerEl: HTMLElement): void {
 		const availableModels = this.settings.getModels();
-		const selectedModel = this.settings.getSelectedModel();
-		const selectedModelId = selectedModel ? buildModelId(selectedModel) : null;
 		const providers = this.settings.getProviders();
 
 		const providersSetting = new Setting(containerEl)
@@ -228,34 +225,21 @@ export class SettingsTab extends PluginSettingTab {
 		}
 
 		new Setting(containerEl)
-			.setName(SETTING_COPY.aiModel.name)
+			.setName(SETTING_COPY.aiModels.name)
 			.setDesc(
 				availableModels.length
-					? SETTING_COPY.aiModel.defaultDesc
-					: SETTING_COPY.aiModel.unavailableDesc,
-			)
-			.addDropdown((dropdown) => {
-				dropdown.selectEl.addClass(ACTIVE_MODEL_SELECT_CLASS);
-				if (!availableModels.length) {
-					dropdown.addOption('', SETTING_COPY.aiModel.noModelsOption).setValue('');
-					dropdown.setDisabled(true);
-					return;
-				}
+					? SETTING_COPY.aiModels.desc
+					: SETTING_COPY.aiModels.unavailableDesc,
+			);
 
-				const options: Record<string, string> = {};
-				for (const model of availableModels) {
-					const displayText = model.displayName || model.name;
-					options[buildModelId(model)] =
-						`${model.provider.name} / ${displayText}`;
-				}
-
-				dropdown
-					.addOptions(options)
-					.setValue(selectedModelId ?? '')
-					.onChange(async (value) => {
-						await this.eventHandlers.handleModelSelection(value);
-					});
-			});
+		const chainRowsEl = containerEl.createDiv({ cls: 'ytkn-settings__model-chain' });
+		renderModelChainRows(chainRowsEl, {
+			availableModels,
+			modelIds: this.settings.getModelIds(),
+			onChange: (next) => {
+				void this.eventHandlers.handleModelChainChange(next);
+			},
+		});
 	}
 
 	private displayNoteContentSection(containerEl: HTMLElement): void {
@@ -591,7 +575,7 @@ export class SettingsTab extends PluginSettingTab {
 			.addButton((button) =>
 				button
 					.setButtonText(RESTORE_DEFAULTS_LABEL)
-					// setWarning() keeps compatibility with minAppVersion 1.11.4; setDestructive() requires Obsidian 1.13.0.
+					// Keep setWarning() for minAppVersion 1.11.4 compatibility.
 					.setWarning()
 					.onClick(() => {
 						this.resetSettings();

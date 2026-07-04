@@ -45,6 +45,33 @@ describe('buildGenerationSubmit', () => {
 		expect(result.options.includeMindmap).toBe(true);
 	});
 
+	it('passes the model chain through and mirrors the first entry as modelId', () => {
+		const result = buildGenerationSubmit({
+			...baseState(),
+			useAi: true,
+			generateAiSummary: true,
+			modelIds: ['OpenAI:gpt-test', 'Local:qwen'],
+		});
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) throw new Error(result.message);
+		expect(result.options.modelIds).toEqual(['OpenAI:gpt-test', 'Local:qwen']);
+		expect(result.options.modelId).toBe('OpenAI:gpt-test');
+	});
+
+	it('rejects AI runs with an empty model chain', () => {
+		const result = buildGenerationSubmit({
+			...baseState(),
+			useAi: true,
+			generateAiSummary: true,
+			modelIds: [],
+		});
+
+		expect(result.ok).toBe(false);
+		if (result.ok) throw new Error('expected failure');
+		expect(result.message).toBe('Select an AI model, or turn off AI for transcript-only output.');
+	});
+
 	it('rejects invalid temperature', () => {
 		const result = buildGenerationSubmit({ ...baseState(), temperature: '3' });
 

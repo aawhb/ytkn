@@ -22,7 +22,7 @@ import type {
 	TranscriptLanguageMode,
 	TranscriptMode,
 } from '../../types';
-import { buildModelId } from '../../modelId';
+import { renderModelChainRows } from '../shared/modelChainRows';
 import {
 	classifyUrls,
 	isPlaylistUrl,
@@ -51,6 +51,7 @@ export class GenerationOptionsModal extends Modal {
 	private templateSubtitleEl?: HTMLElement;
 	private manualSettingEl?: HTMLElement;
 	private aiModelSettingEl?: HTMLElement;
+	private aiModelChainEl?: HTMLElement;
 	private temperatureSettingEl?: HTMLElement;
 	private requestTimeoutSettingEl?: HTMLElement;
 	private folderSettingEl?: HTMLElement;
@@ -597,34 +598,26 @@ export class GenerationOptionsModal extends Modal {
 	}
 
 	private renderAiGroup(containerEl: HTMLElement): void {
-		const modelSetting = new Setting(containerEl)
-			.setName(SETTING_COPY.aiModel.name)
-			.addDropdown((dropdown) => {
-				if (!this.availableModels.length) {
-					dropdown.addOption('', SETTING_COPY.aiModel.noModelsOption).setValue('');
-					dropdown.setDisabled(true);
-					return;
-				}
+		const chainHeading = new Setting(containerEl)
+			.setName(SETTING_COPY.aiModels.name)
+			.setDesc(this.availableModels.length ? SETTING_COPY.aiModels.desc : SETTING_COPY.aiModels.unavailableDesc);
+		chainHeading.settingEl.addClass('ytkn-modal__model-setting');
 
-				const options: Record<string, string> = {
-					'': SETTING_COPY.aiModel.pluginDefaultOption,
-				};
-
-				for (const model of this.availableModels) {
-					const displayName = model.displayName || model.name;
-					options[buildModelId(model)] = `${model.provider.name} / ${displayName}`;
-				}
-
-				dropdown
-					.addOptions(options)
-					.setValue(this.state.modelId)
-					.onChange((v) => {
-						this.state.modelId = v;
-						this.refreshAiVisibility();
-					});
+		const chainRowsEl = containerEl.createDiv({ cls: 'ytkn-modal__model-chain' });
+		const renderChain = (): void => {
+			chainRowsEl.empty();
+			renderModelChainRows(chainRowsEl, {
+				availableModels: this.availableModels,
+				modelIds: this.state.modelIds,
+				onChange: (next) => {
+					this.state.modelIds = next;
+					renderChain();
+				},
 			});
-		modelSetting.settingEl.addClass('ytkn-modal__model-setting');
-		this.aiModelSettingEl = modelSetting.settingEl;
+		};
+		renderChain();
+		this.aiModelSettingEl = chainHeading.settingEl;
+		this.aiModelChainEl = chainRowsEl;
 
 		this.temperatureSettingEl = new Setting(containerEl)
 			.setName(SETTING_COPY.temperature.name)
@@ -718,6 +711,7 @@ export class GenerationOptionsModal extends Modal {
 		this.mindmapSettingEl?.toggle(this.state.useAi);
 		this.memorableQuotesSettingEl?.toggle(this.state.useAi);
 		this.aiModelSettingEl?.toggle(this.state.useAi);
+		this.aiModelChainEl?.toggle(this.state.useAi);
 		this.temperatureSettingEl?.toggle(this.state.useAi);
 		this.requestTimeoutSettingEl?.toggle(this.state.useAi);
 

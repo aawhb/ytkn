@@ -60,8 +60,15 @@ export class SettingsService implements PluginSettings {
 				.join(' ');
 		}
 
+		const savedModelIds = Array.isArray(savedSettings?.modelIds)
+			? savedSettings.modelIds.filter((id): id is string => typeof id === 'string')
+			: savedSettings?.selectedModelId
+				? [savedSettings.selectedModelId]
+				: [];
+
 		const normalized: StoredSettings = {
 			providers: this.normalizeProviders(savedSettings?.providers),
+			modelIds: savedModelIds,
 			selectedModelId: savedSettings?.selectedModelId ?? null,
 			outputDefaults: normalizeOutputDefaults(savedSettings?.outputDefaults),
 			instructionConfig: normalizeInstructionConfig(savedSettings?.instructionConfig),
@@ -71,27 +78,49 @@ export class SettingsService implements PluginSettings {
 		};
 
 		this.settings = normalized;
+		this.pruneModelChain();
 
-		const needsSave = JSON.stringify(savedSettings ?? null) !== JSON.stringify(normalized);
-
-		if (this.settings.selectedModelId && !this.validateModelId(this.settings.selectedModelId)) {
-			this.settings.selectedModelId = null;
-			await this.saveData();
-			return;
-		}
-
+		const needsSave = JSON.stringify(savedSettings ?? null) !== JSON.stringify(this.settings);
 		if (needsSave) {
 			await this.saveData();
 		}
 	}
 
 	getSelectedModel(): ModelConfig | null {
-		if (!this.settings.selectedModelId) {
-			return null;
-		}
+		return this.getSelectedModels()[0] ?? null;
+	}
 
-		const found = this.findModelAndProvider(this.settings.selectedModelId);
-		return found ? this.convertToModelConfig(found.model, found.provider) : null;
+	getSelectedModels(): ModelConfig[] {
+		const resolved: ModelConfig[] = [];
+		for (const modelId of this.settings.modelIds) {
+			const found = this.findModelAndProvider(modelId);
+			if (found) {
+				resolved.push(this.convertToModelConfig(found.model, found.provider));
+			}
+		}
+		return resolved;
+	}
+
+	getModelIds(): string[] {
+		return [...this.settings.modelIds];
+	}
+
+	async updateModelIds(modelIds: string[]): Promise<void> {
+		this.settings.modelIds = modelIds;
+		this.pruneModelChain();
+		await this.saveData();
+	}
+
+	private pruneModelChain(): void {
+		const seen = new Set<string>();
+		this.settings.modelIds = this.settings.modelIds.filter((modelId) => {
+			if (seen.has(modelId) || !this.validateModelId(modelId)) {
+				return false;
+			}
+			seen.add(modelId);
+			return true;
+		});
+		this.settings.selectedModelId = this.settings.modelIds[0] ?? null;
 	}
 
 	getProviders(): ProviderConfig[] {
@@ -223,12 +252,15 @@ export class SettingsService implements PluginSettings {
 		const index = this.settings.providers.indexOf(storedProvider);
 		this.settings.providers[index] = updatedProvider;
 
-		if (this.settings.selectedModelId?.startsWith(`${originalName}:`) && originalName !== updatedProvider.name) {
-			const selectedModel = parseModelId(this.settings.selectedModelId);
-			if (selectedModel) {
-				this.settings.selectedModelId = formatModelId(updatedProvider.name, selectedModel.modelName);
-			}
+		if (originalName !== updatedProvider.name) {
+			this.settings.modelIds = this.settings.modelIds.map((modelId) => {
+				const parsed = parseModelId(modelId);
+				return parsed && parsed.providerName === originalName
+					? formatModelId(updatedProvider.name, parsed.modelName)
+					: modelId;
+			});
 		}
+		this.pruneModelChain();
 
 		await this.saveData();
 	}
@@ -261,10 +293,7 @@ export class SettingsService implements PluginSettings {
 		}
 
 		this.settings.providers.splice(index, 1);
-
-		if (this.settings.selectedModelId?.startsWith(`${provider.name}:`)) {
-			this.settings.selectedModelId = null;
-		}
+		this.pruneModelChain();
 
 		await this.saveData();
 	}
@@ -280,17 +309,13 @@ export class SettingsService implements PluginSettings {
 			throw new Error(`Model "${modelName}" not found.`);
 		}
 
-		if (this.settings.selectedModelId === formatModelId(providerName, modelName)) {
-			this.settings.selectedModelId = null;
-		}
-
 		provider.models.splice(index, 1);
+		this.pruneModelChain();
 		await this.saveData();
 	}
 
 	async updateActiveModel(modelId: string): Promise<void> {
-		this.settings.selectedModelId = modelId;
-		await this.saveData();
+		await this.updateModelIds([modelId, ...this.settings.modelIds.filter((id) => id !== modelId)]);
 	}
 
 	async updateInstructionConfig(patch: Partial<InstructionConfig>): Promise<void> {
@@ -345,6 +370,7 @@ export class SettingsService implements PluginSettings {
 	private getDefaultSettings(): StoredSettings {
 		return {
 			providers: [],
+			modelIds: [],
 			selectedModelId: null,
 			outputDefaults: normalizeOutputDefaults(),
 			instructionConfig: normalizeInstructionConfig(),

@@ -56,6 +56,7 @@ function makeOptions(overrides: Partial<EffectiveGenerationOptions> = {}): Effec
 		sourceSectionPosition: 'top',
 		linkTimestamps: false,
 		tldrCalloutAtTop: false,
+		modelIds: [],
 		...overrides,
 	};
 }
@@ -84,25 +85,32 @@ describe('AI generation policy', () => {
 		expect(providerFactoryMocks.createProvider).not.toHaveBeenCalled();
 	});
 
-	it('creates an AI context from the selected model and effective options', () => {
+	it('creates a chain context from the run model list without instantiating providers', () => {
+		const secondModel: ModelConfig = {
+			name: 'gpt-test',
+			provider: { name: 'OpenAI', type: 'openai', apiKey: 'key' },
+		};
 		const context = buildAiExecutionContext(
 			makeOptions({
 				useAi: true,
 				tldrCalloutAtTop: true,
-				modelId: 'Ollama:local-model',
+				modelIds: ['Ollama:local-model', 'Missing:model', 'OpenAI:gpt-test'],
 				temperature: 0.7,
 				requestTimeoutMs: 1000,
 			}),
-			makeSettings(),
+			makeSettings([model, secondModel]),
 		);
 
-		expect(context?.selectedModel).toBe(model);
-		expect(providerFactoryMocks.createProvider).toHaveBeenCalledWith(model, 0.7, 1000);
+		expect(context?.chain.candidates).toEqual([model, secondModel]);
+		expect(context?.chain.index).toBe(0);
+		expect(context?.chain.temperature).toBe(0.7);
+		expect(context?.chain.requestTimeoutMs).toBe(1000);
+		expect(providerFactoryMocks.createProvider).not.toHaveBeenCalled();
 	});
 
-	it('rejects missing selected models and API keys for cloud providers', () => {
+	it('rejects empty chains and chains with no usable model', () => {
 		expect(() => buildAiExecutionContext(
-			makeOptions({ useAi: true, tldrCalloutAtTop: true, modelId: 'Missing:model' }),
+			makeOptions({ useAi: true, tldrCalloutAtTop: true, modelIds: ['Missing:model'] }),
 			makeSettings(),
 		)).toThrow('No AI model selected');
 
@@ -111,8 +119,14 @@ describe('AI generation policy', () => {
 			provider: { name: 'OpenAI', type: 'openai', apiKey: '' },
 		};
 		expect(() => buildAiExecutionContext(
-			makeOptions({ useAi: true, tldrCalloutAtTop: true, modelId: 'OpenAI:gpt-test' }),
+			makeOptions({ useAi: true, tldrCalloutAtTop: true, modelIds: ['OpenAI:gpt-test'] }),
 			makeSettings([cloudModel]),
 		)).toThrow('OpenAI requires an API key');
+
+		const context = buildAiExecutionContext(
+			makeOptions({ useAi: true, tldrCalloutAtTop: true, modelIds: ['OpenAI:gpt-test', 'Ollama:local-model'] }),
+			makeSettings([cloudModel, model]),
+		);
+		expect(context?.chain.candidates).toEqual([cloudModel, model]);
 	});
 });

@@ -87,6 +87,9 @@ export type RawStoredProvider = StoredProvider & {
 
 export interface StoredSettings {
 	providers: StoredProvider[];
+	/** Ordered model chain; entry 0 is the primary, the rest are fallbacks. */
+	modelIds: string[];
+	/** Mirror of modelIds[0], kept for configs written by older plugin versions. */
 	selectedModelId: string | null;
 	outputDefaults: OutputDefaults;
 	instructionConfig: InstructionConfig;
@@ -99,6 +102,9 @@ export interface PluginSettings {
 	loadSettings(): Promise<void>;
 	hasSavedSettings(): boolean;
 	getSelectedModel(): ModelConfig | null;
+	getSelectedModels(): ModelConfig[];
+	getModelIds(): string[];
+	updateModelIds(modelIds: string[]): Promise<void>;
 	getProviders(): ProviderConfig[];
 	getModels(): ModelConfig[];
 	getInstructionConfig(): InstructionConfig;
@@ -145,6 +151,8 @@ export interface GenerationOptions {
 	useVideoTitleAsNoteName?: boolean;
 	noteDestinationMode?: NoteDestinationMode;
 	noteDestinationFolder?: string;
+	/** Ordered per-run model chain; falls back to `modelId`, then the settings chain. */
+	modelIds?: string[];
 	modelId?: string;
 	temperature?: number;
 	requestTimeoutMs?: number;

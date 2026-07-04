@@ -1,7 +1,5 @@
 import { PromptService } from '../ai/promptService';
-import { createProvider } from '../ai/providers/factory';
 import type {
-	AIModelProvider,
 	InstructionConfig,
 	ModelConfig,
 	PluginSettings,
@@ -17,11 +15,15 @@ export function isMetadataOnlyRun(effectiveOptions: EffectiveGenerationOptions):
 	return !shouldUseAi(effectiveOptions) && effectiveOptions.transcriptMode === 'none';
 }
 
-function resolveSelectedModel(settings: PluginSettings, modelId?: string): ModelConfig | null {
-	if (!modelId) {
-		return null;
-	}
-	return settings.getModels().find((model) => buildModelId(model) === modelId) ?? null;
+function resolveModelChain(settings: PluginSettings, modelIds: string[]): ModelConfig[] {
+	const models = settings.getModels();
+	return modelIds
+		.map((modelId) => models.find((model) => buildModelId(model) === modelId))
+		.filter((model): model is ModelConfig => Boolean(model));
+}
+
+function isModelUsable(model: ModelConfig): boolean {
+	return Boolean(model.provider.apiKey) || model.provider.type === 'openai-compatible';
 }
 
 function createInstructionConfig(effectiveOptions: EffectiveGenerationOptions): InstructionConfig {
@@ -49,24 +51,22 @@ export function buildAiExecutionContext(
 		return null;
 	}
 
-	const selectedModel = resolveSelectedModel(settings, effectiveOptions.modelId);
-	if (!selectedModel) {
+	const candidates = resolveModelChain(settings, effectiveOptions.modelIds);
+	if (candidates.length === 0) {
 		throw new Error('No AI model selected. Please select a model in the plugin settings or in the generation modal.');
 	}
 
-	if (!selectedModel.provider.apiKey && selectedModel.provider.type !== 'openai-compatible') {
-		throw new Error(`${selectedModel.provider.name} requires an API key. Please select an existing Obsidian secret in the plugin settings.`);
+	if (!candidates.some(isModelUsable)) {
+		throw new Error(`${candidates[0].provider.name} requires an API key. Please select an existing Obsidian secret in the plugin settings.`);
 	}
 
-	const provider: AIModelProvider = createProvider(
-		selectedModel,
-		effectiveOptions.temperature,
-		effectiveOptions.requestTimeoutMs,
-	);
-
 	return {
-		selectedModel,
-		provider,
+		chain: {
+			candidates,
+			index: 0,
+			temperature: effectiveOptions.temperature,
+			requestTimeoutMs: effectiveOptions.requestTimeoutMs,
+		},
 		promptService: createPromptService(createInstructionConfig(effectiveOptions), effectiveOptions),
 	};
 }

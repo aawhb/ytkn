@@ -11,17 +11,12 @@ export class SettingsEventHandlers {
 		private onChanged: () => void = () => undefined,
 	) { }
 
-	async handleModelSelection(value: string): Promise<void> {
+	async handleModelChainChange(modelIds: string[]): Promise<void> {
 		try {
-			if (!this.settings.validateModelId(value)) {
-				console.error('Could not save active model:', value, 'Invalid model ID');
-				return;
-			}
-
-			await this.settings.updateActiveModel(value);
+			await this.settings.updateModelIds(modelIds);
 			this.onChanged();
 		} catch (error) {
-			notifyError('Failed to set active model', error, 'Selected model:', value);
+			notifyError('Failed to update the AI model list', error, 'Models:', modelIds.join(', '));
 		}
 	}
 

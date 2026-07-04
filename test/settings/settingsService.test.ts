@@ -337,3 +337,85 @@ describe('SettingsService current contracts', () => {
 		await expect(manager.saveProviderSecretId('Missing', 'replacement-secret')).rejects.toThrow(/Provider "Missing" not found/);
 	});
 });
+
+describe('SettingsService model chain', () => {
+	async function makeWithTwoModels() {
+		const { plugin, manager } = makeManager();
+		await manager.loadSettings();
+		await manager.addProvider({ name: 'Local', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1', models: [] });
+		await manager.addModel({
+			name: 'qwen3.5:4b',
+			displayName: 'Qwen',
+			provider: { name: 'Local', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1' },
+		});
+		await manager.addModel({
+			name: 'llama3.2',
+			displayName: 'Llama',
+			provider: { name: 'Local', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1' },
+		});
+		return { plugin, manager };
+	}
+
+	it('seeds the chain from a legacy selectedModelId', async () => {
+		const { manager } = makeManager({
+			settings: {
+				providers: [{ name: 'Local', type: 'openai-compatible', url: 'http://localhost:11434/v1', models: [{ name: 'qwen3.5:4b', displayName: 'Qwen' }] }],
+				selectedModelId: 'Local:qwen3.5:4b',
+			},
+		});
+		await manager.loadSettings();
+
+		expect(manager.getModelIds()).toEqual(['Local:qwen3.5:4b']);
+		expect(manager.getSelectedModels().map((m) => m.name)).toEqual(['qwen3.5:4b']);
+		expect(manager.getSelectedModel()?.name).toBe('qwen3.5:4b');
+	});
+
+	it('persists the chain and mirrors selectedModelId to the first entry', async () => {
+		const { plugin, manager } = await makeWithTwoModels();
+
+		await manager.updateModelIds(['Local:llama3.2', 'Local:qwen3.5:4b']);
+
+		expect(manager.getModelIds()).toEqual(['Local:llama3.2', 'Local:qwen3.5:4b']);
+		expect(plugin.data?.settings?.modelIds).toEqual(['Local:llama3.2', 'Local:qwen3.5:4b']);
+		expect(plugin.data?.settings?.selectedModelId).toBe('Local:llama3.2');
+		expect(manager.getSelectedModel()?.name).toBe('llama3.2');
+	});
+
+	it('drops invalid and duplicate entries when updating the chain', async () => {
+		const { manager } = await makeWithTwoModels();
+
+		await manager.updateModelIds(['Local:qwen3.5:4b', 'Local:qwen3.5:4b', 'Missing:model', 'no-colon']);
+
+		expect(manager.getModelIds()).toEqual(['Local:qwen3.5:4b']);
+	});
+
+	it('prunes stale chain entries on load and re-derives the mirror', async () => {
+		const { manager } = makeManager({
+			settings: {
+				providers: [{ name: 'Local', type: 'openai-compatible', url: 'http://localhost:11434/v1', models: [{ name: 'llama3.2', displayName: 'Llama' }] }],
+				selectedModelId: 'Local:gone',
+				modelIds: ['Local:gone', 'Local:llama3.2'],
+			},
+		});
+		await manager.loadSettings();
+
+		expect(manager.getModelIds()).toEqual(['Local:llama3.2']);
+		expect(manager.getSelectedModel()?.name).toBe('llama3.2');
+	});
+
+	it('keeps the chain in sync when providers are renamed or models deleted', async () => {
+		const { manager } = await makeWithTwoModels();
+		await manager.updateModelIds(['Local:qwen3.5:4b', 'Local:llama3.2']);
+
+		await manager.updateProvider({ name: 'Ollama', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1' }, 'Local');
+		expect(manager.getModelIds()).toEqual(['Ollama:qwen3.5:4b', 'Ollama:llama3.2']);
+
+		await manager.deleteModel('Ollama', 'qwen3.5:4b');
+		expect(manager.getModelIds()).toEqual(['Ollama:llama3.2']);
+		expect(manager.getSelectedModel()?.name).toBe('llama3.2');
+
+		await manager.deleteProvider({ name: 'Ollama', type: 'openai-compatible', apiKey: '' });
+		expect(manager.getModelIds()).toEqual([]);
+		expect(manager.getSelectedModel()).toBeNull();
+	});
+});

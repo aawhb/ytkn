@@ -34,7 +34,6 @@ export const DEFAULT_REQUEST_TIMEOUT_MS = 300000;
 export const DEFAULT_OPENAI_COMPATIBLE_URL = 'http://localhost:11434/v1';
 
 export const TRUNCATION_NOTICE = '\n\n[Summary truncated due to output limit.]';
-export const ACTIVE_MODEL_SELECT_CLASS = 'ytkn-settings__active-model-select';
 
 export const DEFAULT_ANTHROPIC_MAX_TOKENS = 256000;
 export const FALLBACK_CONTEXT_WINDOW_TOKENS: Record<string, number> = {

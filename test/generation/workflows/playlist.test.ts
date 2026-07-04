@@ -32,6 +32,7 @@ function makeOptions(overrides: Partial<EffectiveGenerationOptions> = {}): Effec
 		useVideoTitleAsNoteName: true,
 		noteDestinationMode: 'folder',
 		noteDestinationFolder: 'Notes',
+		modelIds: [],
 		temperature: 0.3,
 		requestTimeoutMs: 60000,
 		includeFrontmatter: true,
@@ -124,6 +125,55 @@ describe('playlist workflow', () => {
 			null,
 			progressState,
 		);
+	});
+
+	it('asks to open the combined note as soon as it is created, before finalizing', async () => {
+		const context = makeContext();
+		const maybeOpenCreatedNote = vi.fn(async () => undefined);
+		context.maybeOpenCreatedNote = maybeOpenCreatedNote;
+		const progressState: ProgressState = { target: null, url: playlist.url, hasProgressContent: false };
+
+		await generatePlaylistNotes(
+			context,
+			playlist.url,
+			null,
+			makeOptions(),
+			null,
+			progressState,
+			new AbortController().signal,
+		);
+
+		expect(maybeOpenCreatedNote).toHaveBeenCalledWith(
+			expect.objectContaining({ file: expect.objectContaining({ path: 'Notes/Workflow Playlist.md' }) }),
+		);
+		const openOrder = maybeOpenCreatedNote.mock.invocationCallOrder[0];
+		const finalizeOrder = vi.mocked(context.targets.finalizeTargetNote).mock.invocationCallOrder[0];
+		expect(openOrder).toBeLessThan(finalizeOrder);
+	});
+
+	it('asks to open each created per-video note at creation time', async () => {
+		const context = makeContext();
+		vi.mocked(context.youtubeService.fetchVideoMetadata).mockImplementation(
+			async (url: string) => makeTranscript(url),
+		);
+		const maybeOpenCreatedNote = vi.fn(async () => undefined);
+		context.maybeOpenCreatedNote = maybeOpenCreatedNote;
+		const progressState: ProgressState = { target: null, url: playlist.url, hasProgressContent: false };
+
+		await generatePlaylistNotes(
+			context,
+			playlist.url,
+			null,
+			makeOptions({ playlistMode: 'per-video' }),
+			null,
+			progressState,
+			new AbortController().signal,
+		);
+
+		expect(maybeOpenCreatedNote).toHaveBeenCalledTimes(2);
+		const firstOpenOrder = maybeOpenCreatedNote.mock.invocationCallOrder[0];
+		const firstFinalizeOrder = vi.mocked(context.targets.finalizeTargetNote).mock.invocationCallOrder[0];
+		expect(firstOpenOrder).toBeLessThan(firstFinalizeOrder);
 	});
 
 	it('fetches combined transcripts, skips unavailable entries, and finalizes completed entries', async () => {

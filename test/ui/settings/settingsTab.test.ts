@@ -33,6 +33,9 @@ function makeFakeSettings() {
 	};
 	const settings = {
 		getModels: vi.fn().mockReturnValue([]),
+		getModelIds: vi.fn().mockReturnValue([]),
+		getSelectedModels: vi.fn().mockReturnValue([]),
+		updateModelIds: vi.fn().mockResolvedValue(undefined),
 		getSelectedModel: vi.fn().mockReturnValue(null),
 		getProviders: vi.fn().mockReturnValue([]),
 		getOutputDefaults: vi.fn().mockReturnValue({
