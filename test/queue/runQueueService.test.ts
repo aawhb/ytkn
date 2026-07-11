@@ -370,6 +370,34 @@ describe('RunQueueService', () => {
 			expect(worker.persistCalls).toHaveLength(0);
 		});
 
+		it('notifies onBatchFinalized for every finished batch, reports on or off', async () => {
+			const finalizedBatchIds: string[] = [];
+			const worker = makeWorker();
+			worker.onBatchFinalized = vi.fn((batch: RunBatch) => { finalizedBatchIds.push(batch.batchId); });
+			const svc = new RunQueueService(worker);
+
+			svc.enqueueBatch(makeInput(1, false));
+			await flushMicrotasks();
+			svc.enqueueBatch(makeInput(1, true));
+			await flushMicrotasks();
+
+			expect(finalizedBatchIds).toHaveLength(2);
+			expect(worker.persistCalls).toHaveLength(1);
+		});
+
+		it('notifies onBatchFinalized when a reports-off batch is fully canceled', async () => {
+			const worker = makeWorker({ executeDelay: 1000 });
+			worker.onBatchFinalized = vi.fn();
+			const svc = new RunQueueService(worker);
+
+			svc.enqueueBatch(makeInput(2, false));
+			svc.cancelAll();
+			await flushMicrotasks();
+
+			expect(worker.onBatchFinalized).toHaveBeenCalledTimes(1);
+			expect(worker.persistCalls).toHaveLength(0);
+		});
+
 		it('ordinals are monotonically increasing across batches', async () => {
 			const ordinals: number[] = [];
 			const worker: RunWorker = {

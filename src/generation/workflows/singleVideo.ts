@@ -92,6 +92,7 @@ export async function generateSingleVideoNote(
 			effectiveOptions.noteDestinationFolder ?? '',
 			buildSingleVideoBaseName(transcript, effectiveOptions),
 		);
+		await context.maybeOpenCreatedNote?.(target);
 	} else if (effectiveOptions.noteDestinationMode !== 'append-to-active-note' && effectiveOptions.useVideoTitleAsNoteName) {
 		titleToRenameTo = transcript.title;
 	}

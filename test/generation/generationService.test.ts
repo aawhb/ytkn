@@ -95,6 +95,7 @@ function makeApp() {
 	const contents = new Map<string, string>();
 	const files = new Map<string, any>();
 	const folders = new Set<string>();
+	const openFile = vi.fn(async () => undefined);
 	const fileForPath = (path: string) => ({
 		path,
 		extension: path.split('.').pop() ?? 'md',
@@ -130,15 +131,19 @@ function makeApp() {
 				contents.set(nextPath, content);
 			}),
 		},
+		workspace: {
+			openFile,
+			getLeaf: vi.fn(() => ({ openFile })),
+		},
 	};
 
 	return { app: app as any, contents };
 }
 
-function makeRun(url: string, options: GenerationOptions, kind: QueuedRun['kind'] = 'video'): QueuedRun {
+function makeRun(url: string, options: GenerationOptions, kind: QueuedRun['kind'] = 'video', batchId = 'batch-1'): QueuedRun {
 	return {
 		id: `run-${kind}`,
-		batchId: 'batch-1',
+		batchId,
 		ordinal: 1,
 		url,
 		kind,
@@ -493,5 +498,88 @@ describe('GenerationService metadata-only runs', () => {
 		expect(entry.kind).toBe('playlist');
 		if (entry.kind !== 'playlist') throw new Error('Expected playlist report entry');
 		expect(entry.warnings).toContain('Requested section "Mindmap" was not emitted by the model.');
+	});
+});
+
+describe('GenerationService open created note', () => {
+	let consoleError: ReturnType<typeof vi.spyOn>;
+
+	beforeEach(() => {
+		consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+	});
+
+	afterEach(() => {
+		consoleError.mockRestore();
+	});
+
+	function makeVideoService() {
+		const { app } = makeApp();
+		const youtubeService = {
+			fetchVideoMetadata: vi.fn(async (url: string) => makeTranscript(url)),
+			fetchTranscript: vi.fn(),
+		};
+		const service = new GenerationService(app, youtubeService as any, makeSettings(), vi.fn());
+		return { app, service };
+	}
+
+	it('opens only the first created note of a batch in a new tab', async () => {
+		const { app, service } = makeVideoService();
+		const options = metadataOptions({ openCreatedNote: true });
+
+		await service.executeRun(makeRun(VIDEO_URL, options), new AbortController().signal);
+		await service.executeRun(makeRun(VIDEO_URL, options), new AbortController().signal);
+
+		expect(app.workspace.getLeaf).toHaveBeenCalledTimes(1);
+		expect(app.workspace.getLeaf).toHaveBeenCalledWith('tab');
+		expect(app.workspace.openFile).toHaveBeenCalledTimes(1);
+		expect(app.workspace.openFile).toHaveBeenCalledWith(expect.objectContaining({ path: expect.stringContaining('Notes/') }));
+	});
+
+	it('opens the first note of each distinct batch', async () => {
+		const { app, service } = makeVideoService();
+		const options = metadataOptions({ openCreatedNote: true });
+
+		await service.executeRun(makeRun(VIDEO_URL, options, 'video', 'batch-1'), new AbortController().signal);
+		await service.executeRun(makeRun(VIDEO_URL, options, 'video', 'batch-2'), new AbortController().signal);
+
+		expect(app.workspace.openFile).toHaveBeenCalledTimes(2);
+	});
+
+	it('does not open notes when the option is off', async () => {
+		const { app, service } = makeVideoService();
+
+		await service.executeRun(makeRun(VIDEO_URL, metadataOptions()), new AbortController().signal);
+
+		expect(app.workspace.openFile).not.toHaveBeenCalled();
+	});
+
+	it('forgets a batch once it is finalized, even with reports disabled', async () => {
+		const { app, service } = makeVideoService();
+		const options = metadataOptions({ openCreatedNote: true });
+
+		await service.executeRun(makeRun(VIDEO_URL, options), new AbortController().signal);
+		service.onBatchFinalized(
+			{ batchId: 'batch-1', reportPolicy: { include: false, location: 'generated-note' }, runIds: [], outcomeEntries: [], finalized: true },
+		);
+		await service.executeRun(makeRun(VIDEO_URL, options), new AbortController().signal);
+
+		expect(app.workspace.openFile).toHaveBeenCalledTimes(2);
+	});
+
+	it('opens the first completed entry of a per-video playlist once', async () => {
+		const { app } = makeApp();
+		const youtubeService = {
+			fetchPlaylist: vi.fn(async () => makePlaylist()),
+			fetchVideoMetadata: vi.fn(async (url: string) => makeTranscript(url, { title: url })),
+			fetchTranscript: vi.fn(),
+		};
+		const service = new GenerationService(app, youtubeService as any, makeSettings(), vi.fn());
+
+		await service.executeRun(
+			makeRun(PLAYLIST_URL, metadataOptions({ openCreatedNote: true }), 'playlist'),
+			new AbortController().signal,
+		);
+
+		expect(app.workspace.openFile).toHaveBeenCalledTimes(1);
 	});
 });

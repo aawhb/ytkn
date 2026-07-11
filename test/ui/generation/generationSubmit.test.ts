@@ -45,6 +45,14 @@ describe('buildGenerationSubmit', () => {
 		expect(result.options.includeMindmap).toBe(true);
 	});
 
+	it('passes openCreatedNote through the submit payload', () => {
+		const result = buildGenerationSubmit({ ...baseState(), openCreatedNote: true });
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) throw new Error(result.message);
+		expect(result.options.openCreatedNote).toBe(true);
+	});
+
 	it('passes the model chain through and mirrors the first entry as modelId', () => {
 		const result = buildGenerationSubmit({
 			...baseState(),

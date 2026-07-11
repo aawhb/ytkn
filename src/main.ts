@@ -74,6 +74,7 @@ export class YTKN extends Plugin {
 			executeRun: (run, signal) => this.generationService.executeRun(run, signal),
 			resolveTitle: (run, signal) => this.generationService.resolveTitle(run, signal),
 			persistBatchReport: (batch, report) => this.generationService.persistBatchReport(batch, report),
+			onBatchFinalized: (batch) => this.generationService.onBatchFinalized(batch),
 		});
 		this.runQueue.on(() => this.renderStatusBar());
 	}

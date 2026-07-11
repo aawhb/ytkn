@@ -31,6 +31,7 @@ function createSettings(overrides: Partial<PluginSettings> = {}): PluginSettings
 			useVideoTitleAsNoteName: true,
 			noteDestinationMode: 'folder',
 			noteDestinationFolder: 'Videos',
+			openCreatedNote: false,
 			includeFrontmatter: true,
 			frontmatterTags: 'ytkn video',
 			frontmatterPropertyAllowlist: 'title source generated',
@@ -111,5 +112,18 @@ describe('resolveEffectiveGenerationOptions', () => {
 		expect(resolveEffectiveGenerationOptions({ modelIds: ['B:two'] }, settings).modelIds).toEqual(['B:two']);
 		expect(resolveEffectiveGenerationOptions({ modelId: 'C:three' }, settings).modelIds).toEqual(['C:three']);
 		expect(resolveEffectiveGenerationOptions({ modelIds: ['A:one'], modelId: 'C:three' }, settings).modelIds).toEqual(['A:one']);
+	});
+
+	it('resolves openCreatedNote from saved defaults and per-run overrides', () => {
+		const settings = createSettings();
+		const withDefaultOn: typeof settings = {
+			...settings,
+			getOutputDefaults: () => ({ ...settings.getOutputDefaults(), openCreatedNote: true }),
+		};
+
+		expect(resolveEffectiveGenerationOptions({}, settings).openCreatedNote).toBe(false);
+		expect(resolveEffectiveGenerationOptions({}, withDefaultOn).openCreatedNote).toBe(true);
+		expect(resolveEffectiveGenerationOptions({ openCreatedNote: false }, withDefaultOn).openCreatedNote).toBe(false);
+		expect(resolveEffectiveGenerationOptions({ openCreatedNote: true }, settings).openCreatedNote).toBe(true);
 	});
 });

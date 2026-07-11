@@ -1,4 +1,4 @@
-import type { App } from 'obsidian';
+import type { App, WorkspaceLeaf } from 'obsidian';
 import { Notice, TFile } from 'obsidian';
 import type { ProgressMarkers } from '../../queue/progress';
 import {
@@ -35,6 +35,8 @@ export function buildSafeBaseName(baseName: string, fallbackName: string): strin
 }
 
 export class NoteTargetWriter {
+	private openedLeavesByJobId = new Map<string, WorkspaceLeaf>();
+
 	constructor(
 		private app: App,
 		private onStatusBar: (message: string | null) => void,
@@ -82,14 +84,43 @@ export class NoteTargetWriter {
 		return this.createNewTarget(normalizeVaultFolderPath(folderPath), baseName);
 	}
 
+	async openTargetInNewTab(target: NoteInsertionTarget): Promise<void> {
+		try {
+			const leaf = this.app.workspace.getLeaf('tab');
+			await leaf.openFile(target.file);
+			this.openedLeavesByJobId.set(target.jobId, leaf);
+		} catch (error) {
+			console.warn('Failed to open generated note in a new tab:', error);
+		}
+	}
+
 	async deleteTargetIfDisposable(target: NoteInsertionTarget | null): Promise<void> {
 		if (!target || !target.createdByPlugin || target.finalized) {
 			return;
 		}
+		this.closeOpenedLeaf(target);
 		try {
 			await this.app.fileManager.trashFile(target.file);
 		} catch (error) {
 			console.warn('Failed to delete temporary note:', error);
+		}
+	}
+
+	/** Closes the tab this writer opened for the target, unless the user navigated it elsewhere. */
+	private closeOpenedLeaf(target: NoteInsertionTarget): void {
+		const leaf = this.openedLeavesByJobId.get(target.jobId);
+		if (!leaf) {
+			return;
+		}
+		this.openedLeavesByJobId.delete(target.jobId);
+		const viewFile = (leaf.view as { file?: TFile | null } | undefined)?.file;
+		if (viewFile?.path !== target.file.path) {
+			return;
+		}
+		try {
+			leaf.detach();
+		} catch (error) {
+			console.warn('Failed to close the tab of a deleted note:', error);
 		}
 	}
 
@@ -146,6 +177,7 @@ export class NoteTargetWriter {
 
 		target.finalized = true;
 		progressState.hasProgressContent = false;
+		this.openedLeavesByJobId.delete(target.jobId);
 	}
 
 	async resolveInitialTarget(run: QueuedRun): Promise<NoteInsertionTarget | null> {

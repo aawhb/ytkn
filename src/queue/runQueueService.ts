@@ -67,6 +67,8 @@ export interface RunWorker {
 	executeRun(run: QueuedRun, signal: AbortSignal): Promise<QueueRunReportEntry>;
 	resolveTitle(run: QueuedRun, signal: AbortSignal): Promise<string>;
 	persistBatchReport(batch: RunBatch, report: QueueBatchReport): Promise<void>;
+	/** Fires once per batch on every termination path, even when report persistence is disabled. */
+	onBatchFinalized?(batch: RunBatch): void;
 }
 
 let _ordinalCounter = 0;
@@ -321,6 +323,7 @@ export class RunQueueService {
 	private async finalizeBatch(batch: RunBatch): Promise<void> {
 		if (batch.finalized) return;
 		batch.finalized = true;
+		this.worker.onBatchFinalized?.(batch);
 		const report: QueueBatchReport = { batchId: batch.batchId, entries: batch.outcomeEntries };
 		if (batch.reportPolicy.include) {
 			await this.worker.persistBatchReport(batch, report);

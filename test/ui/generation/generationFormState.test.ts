@@ -44,6 +44,24 @@ describe('buildGenerationFormState', () => {
 		expect(fromLegacy.modelIds).toEqual(['C:three']);
 	});
 
+	it('defaults openCreatedNote off and honors saved defaults', () => {
+		const defaultState = buildGenerationFormState({
+			initialUrl: '',
+			availableModels: [],
+			initialOptions: {},
+			hasActiveNote: true,
+		});
+		const savedOnState = buildGenerationFormState({
+			initialUrl: '',
+			availableModels: [],
+			initialOptions: { openCreatedNote: true },
+			hasActiveNote: true,
+		});
+
+		expect(defaultState.openCreatedNote).toBe(false);
+		expect(savedOnState.openCreatedNote).toBe(true);
+	});
+
 	it('forces folder destination when no active note exists', () => {
 		const state = buildGenerationFormState({
 			initialUrl: '',

@@ -41,6 +41,7 @@ const REQUIRED_COPY_KEYS: Array<keyof typeof SETTING_COPY> = [
 	'sourceMetadataPosition',
 	'outputDestination',
 	'destinationFolder',
+	'openCreatedNote',
 	'transcriptInNote',
 	'linkTimestamps',
 	'transcriptLanguage',

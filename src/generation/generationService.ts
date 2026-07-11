@@ -12,7 +12,7 @@ import { isAbortError } from '../queue/progress';
 import { renderQueueBatchReport } from '../rendering/runReport';
 import { getErrorMessage } from '../utils';
 import type { QueuedRun, RunBatch } from '../queue/runQueueService';
-import { resolveEffectiveGenerationOptions } from './effectiveOptions';
+import { resolveEffectiveGenerationOptions, type EffectiveGenerationOptions } from './effectiveOptions';
 import { buildAiExecutionContext } from './aiPolicy';
 import { playlistRunOutcome } from './reportEntries';
 import type { GenerationWorkflowContext } from './workflows/context';
@@ -23,6 +23,7 @@ import type { ProgressState } from './targets/noteTargets';
 
 export class GenerationService {
 	private targets: NoteTargetWriter;
+	private openedNoteBatchIds = new Set<string>();
 
 	constructor(
 		private app: App,
@@ -52,9 +53,11 @@ export class GenerationService {
 				effectiveOptions = { ...effectiveOptions, noteDestinationMode: 'append-to-active-note' };
 			}
 
+			const context = this.workflowContext(run, effectiveOptions);
+
 			if (isPlaylistUrl(run.url)) {
 				const { playlist, notePath, entries, warnings } = await generatePlaylistNotes(
-					this.workflowContext(), run.url, initialTarget, effectiveOptions, aiContext, progressState, signal,
+					context, run.url, initialTarget, effectiveOptions, aiContext, progressState, signal,
 				);
 				return {
 					kind: 'playlist',
@@ -73,7 +76,7 @@ export class GenerationService {
 			}
 
 			const { notePath, transcriptLanguageCode, warnings } = await generateSingleVideoNote(
-				this.workflowContext(), run.url, initialTarget, effectiveOptions, aiContext, progressState, signal,
+				context, run.url, initialTarget, effectiveOptions, aiContext, progressState, signal,
 			);
 			return {
 				kind: 'video',
@@ -129,6 +132,10 @@ export class GenerationService {
 		return title;
 	}
 
+	onBatchFinalized(batch: RunBatch): void {
+		this.openedNoteBatchIds.delete(batch.batchId);
+	}
+
 	async persistBatchReport(batch: RunBatch, report: QueueBatchReport): Promise<void> {
 		if (!batch.reportPolicy.include) return;
 
@@ -153,11 +160,21 @@ export class GenerationService {
 		target.finalized = true;
 	}
 
-	private workflowContext(): GenerationWorkflowContext {
+	private workflowContext(run: QueuedRun, effectiveOptions: EffectiveGenerationOptions): GenerationWorkflowContext {
 		return {
 			youtubeService: this.youtubeService,
 			targets: this.targets,
 			onStatusBar: this.onStatusBar,
+			maybeOpenCreatedNote: async (target) => {
+				if (!effectiveOptions.openCreatedNote || effectiveOptions.noteDestinationMode !== 'folder') {
+					return;
+				}
+				if (this.openedNoteBatchIds.has(run.batchId)) {
+					return;
+				}
+				this.openedNoteBatchIds.add(run.batchId);
+				await this.targets.openTargetInNewTab(target);
+			},
 		};
 	}
 

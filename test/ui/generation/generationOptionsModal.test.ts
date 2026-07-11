@@ -305,6 +305,19 @@ describe('GenerationOptionsModal submit — multi-URL', () => {
 		expect(options.mediaEmbedMode).toBe('thumbnail');
 	});
 
+	it('renders the open-created-note toggle for folder destination and passes it through on submit', () => {
+		const modal = openWithUrl(VIDEO_URL, { openCreatedNote: true });
+		const row = Array.from(modal.contentEl.querySelectorAll('.setting-item')).find(
+			(el) => el.querySelector('.setting-item-name')?.textContent === 'Open created note',
+		);
+		expect(row).toBeDefined();
+
+		clickSubmit(modal);
+		expect(onSubmit).toHaveBeenCalledOnce();
+		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
+		expect(options.openCreatedNote).toBe(true);
+	});
+
 	it('passes tldrCalloutAtTop through on submit', () => {
 		const modal = openWithUrl(VIDEO_URL, {
 			generateAiSummary: true,

@@ -23,6 +23,7 @@ import {
 	DEFAULT_LINK_TIMESTAMPS,
 	DEFAULT_MEDIA_EMBED_MODE,
 	DEFAULT_NOTE_DESTINATION_MODE,
+	DEFAULT_OPEN_CREATED_NOTE,
 	DEFAULT_OUTPUT_TRANSCRIPT_MODE,
 	DEFAULT_RUN_REPORT_LOCATION,
 	DEFAULT_PLAYLIST_MODE,
@@ -54,6 +55,7 @@ export interface GenerationFormState {
 	useVideoTitleAsNoteName: boolean;
 	noteDestinationMode: NoteDestinationMode;
 	noteDestinationFolder: string;
+	openCreatedNote: boolean;
 	includeFrontmatter: boolean;
 	frontmatterTags: string;
 	frontmatterPropertyAllowlist: string;
@@ -118,6 +120,7 @@ export function buildGenerationFormState({
 			? (init.noteDestinationMode ?? DEFAULT_NOTE_DESTINATION_MODE)
 			: 'folder',
 		noteDestinationFolder: init.noteDestinationFolder ?? '',
+		openCreatedNote: init.openCreatedNote ?? DEFAULT_OPEN_CREATED_NOTE,
 		includeFrontmatter: init.includeFrontmatter ?? DEFAULT_INCLUDE_FRONTMATTER,
 		frontmatterTags: init.frontmatterTags ?? '',
 		frontmatterPropertyAllowlist: init.frontmatterPropertyAllowlist ?? '',

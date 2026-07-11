@@ -7,6 +7,113 @@ describe('note target helpers', () => {
 		expect(buildSafeBaseName('///', 'Fallback')).toBe('Fallback');
 	});
 
+	it('opens a target file in a new workspace tab', async () => {
+		const openFile = vi.fn(async () => undefined);
+		const app = { workspace: { getLeaf: vi.fn(() => ({ openFile })) } };
+		const writer = new NoteTargetWriter(app as any, vi.fn());
+		const target = {
+			file: { path: 'Notes/Video.md' },
+			fromOffset: 0,
+			toOffset: 0,
+			jobId: 'job',
+			createdByPlugin: true,
+			finalized: true,
+		} as any;
+
+		await writer.openTargetInNewTab(target);
+
+		expect(app.workspace.getLeaf).toHaveBeenCalledWith('tab');
+		expect(openFile).toHaveBeenCalledWith(target.file);
+	});
+
+	it('does not throw when opening the note fails', async () => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		const app = {
+			workspace: {
+				getLeaf: vi.fn(() => ({ openFile: vi.fn(async () => { throw new Error('boom'); }) })),
+			},
+		};
+		const writer = new NoteTargetWriter(app as any, vi.fn());
+		const target = { file: { path: 'Notes/Video.md' } } as any;
+
+		await expect(writer.openTargetInNewTab(target)).resolves.toBeUndefined();
+		expect(warn).toHaveBeenCalled();
+		warn.mockRestore();
+	});
+
+	it('closes the tab it opened when a disposable target is deleted', async () => {
+		const target = {
+			file: { path: 'Notes/Video.md' },
+			fromOffset: 0,
+			toOffset: 0,
+			jobId: 'job-1',
+			createdByPlugin: true,
+			finalized: false,
+		} as any;
+		const leaf = { view: { file: target.file }, detach: vi.fn(), openFile: vi.fn(async () => undefined) };
+		const app = {
+			workspace: { getLeaf: vi.fn(() => leaf) },
+			fileManager: { trashFile: vi.fn(async () => undefined) },
+		};
+		const writer = new NoteTargetWriter(app as any, vi.fn());
+
+		await writer.openTargetInNewTab(target);
+		await writer.deleteTargetIfDisposable(target);
+
+		expect(leaf.detach).toHaveBeenCalledTimes(1);
+		expect(app.fileManager.trashFile).toHaveBeenCalledWith(target.file);
+	});
+
+	it('does not close the tab when the user navigated it to another file', async () => {
+		const target = {
+			file: { path: 'Notes/Video.md' },
+			fromOffset: 0,
+			toOffset: 0,
+			jobId: 'job-1',
+			createdByPlugin: true,
+			finalized: false,
+		} as any;
+		const leaf = { view: { file: { path: 'Other.md' } }, detach: vi.fn(), openFile: vi.fn(async () => undefined) };
+		const app = {
+			workspace: { getLeaf: vi.fn(() => leaf) },
+			fileManager: { trashFile: vi.fn(async () => undefined) },
+		};
+		const writer = new NoteTargetWriter(app as any, vi.fn());
+
+		await writer.openTargetInNewTab(target);
+		await writer.deleteTargetIfDisposable(target);
+
+		expect(leaf.detach).not.toHaveBeenCalled();
+		expect(app.fileManager.trashFile).toHaveBeenCalledWith(target.file);
+	});
+
+	it('stops tracking the opened tab once the target is finalized', async () => {
+		const target = {
+			file: { path: 'Notes/Video.md' },
+			fromOffset: 0,
+			toOffset: 0,
+			jobId: 'job-1',
+			createdByPlugin: true,
+			finalized: false,
+		} as any;
+		const leaf = { view: { file: target.file }, detach: vi.fn(), openFile: vi.fn(async () => undefined) };
+		const app = {
+			workspace: { getLeaf: vi.fn(() => leaf) },
+			fileManager: { trashFile: vi.fn(async () => undefined) },
+			vault: { process: vi.fn(async () => undefined) },
+		};
+		const writer = new NoteTargetWriter(app as any, vi.fn());
+		const progressState = { target: null, url: 'u', hasProgressContent: false };
+
+		await writer.openTargetInNewTab(target);
+		await writer.finalizeTargetNote(target, 'content', null, progressState);
+		target.finalized = false;
+		await writer.deleteTargetIfDisposable(target);
+
+		expect(leaf.detach).not.toHaveBeenCalled();
+		expect(app.fileManager.trashFile).toHaveBeenCalledWith(target.file);
+	});
+
 	it('creates parent folders and a unique note target', async () => {
 		const folders = new Set<string>();
 		const files = new Set<string>(['Notes/Video.md']);

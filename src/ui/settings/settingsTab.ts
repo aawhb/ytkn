@@ -362,6 +362,21 @@ export class SettingsTab extends PluginSettingTab {
 						});
 					}),
 			);
+
+		if (outputDefaults.noteDestinationMode === 'folder') {
+			new Setting(containerEl)
+				.setName(SETTING_COPY.openCreatedNote.name)
+				.setDesc(SETTING_COPY.openCreatedNote.desc!)
+				.addToggle((toggle) =>
+					toggle
+						.setValue(outputDefaults.openCreatedNote)
+						.onChange(async (value) => {
+							await this.updateOutputDefaults({
+								openCreatedNote: value,
+							});
+						}),
+				);
+		}
 	}
 
 	private displayTranscriptInNoteSection(containerEl: HTMLElement): void {

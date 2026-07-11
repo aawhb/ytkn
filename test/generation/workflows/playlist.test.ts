@@ -32,6 +32,7 @@ function makeOptions(overrides: Partial<EffectiveGenerationOptions> = {}): Effec
 		useVideoTitleAsNoteName: true,
 		noteDestinationMode: 'folder',
 		noteDestinationFolder: 'Notes',
+		openCreatedNote: false,
 		modelIds: [],
 		temperature: 0.3,
 		requestTimeoutMs: 60000,

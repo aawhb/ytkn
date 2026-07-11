@@ -55,6 +55,7 @@ export class GenerationOptionsModal extends Modal {
 	private temperatureSettingEl?: HTMLElement;
 	private requestTimeoutSettingEl?: HTMLElement;
 	private folderSettingEl?: HTMLElement;
+	private openCreatedNoteSettingEl?: HTMLElement;
 	private playlistQuickSettingEl?: HTMLElement;
 	private perVideoReportSettingEl?: HTMLElement;
 	private preferredLangSettingEl?: HTMLElement;
@@ -399,6 +400,16 @@ export class GenerationOptionsModal extends Modal {
 		folderSettingEl.addClass('ytkn-modal__quick-full');
 		this.folderSettingEl = folderSettingEl;
 
+		const openCreatedNoteSettingEl = new Setting(quickGrid)
+			.setName(SETTING_COPY.openCreatedNote.name)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.state.openCreatedNote)
+					.onChange((v) => (this.state.openCreatedNote = v)),
+			).settingEl;
+		openCreatedNoteSettingEl.addClass('ytkn-modal__quick-full');
+		this.openCreatedNoteSettingEl = openCreatedNoteSettingEl;
+
 		const playlistSetting = new Setting(quickGrid)
 			.setName(SETTING_COPY.playlistHandling.name)
 			.addDropdown((dropdown) =>
@@ -740,8 +751,10 @@ export class GenerationOptionsModal extends Modal {
 	private refreshDestinationVisibility(): void {
 		if (this.state.noteDestinationMode === 'folder') {
 			this.folderSettingEl?.show();
+			this.openCreatedNoteSettingEl?.show();
 		} else {
 			this.folderSettingEl?.hide();
+			this.openCreatedNoteSettingEl?.hide();
 		}
 	}
 

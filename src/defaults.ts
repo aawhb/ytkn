@@ -2,6 +2,7 @@ export const VIDEO_ID_REGEX = /(?:v=|\/)([a-zA-Z0-9_-]{11})/;
 
 export const DEFAULT_NOTE_DESTINATION_MODE = 'current-note';
 export const DEFAULT_NOTE_DESTINATION_FOLDER = '';
+export const DEFAULT_OPEN_CREATED_NOTE = false;
 
 export const DEFAULT_MEDIA_EMBED_MODE = 'video';
 export const DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME = true;

@@ -52,13 +52,19 @@ async function resolveCombinedTarget(
 	initialTarget: NoteInsertionTarget | null,
 	effectiveOptions: EffectiveGenerationOptions,
 ): Promise<CombinedPlaylistTarget> {
+	let target: NoteInsertionTarget;
+	if (effectiveOptions.noteDestinationMode === 'folder') {
+		target = await context.targets.createFolderTarget(
+			effectiveOptions.noteDestinationFolder ?? '',
+			buildCombinedPlaylistBaseName(playlist, effectiveOptions),
+		);
+		await context.maybeOpenCreatedNote?.(target);
+	} else {
+		target = initialTarget!;
+	}
+
 	return {
-		target: effectiveOptions.noteDestinationMode === 'folder'
-			? await context.targets.createFolderTarget(
-				effectiveOptions.noteDestinationFolder ?? '',
-				buildCombinedPlaylistBaseName(playlist, effectiveOptions),
-			)
-			: initialTarget!,
+		target,
 		isAppendMode: effectiveOptions.noteDestinationMode === 'append-to-active-note',
 		titleToRenameTo: effectiveOptions.noteDestinationMode === 'current-note' && effectiveOptions.useVideoTitleAsNoteName
 			? playlist.title
@@ -382,6 +388,7 @@ async function generatePerVideoPlaylistNotes(
 				const baseName = buildPerVideoBaseName(playlist, transcript, index + 1, effectiveOptions);
 				if (effectiveOptions.noteDestinationMode === 'folder') {
 					target = await context.targets.createFolderTarget(effectiveOptions.noteDestinationFolder ?? '', baseName);
+					await context.maybeOpenCreatedNote?.(target);
 				} else {
 					if (!initialTarget) {
 						throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);

@@ -43,6 +43,7 @@ type SharedSettingCopy = {
 	sourceMetadataPosition: SettingFieldCopy<Record<SourceSectionPosition, string>>;
 	outputDestination: SettingFieldCopy<Record<NoteDestinationMode, string>>;
 	destinationFolder: SettingFieldCopy;
+	openCreatedNote: SettingFieldCopy;
 	transcriptInNote: SettingFieldCopy<Record<TranscriptMode, string>>;
 	linkTimestamps: SettingFieldCopy;
 	transcriptLanguage: SettingFieldCopy<Record<TranscriptLanguageMode, string>>;
@@ -149,6 +150,10 @@ export const SETTING_COPY: SharedSettingCopy = {
 		name: 'Destination folder',
 		desc: 'Created automatically if it does not exist.',
 		placeholder: 'YouTube notes',
+	},
+	openCreatedNote: {
+		name: 'Open created note',
+		desc: 'Open the first created note in a new tab. Playlists and multi-URL batches open only their first note.',
 	},
 	transcriptInNote: {
 		name: 'Transcript in note',

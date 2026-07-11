@@ -67,6 +67,7 @@ export interface OutputDefaults {
 	useVideoTitleAsNoteName: boolean;
 	noteDestinationMode: NoteDestinationMode;
 	noteDestinationFolder: string;
+	openCreatedNote: boolean;
 	includeFrontmatter: boolean;
 	frontmatterTags: string;
 	frontmatterPropertyAllowlist: string;
@@ -151,6 +152,7 @@ export interface GenerationOptions {
 	useVideoTitleAsNoteName?: boolean;
 	noteDestinationMode?: NoteDestinationMode;
 	noteDestinationFolder?: string;
+	openCreatedNote?: boolean;
 	/** Ordered per-run model chain; falls back to `modelId`, then the settings chain. */
 	modelIds?: string[];
 	modelId?: string;

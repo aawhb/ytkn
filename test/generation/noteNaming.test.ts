@@ -28,6 +28,7 @@ function makeOptions(useVideoTitleAsNoteName: boolean): EffectiveGenerationOptio
 		useVideoTitleAsNoteName,
 		noteDestinationMode: 'folder',
 		noteDestinationFolder: '',
+		openCreatedNote: false,
 		modelIds: [],
 		temperature: 0.3,
 		requestTimeoutMs: 60000,

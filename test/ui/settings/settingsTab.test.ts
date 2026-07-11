@@ -109,6 +109,40 @@ describe('SettingsTab', () => {
 		expect(semanticTabs.map((tabEl) => tabEl.textContent)).toEqual(['General', 'GenAI']);
 	});
 
+	it('shows the open-created-note toggle below the destination folder only for folder output', async () => {
+		const currentNotePlugin = makeFakePlugin();
+		const currentNoteTab = createSettingsTab(currentNotePlugin);
+		renderSettingsTab(currentNoteTab);
+		const currentNoteNames = Array.from(currentNoteTab.containerEl.querySelectorAll('.setting-item'))
+			.map((el) => el.querySelector('.setting-item-name')?.textContent);
+		expect(currentNoteNames).not.toContain('Open created note');
+
+		const folderPlugin = makeFakePlugin();
+		const baseDefaults = folderPlugin.settings.getOutputDefaults();
+		folderPlugin.settings.getOutputDefaults = vi.fn().mockReturnValue({
+			...baseDefaults,
+			noteDestinationMode: 'folder',
+			noteDestinationFolder: 'Notes',
+			openCreatedNote: false,
+		});
+		const folderTab = createSettingsTab(folderPlugin);
+		renderSettingsTab(folderTab);
+		const rows = Array.from(folderTab.containerEl.querySelectorAll('.setting-item'));
+		const names = rows.map((el) => el.querySelector('.setting-item-name')?.textContent);
+		const folderIndex = names.indexOf('Destination folder');
+		const toggleIndex = names.indexOf('Open created note');
+		expect(folderIndex).toBeGreaterThan(-1);
+		expect(toggleIndex).toBe(folderIndex + 1);
+
+		const checkbox = rows[toggleIndex].querySelector('input[type="checkbox"]') as HTMLInputElement;
+		checkbox.checked = true;
+		checkbox.dispatchEvent(new Event('change'));
+		await Promise.resolve();
+		expect(folderPlugin.settings.updateOutputDefaults).toHaveBeenCalledWith(
+			expect.objectContaining({ openCreatedNote: true }),
+		);
+	});
+
 	it('renders the default content template subtitle inside its setting row', () => {
 		const plugin = makeFakePlugin();
 		const tab = createSettingsTab(plugin);

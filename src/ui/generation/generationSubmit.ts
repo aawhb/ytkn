@@ -90,6 +90,7 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 			useVideoTitleAsNoteName: state.useVideoTitleAsNoteName,
 			noteDestinationMode: state.noteDestinationMode,
 			noteDestinationFolder: state.noteDestinationFolder,
+			openCreatedNote: state.openCreatedNote,
 			includeFrontmatter: state.includeFrontmatter,
 			frontmatterTags: state.frontmatterTags,
 			frontmatterPropertyAllowlist: state.frontmatterPropertyAllowlist,
