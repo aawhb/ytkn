@@ -1,10 +1,10 @@
-import type { PlaylistTranscriptResponse, TranscriptResponse } from '../types';
+import type { TranscriptResponse, VideoCollectionTranscriptResponse } from '../types';
 
 export function buildVideoSourceSection(transcript: TranscriptResponse, url: string): string {
 	return `> [!info] Source Info\n> - **Title:** ${transcript.title}\n> - **Channel:** [${transcript.author}](${transcript.channelUrl})\n> - **URL:** ${url}`;
 }
 
-export function buildPlaylistSourceSection(playlist: PlaylistTranscriptResponse): string {
+export function buildPlaylistSourceSection(playlist: VideoCollectionTranscriptResponse): string {
 	const videoItems = playlist.transcripts.length > 0
 		? playlist.transcripts.map((transcript) => ({
 			title: transcript.title,
@@ -26,8 +26,9 @@ export function buildPlaylistSourceSection(playlist: PlaylistTranscriptResponse)
 		.join('\n');
 	const videoCount = videoItems.length;
 
+	const sourceLabel = 'channelId' in playlist ? 'Channel' : 'Playlist';
 	return `## Source
-- Playlist: [${playlist.title}](${playlist.url})
+- ${sourceLabel}: [${playlist.title}](${playlist.url})
 - Video count: ${videoCount}
 
 ### Videos

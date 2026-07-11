@@ -1,4 +1,5 @@
 import type {
+	ChannelContentType,
 	GenerationOptions,
 	InstructionMode,
 	InstructionTemplate,
@@ -25,6 +26,8 @@ export interface EffectiveGenerationOptions extends GenerationOptions {
 	controlValues: Record<string, string>;
 	transcriptMode: TranscriptMode;
 	playlistMode: PlaylistMode;
+	channelContentTypes: ChannelContentType[];
+	channelVideoLimit: number | null;
 	transcriptLanguageMode: TranscriptLanguageMode;
 	preferredTranscriptLanguage: string;
 	transcriptFailureMode: TranscriptFailureMode;
@@ -65,6 +68,10 @@ export function resolveEffectiveGenerationOptions(
 		controlValues: options.controlValues ?? instructionConfig.controlValues ?? {},
 		transcriptMode: options.transcriptMode ?? outputDefaults.transcriptMode,
 		playlistMode: options.playlistMode ?? outputDefaults.playlistMode,
+		channelContentTypes: options.channelContentTypes ?? outputDefaults.channelContentTypes,
+		channelVideoLimit: options.channelVideoLimit !== undefined
+			? options.channelVideoLimit
+			: outputDefaults.channelVideoLimit,
 		transcriptLanguageMode: options.transcriptLanguageMode ?? outputDefaults.transcriptLanguageMode,
 		preferredTranscriptLanguage: options.preferredTranscriptLanguage ?? outputDefaults.preferredTranscriptLanguage,
 		transcriptFailureMode: options.transcriptFailureMode ?? outputDefaults.transcriptFailureMode,

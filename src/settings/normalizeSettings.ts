@@ -1,4 +1,5 @@
 import type {
+	ChannelContentType,
 	InstructionConfig,
 	InstructionMode,
 	InstructionTemplate,
@@ -12,6 +13,8 @@ import type {
 	TranscriptLanguageMode,
 } from '../types';
 import {
+	DEFAULT_CHANNEL_CONTENT_TYPES,
+	DEFAULT_CHANNEL_VIDEO_LIMIT,
 	DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST,
 	DEFAULT_FRONTMATTER_TAGS,
 	DEFAULT_GENERATE_AI_SUMMARY,
@@ -43,8 +46,10 @@ import { normalizeVaultFolderPath } from '../utils';
 import { isInstructionTemplate } from '../ai/templates/registry';
 import { resolveLegacyUseAi } from '../aiOutputPolicy';
 
-export type RawOutputDefaults = Partial<Omit<OutputDefaults, 'mediaEmbedMode'>> & {
+export type RawOutputDefaults = Partial<Omit<OutputDefaults, 'mediaEmbedMode' | 'channelContentTypes' | 'channelVideoLimit'>> & {
 	mediaEmbedMode?: unknown;
+	channelContentTypes?: unknown;
+	channelVideoLimit?: unknown;
 	includeThumbnail?: boolean;
 	addAlias?: boolean;
 };
@@ -70,6 +75,7 @@ const VALID_TRANSCRIPT_FAILURE_MODES: readonly TranscriptFailureMode[] = ['skip'
 const VALID_RUN_REPORT_LOCATIONS: readonly RunReportLocation[] = ['generated-note', 'separate-note'];
 const VALID_SOURCE_SECTION_POSITIONS: readonly SourceSectionPosition[] = ['top', 'bottom'];
 const VALID_MEDIA_EMBED_MODES: readonly MediaEmbedMode[] = ['video', 'thumbnail', 'none'];
+const VALID_CHANNEL_CONTENT_TYPES: readonly ChannelContentType[] = ['videos', 'shorts', 'streams'];
 
 function normalizeInstructionMode(mode?: InstructionMode): InstructionMode {
 	return normalizeOneOf(mode, VALID_INSTRUCTION_MODES, DEFAULT_INSTRUCTION_MODE);
@@ -162,6 +168,25 @@ function normalizePlaylistMode(playlistMode?: PlaylistMode): PlaylistMode {
 	return normalizeOneOf(playlistMode, VALID_PLAYLIST_MODES, DEFAULT_PLAYLIST_MODE);
 }
 
+function normalizeChannelContentTypes(value: unknown): ChannelContentType[] {
+	if (!Array.isArray(value)) {
+		return [...DEFAULT_CHANNEL_CONTENT_TYPES];
+	}
+
+	const selected = VALID_CHANNEL_CONTENT_TYPES.filter((type) => value.includes(type));
+	return selected.length > 0 ? selected : [...DEFAULT_CHANNEL_CONTENT_TYPES];
+}
+
+function normalizeChannelVideoLimit(value: unknown): number | null {
+	if (value === null) {
+		return null;
+	}
+	if (typeof value !== 'number' || !Number.isFinite(value) || value < 1) {
+		return DEFAULT_CHANNEL_VIDEO_LIMIT;
+	}
+	return Math.floor(value);
+}
+
 function normalizeNoteDestinationMode(noteDestinationMode?: NoteDestinationMode): NoteDestinationMode {
 	return normalizeOneOf(noteDestinationMode, VALID_NOTE_DESTINATION_MODES, DEFAULT_NOTE_DESTINATION_MODE);
 }
@@ -220,6 +245,8 @@ export function normalizeOutputDefaults(outputDefaults?: RawOutputDefaults): Out
 		generateAiSummary: outputDefaults?.generateAiSummary ?? DEFAULT_GENERATE_AI_SUMMARY,
 		transcriptMode: normalizeTranscriptMode(outputDefaults?.transcriptMode),
 		playlistMode: normalizePlaylistMode(outputDefaults?.playlistMode),
+		channelContentTypes: normalizeChannelContentTypes(outputDefaults?.channelContentTypes),
+		channelVideoLimit: normalizeChannelVideoLimit(outputDefaults?.channelVideoLimit),
 		transcriptLanguageMode: normalizeTranscriptLanguageMode(outputDefaults?.transcriptLanguageMode),
 		preferredTranscriptLanguage: normalizePreferredTranscriptLanguage(outputDefaults?.preferredTranscriptLanguage),
 		transcriptFailureMode: normalizeTranscriptFailureMode(outputDefaults?.transcriptFailureMode),

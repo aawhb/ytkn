@@ -31,9 +31,13 @@ type PlaylistRenderer = {
 	thumbnail?: {
 		thumbnails?: Thumbnail[];
 	};
+	upcomingEventData?: unknown;
+	thumbnailOverlays?: unknown[];
+	badges?: unknown[];
 };
 
 export type ContinuationLoader = (continuation: string) => Promise<unknown>;
+export type PlaylistEntryFilter = (entry: PlaylistEntry) => boolean;
 
 function isObject(value: unknown): value is JsonObject {
 	return typeof value === 'object' && value !== null;
@@ -109,6 +113,96 @@ function playlistEntryChannelMetadata(renderer: PlaylistRenderer): Pick<Playlist
 	return {};
 }
 
+const LIVE_STATUS_MARKERS = new Set([
+	'LIVE',
+	'LIVE_NOW',
+	'BADGE_STYLE_TYPE_LIVE',
+	'BADGE_STYLE_TYPE_LIVE_NOW',
+]);
+const UPCOMING_STATUS_MARKERS = new Set([
+	'UPCOMING',
+	'BADGE_STYLE_TYPE_UPCOMING',
+]);
+
+function normalizedStatusValue(value: unknown): string | null {
+	return typeof value === 'string'
+		? value.trim().replace(/\s+/g, ' ').toUpperCase()
+		: null;
+}
+
+function statusFromStableMarker(value: unknown): PlaylistEntry['liveStatus'] {
+	const marker = normalizedStatusValue(value);
+	if (!marker) {
+		return undefined;
+	}
+	if (UPCOMING_STATUS_MARKERS.has(marker)) {
+		return 'upcoming';
+	}
+	if (LIVE_STATUS_MARKERS.has(marker)) {
+		return 'live';
+	}
+	return undefined;
+}
+
+function statusFromExactEnglishText(value: unknown): PlaylistEntry['liveStatus'] {
+	const text = normalizedStatusValue(value);
+	if (text === 'UPCOMING') {
+		return 'upcoming';
+	}
+	if (text === 'LIVE' || text === 'LIVE NOW') {
+		return 'live';
+	}
+	return undefined;
+}
+
+function statusFromKnownRenderer(renderer: unknown): PlaylistEntry['liveStatus'] {
+	if (!isObject(renderer)) {
+		return undefined;
+	}
+
+	const iconType = isObject(renderer.icon) ? renderer.icon.iconType : undefined;
+	const stableStatus = statusFromStableMarker(renderer.style) ?? statusFromStableMarker(iconType);
+	if (stableStatus) {
+		return stableStatus;
+	}
+
+	return statusFromExactEnglishText(rendererText(renderer.text))
+		?? statusFromExactEnglishText(renderer.label)
+		?? statusFromExactEnglishText(renderer.tooltip);
+}
+
+function statusesFromKnownContainers(values: unknown, rendererKey: string): PlaylistEntry['liveStatus'][] {
+	if (!Array.isArray(values)) {
+		return [];
+	}
+
+	return values.flatMap((container) => {
+		if (!isObject(container)) {
+			return [];
+		}
+		const status = statusFromKnownRenderer(container[rendererKey]);
+		return status ? [status] : [];
+	});
+}
+
+function playlistEntryLiveStatus(renderer: PlaylistRenderer): PlaylistEntry['liveStatus'] {
+	if (renderer.upcomingEventData) {
+		return 'upcoming';
+	}
+
+	const statuses = [
+		...statusesFromKnownContainers(renderer.thumbnailOverlays, 'thumbnailOverlayTimeStatusRenderer'),
+		...statusesFromKnownContainers(renderer.badges, 'metadataBadgeRenderer'),
+	];
+	if (statuses.includes('upcoming')) {
+		return 'upcoming';
+	}
+	if (statuses.includes('live')) {
+		return 'live';
+	}
+	return undefined;
+}
+
 export function playlistTitleFromPayload(payload: unknown): string | null {
 	let title: string | null = null;
 
@@ -165,24 +259,35 @@ function walkJson(value: unknown, visitObject: (node: JsonObject) => boolean | v
 	}
 }
 
-function collectPlaylistPage(payload: unknown, playlistId: string, entries: Map<string, PlaylistEntry>): string | null {
+function collectPlaylistPage(
+	payload: unknown,
+	playlistId: string,
+	entries: Map<string, PlaylistEntry>,
+	maxEntries: number,
+	entryFilter?: PlaylistEntryFilter,
+): string | null {
 	let nextToken: string | null = null;
 
 	walkJson(payload, (node) => {
 		const renderer = playlistVideoRenderer(node);
-		if (renderer?.videoId && !entries.has(renderer.videoId)) {
+		if (renderer?.videoId && entries.size < maxEntries && !entries.has(renderer.videoId)) {
 			const fallbackIndex = entries.size + 1;
 			const title = rendererText(renderer.title) ?? `Video ${fallbackIndex}`;
 			const thumbnailUrl = bestProvidedThumbnailUrl(renderer.thumbnail?.thumbnails);
 			const channelMetadata = playlistEntryChannelMetadata(renderer);
-			entries.set(renderer.videoId, {
+			const liveStatus = playlistEntryLiveStatus(renderer);
+			const entry: PlaylistEntry = {
 				videoId: renderer.videoId,
 				url: `https://www.youtube.com/watch?v=${renderer.videoId}&list=${playlistId}`,
 				position: playlistPosition(renderer, fallbackIndex),
 				title: normalizeHtmlText(title),
 				...channelMetadata,
 				...(thumbnailUrl ? { thumbnailUrl } : {}),
-			});
+				...(liveStatus ? { liveStatus } : {}),
+			};
+			if (!entryFilter || entryFilter(entry)) {
+				entries.set(renderer.videoId, entry);
+			}
 		}
 
 		if (!nextToken) {
@@ -261,13 +366,20 @@ export async function collectPlaylistEntries(
 	initialPayload: unknown,
 	playlistId: string,
 	loadContinuation: ContinuationLoader,
+	maxEntries?: number | null,
+	entryFilter?: PlaylistEntryFilter,
 ): Promise<PlaylistEntry[]> {
-	const entries = new Map<string, PlaylistEntry>();
-	let token = collectPlaylistPage(initialPayload, playlistId, entries);
+	const limit = maxEntries == null ? Number.POSITIVE_INFINITY : Math.max(0, Math.floor(maxEntries));
+	if (limit === 0) {
+		return [];
+	}
 
-	while (token) {
+	const entries = new Map<string, PlaylistEntry>();
+	let token = collectPlaylistPage(initialPayload, playlistId, entries, limit, entryFilter);
+
+	while (token && entries.size < limit) {
 		const page = await loadContinuation(token);
-		const nextToken = collectPlaylistPage(page, playlistId, entries);
+		const nextToken = collectPlaylistPage(page, playlistId, entries, limit, entryFilter);
 		if (!nextToken || nextToken === token) {
 			break;
 		}

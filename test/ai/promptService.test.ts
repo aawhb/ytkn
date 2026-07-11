@@ -89,6 +89,26 @@ describe('PromptService', () => {
 		expect(playlistPrompt).toContain('Summary text');
 	});
 
+	it('uses channel-specific language for channel synthesis', () => {
+		const service = new PromptService({ mode: 'template', template: 'study', manualInstructions: '', includeMindmap: false, includeMemorableQuotes: false });
+		const channelPrompt = service.buildPlaylistSynthesisPrompt(
+			{
+				channelId: 'UCabc',
+				title: 'Channel',
+				url: 'https://youtube.com/@channel',
+				contentTypes: ['videos'],
+				entries: [{ videoId: '123', url: transcript.url, title: transcript.title, position: 1, contentType: 'videos' }],
+				transcripts: [transcript],
+			},
+			[{ transcript, summary: 'Summary text' }],
+		);
+
+		expect(channelPrompt).toContain('Apply the same template to the channel selection as a whole');
+		expect(channelPrompt).toContain('entire YouTube channel selection');
+		expect(channelPrompt).toContain('Channel URL');
+		expect(channelPrompt).not.toContain('Playlist URL');
+	});
+
 	it('lists the new template set and keeps the TL;DR contract on every built-in template', () => {
 		const choices = listTemplateChoices();
 

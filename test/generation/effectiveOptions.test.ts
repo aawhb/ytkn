@@ -22,6 +22,8 @@ function createSettings(overrides: Partial<PluginSettings> = {}): PluginSettings
 			generateAiSummary: true,
 			transcriptMode: 'readable',
 			playlistMode: 'combined',
+			channelContentTypes: ['videos', 'shorts'],
+			channelVideoLimit: 10,
 			transcriptLanguageMode: 'preferred',
 			preferredTranscriptLanguage: 'en',
 			transcriptFailureMode: 'skip',
@@ -75,6 +77,8 @@ describe('resolveEffectiveGenerationOptions', () => {
 		expect(effective.includeMemorableQuotes).toBe(true);
 		expect(effective.transcriptMode).toBe('readable');
 		expect(effective.noteDestinationMode).toBe('folder');
+		expect(effective.channelContentTypes).toEqual(['videos', 'shorts']);
+		expect(effective.channelVideoLimit).toBe(10);
 		expect(effective.temperature).toBe(0.4);
 		expect(effective.requestTimeoutMs).toBe(60000);
 	});
@@ -90,6 +94,8 @@ describe('resolveEffectiveGenerationOptions', () => {
 			noteDestinationMode: 'current-note',
 			temperature: 1.2,
 			requestTimeoutMs: 1000,
+			channelContentTypes: ['streams'],
+			channelVideoLimit: null,
 		}, createSettings());
 
 		expect(effective.useAi).toBe(false);
@@ -101,6 +107,8 @@ describe('resolveEffectiveGenerationOptions', () => {
 		expect(effective.noteDestinationMode).toBe('current-note');
 		expect(effective.temperature).toBe(1.2);
 		expect(effective.requestTimeoutMs).toBe(1000);
+		expect(effective.channelContentTypes).toEqual(['streams']);
+		expect(effective.channelVideoLimit).toBeNull();
 	});
 
 	it('resolves the model chain from per-run list, legacy single model, then settings', () => {

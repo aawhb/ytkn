@@ -6,7 +6,7 @@ import {
 	countPlaylistOutcomes,
 	playlistRunOutcome,
 } from '../../src/generation/reportEntries';
-import type { PlaylistEntry, PlaylistRunReportEntry } from '../../src/types';
+import type { ChannelEntry, PlaylistEntry, PlaylistRunReportEntry } from '../../src/types';
 
 const entries: PlaylistEntry[] = [
 	{ videoId: 'one', title: 'One', url: 'https://youtu.be/one', position: 1 },
@@ -27,6 +27,18 @@ describe('playlist report entries', () => {
 			outcome: 'completed',
 			transcriptLanguageCode: 'en',
 			notePath: 'Notes/Fetched.md',
+		});
+	});
+
+	it('preserves channel content types in report entries', () => {
+		const short: ChannelEntry = {
+			...entries[0],
+			contentType: 'shorts',
+		};
+
+		expect(buildPlaylistReportEntry(short, 'completed')).toMatchObject({
+			title: 'One',
+			contentType: 'shorts',
 		});
 	});
 

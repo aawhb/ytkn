@@ -7,7 +7,7 @@ import type {
 	QueueRunReportEntry,
 } from '../types';
 import type { YouTubeService } from '../youtube/youtubeService';
-import { extractPlaylistId, extractVideoId, isPlaylistUrl } from '../youtube/urls';
+import { classifyVideoContentType, extractPlaylistId, extractVideoId } from '../youtube/urls';
 import { isAbortError } from '../queue/progress';
 import { renderQueueBatchReport } from '../rendering/runReport';
 import { getErrorMessage } from '../utils';
@@ -16,7 +16,7 @@ import { resolveEffectiveGenerationOptions, type EffectiveGenerationOptions } fr
 import { buildAiExecutionContext } from './aiPolicy';
 import { playlistRunOutcome } from './reportEntries';
 import type { GenerationWorkflowContext } from './workflows/context';
-import { generatePlaylistNotes } from './workflows/playlist';
+import { generateChannelNotes, generatePlaylistNotes } from './workflows/playlist';
 import { generateSingleVideoNote } from './workflows/singleVideo';
 import { buildSafeBaseName, NoteTargetWriter } from './targets/noteTargets';
 import type { ProgressState } from './targets/noteTargets';
@@ -55,7 +55,28 @@ export class GenerationService {
 
 			const context = this.workflowContext(run, effectiveOptions);
 
-			if (isPlaylistUrl(run.url)) {
+			if (run.kind === 'channel') {
+				const { channel, notePath, entries, warnings } = await generateChannelNotes(
+					context, run.url, initialTarget, effectiveOptions, aiContext, progressState, signal,
+				);
+				return {
+					kind: 'channel',
+					runId: run.id,
+					batchId: run.batchId,
+					ordinal: run.ordinal,
+					url: run.url,
+					displayTitle: run.displayTitle,
+					channelTitle: channel.title,
+					channelUrl: run.url,
+					contentTypes: channel.contentTypes,
+					outcome: playlistRunOutcome(entries),
+					notePath: notePath ?? undefined,
+					warnings: warnings.length > 0 ? warnings : undefined,
+					entries,
+				};
+			}
+
+			if (run.kind === 'playlist') {
 				const { playlist, notePath, entries, warnings } = await generatePlaylistNotes(
 					context, run.url, initialTarget, effectiveOptions, aiContext, progressState, signal,
 				);
@@ -85,6 +106,7 @@ export class GenerationService {
 				ordinal: run.ordinal,
 				url: run.url,
 				displayTitle: run.displayTitle,
+				contentType: classifyVideoContentType(run.url),
 				outcome: 'completed',
 				notePath: notePath ?? undefined,
 				transcriptLanguageCode,
@@ -118,7 +140,12 @@ export class GenerationService {
 
 	async resolveTitle(run: QueuedRun, signal: AbortSignal): Promise<string> {
 		if (signal.aborted) throw signal.reason;
-		if (isPlaylistUrl(run.url)) {
+		if (run.kind === 'channel') {
+			const title = await this.youtubeService.fetchChannelTitle(run.url);
+			if (signal.aborted) throw signal.reason;
+			return title;
+		}
+		if (run.kind === 'playlist') {
 			const playlistId = extractPlaylistId(run.url);
 			if (!playlistId) throw new Error('Could not extract playlist ID');
 			const title = await this.youtubeService.fetchPlaylistTitle(playlistId);
@@ -185,7 +212,7 @@ export class GenerationService {
 	private pickFirstNotePath(entries: QueueRunReportEntry[]): string | null {
 		for (const entry of entries) {
 			if (entry.notePath) return entry.notePath;
-			if (entry.kind === 'playlist') {
+			if (entry.kind !== 'video') {
 				const nested = entry.entries.find((e) => e.notePath);
 				if (nested?.notePath) return nested.notePath;
 			}

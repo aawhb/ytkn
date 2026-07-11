@@ -1,4 +1,5 @@
 import type {
+	ChannelContentType,
 	GenerationOptions,
 	InstructionMode,
 	InstructionTemplate,
@@ -13,6 +14,8 @@ import type {
 	TranscriptMode,
 } from '../../types';
 import {
+	DEFAULT_CHANNEL_CONTENT_TYPES,
+	DEFAULT_CHANNEL_VIDEO_LIMIT,
 	DEFAULT_GENERATE_AI_SUMMARY,
 	DEFAULT_INCLUDE_FRONTMATTER,
 	DEFAULT_INCLUDE_MEMORABLE_QUOTES,
@@ -39,6 +42,7 @@ import { resolveLegacyUseAi } from '../../aiOutputPolicy';
 import { buildModelId } from '../../modelId';
 import { getTemplate } from '../../ai/templates/registry';
 import { controlDefaultToString } from '../shared/templateControls';
+import { extractChannelRef, parseUrls } from '../../youtube/urls';
 
 export interface GenerationFormState {
 	url: string;
@@ -46,6 +50,9 @@ export interface GenerationFormState {
 	generateAiSummary: boolean;
 	transcriptMode: TranscriptMode;
 	playlistMode: PlaylistMode;
+	channelContentTypes: ChannelContentType[];
+	/** Blank means fetch every item from each selected channel content type. */
+	channelVideoLimit: string;
 	transcriptLanguageMode: TranscriptLanguageMode;
 	preferredTranscriptLanguage: string;
 	transcriptFailureMode: TranscriptFailureMode;
@@ -102,6 +109,12 @@ export function buildGenerationFormState({
 	const init = initialOptions;
 	const instructionTemplate = init.instructionTemplate ?? DEFAULT_INSTRUCTION_TEMPLATE;
 	const controlValues = seedTemplateControlValues(instructionTemplate, init.controlValues);
+	const channelRef = parseUrls(initialUrl).length === 1 ? extractChannelRef(initialUrl.trim()) : null;
+	const explicitChannelContentType: ChannelContentType | null = channelRef?.tab === 'videos'
+		? 'videos'
+		: channelRef?.tab === 'shorts'
+			? 'shorts'
+			: channelRef?.tab === 'streams' ? 'streams' : null;
 
 	return {
 		url: initialUrl,
@@ -109,6 +122,12 @@ export function buildGenerationFormState({
 		generateAiSummary: init.generateAiSummary ?? DEFAULT_GENERATE_AI_SUMMARY,
 		transcriptMode: init.transcriptMode ?? DEFAULT_OUTPUT_TRANSCRIPT_MODE,
 		playlistMode: init.playlistMode ?? DEFAULT_PLAYLIST_MODE,
+		channelContentTypes: explicitChannelContentType
+			? [explicitChannelContentType]
+			: [...(init.channelContentTypes ?? DEFAULT_CHANNEL_CONTENT_TYPES)],
+		channelVideoLimit: init.channelVideoLimit === null
+			? ''
+			: String(init.channelVideoLimit ?? DEFAULT_CHANNEL_VIDEO_LIMIT),
 		transcriptLanguageMode: init.transcriptLanguageMode ?? DEFAULT_TRANSCRIPT_LANGUAGE_MODE,
 		preferredTranscriptLanguage: init.preferredTranscriptLanguage ?? '',
 		transcriptFailureMode: init.transcriptFailureMode ?? DEFAULT_TRANSCRIPT_FAILURE_MODE,

@@ -84,4 +84,19 @@ describe('buildGenerationFormState', () => {
 
 		expect(state.controlValues.density).toBe('comprehensive');
 	});
+
+	it('uses an explicit channel tab as the initial content selection and preserves unlimited mode', () => {
+		const state = buildGenerationFormState({
+			initialUrl: 'https://www.youtube.com/@channel/shorts',
+			availableModels: [],
+			initialOptions: {
+				channelContentTypes: ['videos', 'shorts', 'streams'],
+				channelVideoLimit: null,
+			},
+			hasActiveNote: true,
+		});
+
+		expect(state.channelContentTypes).toEqual(['shorts']);
+		expect(state.channelVideoLimit).toBe('');
+	});
 });

@@ -11,6 +11,7 @@ const PUBLIC_INNERTUBE_KEY = [
 ].join('');
 const INNERTUBE_PLAYER_ENDPOINT = `https://www.youtube.com/youtubei/v1/player?key=${PUBLIC_INNERTUBE_KEY}`;
 const INNERTUBE_BROWSE_ENDPOINT = `https://www.youtube.com/youtubei/v1/browse?key=${PUBLIC_INNERTUBE_KEY}`;
+const INNERTUBE_RESOLVE_URL_ENDPOINT = `https://www.youtube.com/youtubei/v1/navigation/resolve_url?key=${PUBLIC_INNERTUBE_KEY}`;
 const ANDROID_CLIENT_VERSION = '20.10.38';
 const ANDROID_SDK_VERSION = 30;
 const ANDROID_RELEASE = '11';
@@ -139,6 +140,56 @@ export async function requestPlaylistBrowse(playlistId: string): Promise<unknown
 	});
 
 	return parseJsonResponse<unknown>(response.text, 'YouTube playlist data');
+}
+
+export async function requestChannelFeedBrowse(playlistId: string): Promise<{ payload: unknown } | null> {
+	const response = await requestUrl({
+		url: INNERTUBE_BROWSE_ENDPOINT,
+		method: 'POST',
+		headers: androidHeaders(),
+		body: JSON.stringify({
+			context: INNER_TUBE_CONTEXT,
+			browseId: `VL${playlistId}`,
+		}),
+		throw: false,
+	});
+
+	if (response.status === 404) {
+		return null;
+	}
+	if (response.status >= 400) {
+		throw new Error(`YouTube channel feed request failed with status ${response.status}`);
+	}
+
+	return { payload: parseJsonResponse<unknown>(response.text, 'YouTube channel feed data') };
+}
+
+export async function requestResolveUrl(url: string): Promise<unknown> {
+	const response = await requestUrl({
+		url: INNERTUBE_RESOLVE_URL_ENDPOINT,
+		method: 'POST',
+		headers: webPlayerHeaders(),
+		body: JSON.stringify({
+			context: WEB_INNER_TUBE_CONTEXT,
+			url,
+		}),
+	});
+
+	return parseJsonResponse<unknown>(response.text, 'YouTube channel URL resolution');
+}
+
+export async function requestChannelBrowse(channelId: string): Promise<unknown> {
+	const response = await requestUrl({
+		url: INNERTUBE_BROWSE_ENDPOINT,
+		method: 'POST',
+		headers: webPlayerHeaders(),
+		body: JSON.stringify({
+			context: WEB_INNER_TUBE_CONTEXT,
+			browseId: channelId,
+		}),
+	});
+
+	return parseJsonResponse<unknown>(response.text, 'YouTube channel data');
 }
 
 export async function requestOEmbedTitle(videoId: string): Promise<string> {

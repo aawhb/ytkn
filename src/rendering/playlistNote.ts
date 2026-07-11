@@ -1,4 +1,4 @@
-import type { GenerationOptions, PlaylistTranscriptResponse } from '../types';
+import type { GenerationOptions, VideoCollectionTranscriptResponse } from '../types';
 import type { Template } from '../types';
 import { buildTldrCallout, shiftMarkdownHeadings } from './outputNormalizer';
 import { assembleNote, selectAssembledBody } from './noteAssembler';
@@ -13,7 +13,7 @@ interface RenderResult {
 }
 
 export function renderPlaylistNote(
-	playlist: PlaylistTranscriptResponse,
+	playlist: VideoCollectionTranscriptResponse,
 	thumbnailUrl: string | null,
 	summaryText?: string | null,
 	options?: GenerationOptions,

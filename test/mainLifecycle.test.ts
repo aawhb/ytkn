@@ -270,6 +270,22 @@ describe('YTKN plugin lifecycle', () => {
 		expect(mocks.runQueueInstances[0].cancelAll).not.toHaveBeenCalled();
 	});
 
+	it('explains unsupported channel tabs before queueing', async () => {
+		const plugin = new YTKN({} as any, {} as any) as YTKN & {
+			commands: Array<{ id: string; callback: () => unknown }>;
+		};
+		await plugin.onload();
+		await plugin.commands.find((command) => command.id === 'generate-video-knowledge-note')?.callback();
+
+		const created = mocks.modalOpenEvents.find((event) => event.kind === 'generation-created');
+		const submit = created?.args[4] as ((urls: string[], options: unknown) => void) | undefined;
+		submit?.(['https://www.youtube.com/@channel/playlists'], {});
+
+		expect(mocks.noticeMessages).toContain(
+			'URL #1 uses the unsupported channel tab "playlists". Use a channel Home, Videos, Shorts, or Live link.',
+		);
+	});
+
 	it('renders the current queue title once and refreshes it on queue events', async () => {
 		const plugin = new YTKN({} as any, {} as any) as YTKN & { statusBarItems: HTMLElement[] };
 		await plugin.onload();

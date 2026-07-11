@@ -16,6 +16,7 @@ export type TranscriptFailureMode = 'skip' | 'fail';
 export type RunReportLocation = 'generated-note' | 'separate-note';
 export type SourceSectionPosition = 'top' | 'bottom';
 export type MediaEmbedMode = 'video' | 'thumbnail' | 'none';
+export type ChannelContentType = 'videos' | 'shorts' | 'streams';
 
 interface BaseProvider {
 	name: string;
@@ -58,6 +59,8 @@ export interface OutputDefaults {
 	generateAiSummary: boolean;
 	transcriptMode: TranscriptMode;
 	playlistMode: PlaylistMode;
+	channelContentTypes: ChannelContentType[];
+	channelVideoLimit: number | null;
 	transcriptLanguageMode: TranscriptLanguageMode;
 	preferredTranscriptLanguage: string;
 	transcriptFailureMode: TranscriptFailureMode;
@@ -143,6 +146,8 @@ export interface GenerationOptions {
 	controlValues?: Record<string, string>;
 	transcriptMode?: TranscriptMode;
 	playlistMode?: PlaylistMode;
+	channelContentTypes?: ChannelContentType[];
+	channelVideoLimit?: number | null;
 	transcriptLanguageMode?: TranscriptLanguageMode;
 	preferredTranscriptLanguage?: string;
 	transcriptFailureMode?: TranscriptFailureMode;
@@ -201,6 +206,7 @@ export interface PlaylistEntry {
 	channelUrl?: string;
 	channelId?: string;
 	thumbnailUrl?: string;
+	liveStatus?: 'live' | 'upcoming';
 }
 
 export interface PlaylistResponse {
@@ -210,9 +216,35 @@ export interface PlaylistResponse {
 	entries: PlaylistEntry[];
 }
 
+export interface ChannelEntry extends PlaylistEntry {
+	contentType: ChannelContentType;
+}
+
+export interface ChannelResponse {
+	url: string;
+	channelId: string;
+	title: string;
+	contentTypes: ChannelContentType[];
+	entries: ChannelEntry[];
+}
+
+export type VideoCollectionResponse = PlaylistResponse | ChannelResponse;
+
+export interface ChannelFetchOptions {
+	contentTypes: ChannelContentType[];
+	/** Maximum entries fetched from each selected type; null means all entries. */
+	videoLimit: number | null;
+}
+
 export interface PlaylistTranscriptResponse extends PlaylistResponse {
 	transcripts: TranscriptResponse[];
 }
+
+export interface ChannelTranscriptResponse extends ChannelResponse {
+	transcripts: TranscriptResponse[];
+}
+
+export type VideoCollectionTranscriptResponse = PlaylistTranscriptResponse | ChannelTranscriptResponse;
 
 export interface TranscriptFetchResult {
 	transcript: TranscriptResponse;
@@ -225,6 +257,7 @@ export interface PlaylistRunReportEntry {
 	title: string;
 	url: string;
 	position: number;
+	contentType?: ChannelContentType;
 	outcome: PlaylistRunOutcome;
 	transcriptLanguageCode?: string;
 	notePath?: string;
@@ -285,6 +318,7 @@ export type QueueRunReportEntry =
 		ordinal: number;
 		url: string;
 		displayTitle: string;
+		contentType?: Extract<ChannelContentType, 'videos' | 'shorts'>;
 		outcome: QueueRunOutcome;
 		notePath?: string;
 		transcriptLanguageCode?: string;
@@ -300,6 +334,22 @@ export type QueueRunReportEntry =
 		displayTitle: string;
 		playlistTitle: string;
 		playlistUrl: string;
+		outcome: QueueRunOutcome;
+		notePath?: string;
+		reason?: string;
+		warnings?: string[];
+		entries: PlaylistRunReportEntry[];
+	}
+	| {
+		kind: 'channel';
+		runId: string;
+		batchId: string;
+		ordinal: number;
+		url: string;
+		displayTitle: string;
+		channelTitle: string;
+		channelUrl: string;
+		contentTypes: ChannelContentType[];
 		outcome: QueueRunOutcome;
 		notePath?: string;
 		reason?: string;

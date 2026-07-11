@@ -70,4 +70,88 @@ describe('playlist payload parsing', () => {
 			},
 		]);
 	});
+
+	it('stops paging as soon as the requested entry limit is reached', async () => {
+		const loadContinuation = vi.fn(async () => ({
+			contents: [{
+				playlistVideoRenderer: {
+					videoId: 'later-video',
+					indexText: { simpleText: '2' },
+					title: { simpleText: 'Later Video' },
+				},
+			}],
+		}));
+
+		const entries = await collectPlaylistEntries(initialPayload, 'PL123', loadContinuation, 1);
+
+		expect(entries).toHaveLength(1);
+		expect(entries[0].videoId).toBe('b-video');
+		expect(loadContinuation).not.toHaveBeenCalled();
+	});
+
+	it('does not classify replay text as a currently live video', async () => {
+		const entries = await collectPlaylistEntries({
+			contents: [{
+				playlistVideoRenderer: {
+					videoId: 'replay-video',
+					title: { simpleText: 'Completed stream replay' },
+					thumbnailOverlays: [{
+						thumbnailOverlayTimeStatusRenderer: {
+							style: 'DEFAULT',
+							text: { simpleText: 'LIVE REPLAY' },
+						},
+					}],
+				},
+			}],
+		}, 'PL123', vi.fn());
+
+		expect(entries).toHaveLength(1);
+		expect(entries[0].liveStatus).toBeUndefined();
+	});
+
+	it('detects live and upcoming entries from known markers and exact status text', async () => {
+		const entries = await collectPlaylistEntries({
+			contents: [
+				{
+					playlistVideoRenderer: {
+						videoId: 'styled-live',
+						title: { simpleText: 'Styled live video' },
+						badges: [{
+							metadataBadgeRenderer: { style: 'BADGE_STYLE_TYPE_LIVE_NOW' },
+						}],
+					},
+				},
+				{
+					playlistVideoRenderer: {
+						videoId: 'icon-upcoming',
+						title: { simpleText: 'Upcoming video' },
+						thumbnailOverlays: [{
+							thumbnailOverlayTimeStatusRenderer: {
+								style: 'DEFAULT',
+								icon: { iconType: 'UPCOMING' },
+							},
+						}],
+					},
+				},
+				{
+					playlistVideoRenderer: {
+						videoId: 'text-live-now',
+						title: { simpleText: 'Text fallback' },
+						thumbnailOverlays: [{
+							thumbnailOverlayTimeStatusRenderer: {
+								style: 'DEFAULT',
+								text: { simpleText: 'LIVE NOW' },
+							},
+						}],
+					},
+				},
+			],
+		}, 'PL123', vi.fn());
+
+		expect(entries.map(({ videoId, liveStatus }) => ({ videoId, liveStatus }))).toEqual([
+			{ videoId: 'styled-live', liveStatus: 'live' },
+			{ videoId: 'icon-upcoming', liveStatus: 'upcoming' },
+			{ videoId: 'text-live-now', liveStatus: 'live' },
+		]);
+	});
 });

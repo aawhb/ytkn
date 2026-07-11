@@ -1,4 +1,4 @@
-import type { GenerationOptions, MediaEmbedMode, PlaylistTranscriptResponse, TranscriptResponse } from '../types';
+import type { GenerationOptions, MediaEmbedMode, TranscriptResponse, VideoCollectionTranscriptResponse } from '../types';
 import { DEFAULT_MEDIA_EMBED_MODE } from '../defaults';
 import { normalizeWhitespace } from '../utils';
 import { thumbnailUrlForQuality } from '../youtube/metadata';
@@ -33,7 +33,7 @@ export function buildMediaEmbed(
 	return `![${escapeMarkdownAltText(title)}](${url})`;
 }
 
-function resolvePlaylistThumbnailUrl(playlist: PlaylistTranscriptResponse, thumbnailUrl: string | null): string | null {
+function resolvePlaylistThumbnailUrl(playlist: VideoCollectionTranscriptResponse, thumbnailUrl: string | null): string | null {
 	if (thumbnailUrl) {
 		return thumbnailUrl;
 	}
@@ -52,12 +52,12 @@ function resolvePlaylistThumbnailUrl(playlist: PlaylistTranscriptResponse, thumb
 	return firstVideoId ? thumbnailUrlForQuality(firstVideoId, 'high') : null;
 }
 
-function resolvePlaylistVideoEmbedUrl(playlist: PlaylistTranscriptResponse): string | null {
+function resolvePlaylistVideoEmbedUrl(playlist: VideoCollectionTranscriptResponse): string | null {
 	return playlist.transcripts[0]?.url ?? playlist.entries[0]?.url ?? null;
 }
 
 export function buildPlaylistMediaEmbed(
-	playlist: PlaylistTranscriptResponse,
+	playlist: VideoCollectionTranscriptResponse,
 	thumbnailUrl: string | null,
 	options?: GenerationOptions,
 ): string | null {

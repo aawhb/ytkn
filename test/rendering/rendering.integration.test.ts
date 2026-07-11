@@ -624,6 +624,19 @@ describe('renderQueueBatchReport', () => {
 		expect(result).not.toContain('|');
 	});
 
+	it('labels a directly submitted Short', () => {
+		const result = renderQueueBatchReport({
+			batchId,
+			entries: [{
+				kind: 'video', runId: 'r1', batchId, ordinal: 1,
+				url: 'https://youtube.com/shorts/abcdefghijk', displayTitle: 'A Short',
+				contentType: 'shorts', outcome: 'completed',
+			}],
+		});
+
+		expect(result).toContain('- Content: Short');
+	});
+
 	it('renders nested playlist entries', () => {
 		const report = {
 			batchId,
@@ -655,6 +668,35 @@ describe('renderQueueBatchReport', () => {
 		expect(result).toContain('- Language: `en`');
 		expect(result).toContain('2. **Skipped** · Vid B');
 		expect(result).toContain('- Reason: No transcript');
+	});
+
+	it('renders channel content selections and nested outcomes', () => {
+		const report = {
+			batchId,
+			entries: [{
+				kind: 'channel' as const,
+				runId: 'r1', batchId, ordinal: 1,
+				url: 'https://youtube.com/@channel',
+				displayTitle: 'Channel',
+				channelTitle: 'Channel Name',
+				channelUrl: 'https://youtube.com/@channel',
+				contentTypes: ['videos', 'shorts', 'streams'] as Array<'videos' | 'shorts' | 'streams'>,
+				outcome: 'completed' as const,
+				entries: [
+					{ title: 'Video', url: 'https://yt/a', position: 1, contentType: 'videos' as const, outcome: 'completed' as const },
+					{ title: 'Short', url: 'https://yt/b', position: 2, contentType: 'shorts' as const, outcome: 'skipped' as const },
+				],
+			}],
+		};
+
+		const result = renderQueueBatchReport(report);
+
+		expect(result).toContain('1. **Completed** · Channel Name');
+		expect(result).toContain('- Content: Videos, Shorts, Streams');
+		expect(result).toContain('- Counts: 2 total, 1 completed, 1 skipped, 0 failed, 0 canceled');
+		expect(result).toContain('- Items:');
+		expect(result).toContain('1. **Completed** · Video · Video');
+		expect(result).toContain('2. **Skipped** · Short · Short');
 	});
 
 	it('counts a playlist-level failure as one item when no child entries exist', () => {

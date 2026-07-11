@@ -19,7 +19,9 @@ function makeOptions(useVideoTitleAsNoteName: boolean): EffectiveGenerationOptio
 		controlValues: {},
 		transcriptMode: 'readable',
 		playlistMode: 'combined',
-		transcriptLanguageMode: 'default',
+		channelContentTypes: ['videos', 'shorts', 'streams'],
+		channelVideoLimit: 10,
+		transcriptLanguageMode: 'auto',
 		preferredTranscriptLanguage: '',
 		transcriptFailureMode: 'skip',
 		mediaEmbedMode: 'thumbnail',
@@ -46,6 +48,7 @@ const transcript: TranscriptResponse = {
 	videoId: 'video',
 	title: 'Bad / Title: One?',
 	author: 'Channel',
+	channelUrl: 'https://youtube.com/@channel',
 	lines: [],
 };
 
@@ -54,9 +57,9 @@ const playlist: PlaylistResponse = {
 	playlistId: 'PL123',
 	title: 'Playlist / Name',
 	entries: [
-		{ title: 'One', url: 'https://youtu.be/one', position: 1 },
-		{ title: 'Two', url: 'https://youtu.be/two', position: 2 },
-		{ title: 'Three', url: 'https://youtu.be/three', position: 3 },
+		{ videoId: 'one', title: 'One', url: 'https://youtu.be/one', position: 1 },
+		{ videoId: 'two', title: 'Two', url: 'https://youtu.be/two', position: 2 },
+		{ videoId: 'three', title: 'Three', url: 'https://youtu.be/three', position: 3 },
 	],
 };
 

@@ -42,14 +42,16 @@ function addOutcomeToCounts(counts: RunReportCounts, outcome: QueueRunOutcome): 
 	counts[outcome] += 1;
 }
 
-function countPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][number], { kind: 'playlist' }>): RunReportCounts {
+type CollectionRunReportEntry = Exclude<QueueBatchReport['entries'][number], { kind: 'video' }>;
+
+function countPlaylistRunReportEntry(entry: CollectionRunReportEntry): RunReportCounts {
 	const counts = emptyRunReportCounts();
 	addRunReportEntryToCounts(counts, entry);
 	return counts;
 }
 
 function addRunReportEntryToCounts(counts: RunReportCounts, entry: QueueBatchReport['entries'][number]): void {
-	if (entry.kind === 'playlist' && entry.entries.length > 0) {
+	if (entry.kind !== 'video' && entry.entries.length > 0) {
 		for (const playlistEntry of entry.entries) {
 			addOutcomeToCounts(counts, playlistEntry.outcome);
 		}
@@ -82,12 +84,21 @@ function appendRunReportWarnings(lines: string[], warnings: string[] | undefined
 	}
 }
 
+function formatContentType(contentType: 'videos' | 'shorts' | 'streams'): string {
+	if (contentType === 'shorts') return 'Short';
+	if (contentType === 'streams') return 'Stream replay';
+	return 'Video';
+}
+
 function buildVideoRunReportEntry(entry: Extract<QueueBatchReport['entries'][number], { kind: 'video' }>, index: number): string {
 	const label = formatRunReportOutcomeLabel(entry.outcome);
 	const title = stripRunOrdinalPrefix(entry.displayTitle, entry.ordinal);
 	const lines = [`${index + 1}. **${label}** · ${normalizeWhitespace(title)}`];
 
 	lines.push(`   - Run: #${entry.ordinal}`);
+	if (entry.contentType === 'shorts') {
+		lines.push('   - Content: Short');
+	}
 	if (entry.transcriptLanguageCode) {
 		lines.push(`   - Language: \`${entry.transcriptLanguageCode}\``);
 	}
@@ -102,9 +113,12 @@ function buildVideoRunReportEntry(entry: Extract<QueueBatchReport['entries'][num
 	return lines.join('\n');
 }
 
-function buildPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][number], { kind: 'playlist' }>, index: number): string {
+function buildPlaylistRunReportEntry(entry: CollectionRunReportEntry, index: number): string {
 	const label = formatRunReportOutcomeLabel(entry.outcome);
-	const title = normalizeWhitespace(entry.playlistTitle || stripRunOrdinalPrefix(entry.displayTitle, entry.ordinal));
+	const title = normalizeWhitespace(
+		(entry.kind === 'channel' ? entry.channelTitle : entry.playlistTitle)
+		|| stripRunOrdinalPrefix(entry.displayTitle, entry.ordinal),
+	);
 	const lines = [`${index + 1}. **${label}** · ${title}`];
 
 	lines.push(`   - Run: #${entry.ordinal}`);
@@ -115,12 +129,16 @@ function buildPlaylistRunReportEntry(entry: Extract<QueueBatchReport['entries'][
 		lines.push(`   - Reason: ${normalizeWhitespace(entry.reason)}`);
 	}
 	appendRunReportWarnings(lines, entry.warnings, '   ');
+	if (entry.kind === 'channel' && entry.contentTypes.length > 0) {
+		lines.push(`   - Content: ${entry.contentTypes.map((type) => type === 'streams' ? 'Streams' : `${type[0].toUpperCase()}${type.slice(1)}`).join(', ')}`);
+	}
 	lines.push(`   - Counts: ${formatRunReportCounts(countPlaylistRunReportEntry(entry))}`);
 	if (entry.entries.length > 0) {
-		lines.push('   - Videos:');
+		lines.push(entry.kind === 'channel' ? '   - Items:' : '   - Videos:');
 		entry.entries.forEach((playlistEntry, playlistIndex) => {
 			const playlistEntryLabel = formatRunReportOutcomeLabel(playlistEntry.outcome);
-			lines.push(`      ${playlistIndex + 1}. **${playlistEntryLabel}** · ${normalizeWhitespace(playlistEntry.title)}`);
+			const contentLabel = playlistEntry.contentType ? ` · ${formatContentType(playlistEntry.contentType)}` : '';
+			lines.push(`      ${playlistIndex + 1}. **${playlistEntryLabel}**${contentLabel} · ${normalizeWhitespace(playlistEntry.title)}`);
 			if (playlistEntry.transcriptLanguageCode) {
 				lines.push(`         - Language: \`${playlistEntry.transcriptLanguageCode}\``);
 			}

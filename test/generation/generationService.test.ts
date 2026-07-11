@@ -16,11 +16,13 @@ vi.mock('../../src/ai/providers/factory', () => ({
 }));
 
 import { GenerationService } from '../../src/generation/generationService';
-import type { GenerationOptions, ModelConfig, PlaylistResponse, PluginSettings, TranscriptResponse } from '../../src/types';
+import type { ChannelResponse, GenerationOptions, ModelConfig, PlaylistResponse, PluginSettings, TranscriptResponse } from '../../src/types';
 import type { QueuedRun } from '../../src/queue/runQueueService';
 
 const VIDEO_URL = 'https://www.youtube.com/watch?v=abcdefghijk';
+const SHORT_URL = 'https://www.youtube.com/shorts/abcdefghijk';
 const PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PL123';
+const CHANNEL_URL = 'https://www.youtube.com/@channel';
 
 const sampleModel: ModelConfig = {
 	name: 'local-model',
@@ -54,6 +56,19 @@ function makePlaylist(entries: PlaylistResponse['entries'] = [
 		playlistId: 'PL123',
 		title: 'Metadata Playlist',
 		entries,
+	};
+}
+
+function makeChannel(): ChannelResponse {
+	return {
+		url: CHANNEL_URL,
+		channelId: 'UC123',
+		title: 'Metadata Channel',
+		contentTypes: ['videos', 'shorts'],
+		entries: [
+			{ videoId: 'video000001', url: 'https://www.youtube.com/watch?v=video000001', position: 1, title: 'Channel Video', contentType: 'videos' },
+			{ videoId: 'short000001', url: 'https://www.youtube.com/watch?v=short000001', position: 2, title: 'Channel Short', contentType: 'shorts' },
+		],
 	};
 }
 
@@ -224,6 +239,50 @@ describe('GenerationService metadata-only runs', () => {
 		expect(entry.entries.every((item) => item.transcriptLanguageCode === undefined)).toBe(true);
 		expect(youtubeService.fetchVideoMetadata).toHaveBeenCalledTimes(2);
 		expect(youtubeService.fetchTranscript).not.toHaveBeenCalled();
+	});
+
+	it('creates a first-class combined channel note from the selected content types', async () => {
+		const { app, contents } = makeApp();
+		const channel = makeChannel();
+		const youtubeService = {
+			fetchChannel: vi.fn(async () => channel),
+		};
+		const service = new GenerationService(app, youtubeService as any, makeSettings(), vi.fn());
+
+		const entry = await service.executeRun(makeRun(CHANNEL_URL, metadataOptions({
+			playlistMode: 'combined',
+			channelContentTypes: ['videos', 'shorts'],
+			channelVideoLimit: 10,
+		}), 'channel' as never), new AbortController().signal);
+
+		expect(youtubeService.fetchChannel).toHaveBeenCalledWith(CHANNEL_URL, {
+			contentTypes: ['videos', 'shorts'],
+			videoLimit: 10,
+		});
+		expect(entry.kind).toBe('channel');
+		if (entry.kind !== 'channel') throw new Error('Expected channel report entry');
+		expect(entry.channelTitle).toBe('Metadata Channel');
+		expect(entry.entries).toHaveLength(2);
+		expect(entry.entries.map((item) => item.contentType)).toEqual(['videos', 'shorts']);
+		const content = Array.from(contents.values()).join('\n');
+		expect(content).toContain('source: youtube-channel');
+		expect(content).toContain(`channelUrl: "${CHANNEL_URL}"`);
+		expect(content).not.toContain('playlistId:');
+	});
+
+	it('marks a directly submitted Shorts URL in the run report entry', async () => {
+		const { app } = makeApp();
+		const youtubeService = {
+			fetchVideoMetadata: vi.fn(async () => makeTranscript(SHORT_URL)),
+			fetchTranscript: vi.fn(),
+		};
+		const service = new GenerationService(app, youtubeService as any, makeSettings(), vi.fn());
+
+		const entry = await service.executeRun(makeRun(SHORT_URL, metadataOptions(), 'video'), new AbortController().signal);
+
+		expect(entry.kind).toBe('video');
+		if (entry.kind !== 'video') throw new Error('Expected video report entry');
+		expect(entry.contentType).toBe('shorts');
 	});
 
 	it('creates combined metadata-only playlist notes without per-video caption or metadata fetches', async () => {

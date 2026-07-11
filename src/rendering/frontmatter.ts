@@ -1,4 +1,4 @@
-import type { FrontmatterDeclaration, FrontmatterFieldType, GenerationOptions, PlaylistTranscriptResponse, TranscriptResponse } from '../types';
+import type { FrontmatterDeclaration, FrontmatterFieldType, GenerationOptions, TranscriptResponse, VideoCollectionTranscriptResponse } from '../types';
 import type { Template } from '../types';
 import { DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST } from '../defaults';
 
@@ -150,12 +150,32 @@ export function buildVideoFrontmatter(
 }
 
 export function buildPlaylistFrontmatter(
-	playlist: PlaylistTranscriptResponse,
+	playlist: VideoCollectionTranscriptResponse,
 	options: GenerationOptions | undefined,
 	template: Template | null,
 	extractedFrontmatter: Record<string, unknown>,
 ): RenderedFrontmatter {
 	return buildFrontmatter(playlist.title, options, template, extractedFrontmatter, (lines, allowlist) => {
+		if ('channelId' in playlist) {
+			if (allowlist.has('source')) {
+				lines.push('source: youtube-channel');
+			}
+			if (allowlist.has('channel')) {
+				lines.push(`channel: ${quoteYamlValue(playlist.title)}`);
+			}
+			if (allowlist.has('channelUrl')) {
+				lines.push(`channelUrl: ${quoteYamlValue(playlist.url)}`);
+			}
+			if (allowlist.has('channelId')) {
+				lines.push(`channelId: ${quoteYamlValue(playlist.channelId)}`);
+			}
+			if (allowlist.has('videoCount')) {
+				const videoCount = playlist.transcripts.length > 0 ? playlist.transcripts.length : playlist.entries.length;
+				lines.push(`videoCount: ${videoCount}`);
+			}
+			return;
+		}
+
 		if (allowlist.has('source')) {
 			lines.push('source: youtube-playlist');
 		}

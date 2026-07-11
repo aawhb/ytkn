@@ -1,6 +1,7 @@
 import type {
 	PlaylistEntry,
 	PlaylistRunReportEntry,
+	ChannelContentType,
 } from '../types';
 import { isAbortError } from '../queue/progress';
 import { getErrorMessage } from '../utils';
@@ -14,7 +15,7 @@ export interface PlaylistOutcomeCounts {
 }
 
 export function buildPlaylistReportEntry(
-	entry: { title: string; url: string; position: number },
+	entry: { title: string; url: string; position: number; contentType?: ChannelContentType },
 	outcome: PlaylistRunReportEntry['outcome'],
 	opts?: {
 		title?: string;
@@ -28,6 +29,7 @@ export function buildPlaylistReportEntry(
 		title: opts?.title ?? entry.title,
 		url: entry.url,
 		position: entry.position,
+		...(entry.contentType !== undefined ? { contentType: entry.contentType } : {}),
 		outcome,
 		...(opts?.reason !== undefined ? { reason: opts.reason } : {}),
 		...(opts?.transcriptLanguageCode !== undefined ? { transcriptLanguageCode: opts.transcriptLanguageCode } : {}),
@@ -55,13 +57,18 @@ export function classifyPlaylistEntryError(
 	return { kind: 'other', message };
 }
 
-export function appendCanceledEntries(entries: PlaylistEntry[], reportEntries: PlaylistRunReportEntry[], startIndex: number): void {
+export function appendCanceledEntries(
+	entries: Array<PlaylistEntry & { contentType?: ChannelContentType }>,
+	reportEntries: PlaylistRunReportEntry[],
+	startIndex: number,
+): void {
 	for (let index = startIndex; index < entries.length; index += 1) {
 		const entry = entries[index];
 		reportEntries.push({
 			title: entry.title,
 			url: entry.url,
 			position: entry.position,
+			...(entry.contentType !== undefined ? { contentType: entry.contentType } : {}),
 			outcome: 'canceled',
 			reason: 'Generation canceled by user.',
 		});

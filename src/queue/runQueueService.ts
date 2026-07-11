@@ -1,8 +1,9 @@
 import type { GenerationOptions, QueueBatchReport, QueueRunOutcome, QueueRunReportEntry, RunReportLocation } from '../types';
 import { createJobId, getErrorMessage } from '../utils';
+import { classifyVideoContentType, extractChannelRef } from '../youtube/urls';
 import { isAbortError } from './progress';
 
-type QueuedRunKind = 'video' | 'playlist';
+type QueuedRunKind = 'video' | 'playlist' | 'channel';
 
 export interface QueuedRunInsertionTargetRef {
 	filePath: string;
@@ -78,10 +79,27 @@ function nextOrdinal(): number {
 }
 
 function buildUrlFallbackTitle(run: QueuedRun): string {
-	return `#${run.ordinal} · ${run.kind}:${run.url.split('/').pop() ?? run.url}`;
+	const channelRef = run.kind === 'channel' ? extractChannelRef(run.url) : null;
+	const urlLabel = channelRef?.value ?? run.url.split('/').pop() ?? run.url;
+	return `#${run.ordinal} · ${run.kind}:${urlLabel}`;
 }
 
 function buildCanceledEntry(run: QueuedRun): QueueRunReportEntry {
+	if (run.kind === 'channel') {
+		return {
+			kind: 'channel',
+			runId: run.id,
+			batchId: run.batchId,
+			ordinal: run.ordinal,
+			url: run.url,
+			displayTitle: run.displayTitle,
+			channelTitle: run.displayTitle,
+			channelUrl: run.url,
+			contentTypes: run.options.channelContentTypes ?? [],
+			outcome: 'canceled',
+			entries: [],
+		};
+	}
 	if (run.kind === 'playlist') {
 		return {
 			kind: 'playlist',
@@ -103,6 +121,7 @@ function buildCanceledEntry(run: QueuedRun): QueueRunReportEntry {
 		ordinal: run.ordinal,
 		url: run.url,
 		displayTitle: run.displayTitle,
+		contentType: classifyVideoContentType(run.url),
 		outcome: 'canceled',
 		reason: 'Removed from queue.',
 	};
@@ -111,6 +130,22 @@ function buildCanceledEntry(run: QueuedRun): QueueRunReportEntry {
 function buildErrorEntry(run: QueuedRun, error: unknown, signal: AbortSignal): QueueRunReportEntry {
 	const outcome: QueueRunOutcome = isAbortError(error, signal) ? 'canceled' : 'failed';
 	const reason = getErrorMessage(error);
+	if (run.kind === 'channel') {
+		return {
+			kind: 'channel',
+			runId: run.id,
+			batchId: run.batchId,
+			ordinal: run.ordinal,
+			url: run.url,
+			displayTitle: run.displayTitle,
+			channelTitle: run.displayTitle,
+			channelUrl: run.url,
+			contentTypes: run.options.channelContentTypes ?? [],
+			outcome,
+			reason,
+			entries: [],
+		};
+	}
 	if (run.kind === 'playlist') {
 		return {
 			kind: 'playlist',
@@ -133,6 +168,7 @@ function buildErrorEntry(run: QueuedRun, error: unknown, signal: AbortSignal): Q
 		ordinal: run.ordinal,
 		url: run.url,
 		displayTitle: run.displayTitle,
+		contentType: classifyVideoContentType(run.url),
 		outcome,
 		reason,
 	};

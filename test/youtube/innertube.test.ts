@@ -7,10 +7,12 @@ vi.mock('obsidian', () => ({
 }));
 
 import {
+	requestChannelBrowse,
 	requestContinuation,
 	requestOEmbedTitle,
 	requestPlayer,
 	requestPlaylistBrowse,
+	requestResolveUrl,
 	requestSupplementalVideoMetadata,
 } from '../../src/youtube/innertube';
 
@@ -56,6 +58,19 @@ describe('InnerTube request wrappers', () => {
 
 		await expect(requestContinuation('token')).resolves.toEqual({ ok: true });
 		expect(JSON.parse(requestUrlMock.mock.calls[1][0].body)).toMatchObject({ continuation: 'token' });
+	});
+
+	it('resolves channel URLs and browses channel metadata', async () => {
+		requestUrlMock.mockResolvedValue({ text: '{"ok":true}' });
+
+		await expect(requestResolveUrl('https://www.youtube.com/@channel')).resolves.toEqual({ ok: true });
+		expect(requestUrlMock.mock.calls[0][0].url).toContain('/navigation/resolve_url');
+		expect(JSON.parse(requestUrlMock.mock.calls[0][0].body)).toMatchObject({
+			url: 'https://www.youtube.com/@channel',
+		});
+
+		await expect(requestChannelBrowse('UC123')).resolves.toEqual({ ok: true });
+		expect(JSON.parse(requestUrlMock.mock.calls[1][0].body)).toMatchObject({ browseId: 'UC123' });
 	});
 
 	it('reads oEmbed titles from requestUrl json', async () => {

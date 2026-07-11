@@ -388,6 +388,107 @@ describe('YouTubeService.fetchPlaylist', () => {
 		return item;
 	}
 
+	it('reuses a completed playlist title preflight when execution starts later', async () => {
+		let browseRequests = 0;
+		const payload = {
+			metadata: { playlistMetadataRenderer: { title: 'Retained Playlist' } },
+			contents: [renderer('retained001', 'Retained video', '1')],
+		};
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (body.includes('"browseId":"VLPLRETAINED"')) {
+				browseRequests += 1;
+				return { json: {}, text: JSON.stringify(payload) };
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const svc = new YouTubeService();
+		expect(await svc.fetchPlaylistTitle('PLRETAINED')).toBe('Retained Playlist');
+		const playlist = await svc.fetchPlaylist('https://www.youtube.com/playlist?list=PLRETAINED');
+
+		expect(playlist.title).toBe('Retained Playlist');
+		expect(browseRequests).toBe(1);
+		spy.mockRestore();
+	});
+
+	it('evicts a failed playlist title preflight before retrying', async () => {
+		let browseRequests = 0;
+		const payload = {
+			metadata: { playlistMetadataRenderer: { title: 'Recovered Playlist' } },
+			contents: [renderer('recovered01', 'Recovered video', '1')],
+		};
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (!body.includes('"browseId":"VLPLRECOVER"')) {
+				throw new Error(`Unexpected request: ${request.url} ${body}`);
+			}
+			browseRequests += 1;
+			if (browseRequests === 1) {
+				throw new Error('Temporary browse failure');
+			}
+			return { json: {}, text: JSON.stringify(payload) };
+		});
+
+		const svc = new YouTubeService();
+		await expect(svc.fetchPlaylistTitle('PLRECOVER')).rejects.toThrow('Temporary browse failure');
+		expect(await svc.fetchPlaylistTitle('PLRECOVER')).toBe('Recovered Playlist');
+		await svc.fetchPlaylist('https://www.youtube.com/playlist?list=PLRECOVER');
+
+		expect(browseRequests).toBe(2);
+		spy.mockRestore();
+	});
+
+	it('does not retain playlist browse data from execution-only calls', async () => {
+		let browseRequests = 0;
+		const payload = {
+			metadata: { playlistMetadataRenderer: { title: 'Execution Playlist' } },
+			contents: [renderer('execution01', 'Execution video', '1')],
+		};
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (body.includes('"browseId":"VLPLEXECUTE"')) {
+				browseRequests += 1;
+				return { json: {}, text: JSON.stringify(payload) };
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const svc = new YouTubeService();
+		await svc.fetchPlaylist('https://www.youtube.com/playlist?list=PLEXECUTE');
+		await svc.fetchPlaylist('https://www.youtube.com/playlist?list=PLEXECUTE');
+
+		expect(browseRequests).toBe(2);
+		spy.mockRestore();
+	});
+
+	it('shares the initial browse between concurrent title resolution and execution', async () => {
+		let browseRequests = 0;
+		const payload = {
+			metadata: { playlistMetadataRenderer: { title: 'Shared Playlist' } },
+			contents: [renderer('shared00001', 'Shared video', '1')],
+		};
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (body.includes('"browseId":"VLPLSHARED"')) {
+				browseRequests += 1;
+				return { json: {}, text: JSON.stringify(payload) };
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const svc = new YouTubeService();
+		const [title, playlist] = await Promise.all([
+			svc.fetchPlaylistTitle('PLSHARED'),
+			svc.fetchPlaylist('https://www.youtube.com/playlist?list=PLSHARED'),
+		]);
+
+		expect(title).toBe('Shared Playlist');
+		expect(playlist.title).toBe('Shared Playlist');
+		expect(browseRequests).toBe(1);
+		spy.mockRestore();
+	});
+
 	it('fetches the initial playlist page through Browse JSON and follows continuations', async () => {
 		const firstPage = {
 			header: {
@@ -596,6 +697,450 @@ describe('YouTubeService.fetchPlaylist', () => {
 		expect(continuationBodies).toHaveLength(1);
 		expect(continuationBodies[0]).toContain('PLAYLIST_NEXT_TOKEN');
 		expect(continuationBodies[0]).not.toContain('UNRELATED_SECTION_TOKEN');
+		spy.mockRestore();
+	});
+});
+
+describe('YouTubeService.fetchChannel', () => {
+	it('continues when a selected channel content type has no feed', async () => {
+		const channelId = 'UC1234567890';
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (body.includes(`"browseId":"${channelId}"`)) {
+				return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Videos only' } } }) };
+			}
+			if (body.includes('"browseId":"VLUULF1234567890"')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						contents: [{
+							playlistVideoRenderer: {
+								videoId: 'available01',
+								title: { simpleText: 'Available video' },
+							},
+						}],
+					}),
+				};
+			}
+			if (body.includes('"browseId":"VLUULV1234567890"')) {
+				if ((request as { throw?: boolean }).throw === false) {
+					return {
+						status: 404,
+						json: { error: { status: 'NOT_FOUND' } },
+						text: JSON.stringify({ error: { status: 'NOT_FOUND' } }),
+					};
+				}
+				throw new Error('Request failed, status 404');
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const channel = await new YouTubeService().fetchChannel(
+			`https://www.youtube.com/channel/${channelId}`,
+			{ contentTypes: ['videos', 'streams'], videoLimit: 10 },
+		);
+
+		expect(channel.title).toBe('Videos only');
+		expect(channel.entries.map(({ videoId, contentType }) => ({ videoId, contentType }))).toEqual([
+			{ videoId: 'available01', contentType: 'videos' },
+		]);
+		spy.mockRestore();
+	});
+
+	it('preserves non-404 channel feed failures', async () => {
+		const channelId = 'UC1234567890';
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (body.includes(`"browseId":"${channelId}"`)) {
+				return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Rate limited' } } }) };
+			}
+			if (body.includes('"browseId":"VLUULF1234567890"')) {
+				return {
+					status: 429,
+					json: { error: { status: 'RESOURCE_EXHAUSTED' } },
+					text: JSON.stringify({ error: { status: 'RESOURCE_EXHAUSTED' } }),
+				};
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		await expect(new YouTubeService().fetchChannel(
+			`https://www.youtube.com/channel/${channelId}`,
+			{ contentTypes: ['videos'], videoLimit: 10 },
+		)).rejects.toThrow('YouTube channel feed request failed with status 429');
+		spy.mockRestore();
+	});
+
+	it('reuses a completed channel title preflight when execution starts later', async () => {
+		const channelId = 'UC1234567890';
+		let channelBrowseRequests = 0;
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (request.url.includes('/navigation/resolve_url')) {
+				return { json: {}, text: JSON.stringify({ endpoint: { browseEndpoint: { browseId: channelId } } }) };
+			}
+			if (body.includes(`"browseId":"${channelId}"`)) {
+				channelBrowseRequests += 1;
+				return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Retained Channel' } } }) };
+			}
+			if (body.includes('"browseId":"VLUULF1234567890"')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						contents: [{
+							playlistVideoRenderer: {
+								videoId: 'regular0001',
+								title: { simpleText: 'Regular video' },
+							},
+						}],
+					}),
+				};
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const svc = new YouTubeService();
+		const url = 'https://www.youtube.com/@channel';
+		expect(await svc.fetchChannelTitle(url)).toBe('Retained Channel');
+		const channel = await svc.fetchChannel(url, { contentTypes: ['videos'], videoLimit: 1 });
+
+		expect(channel.title).toBe('Retained Channel');
+		expect(channelBrowseRequests).toBe(1);
+		spy.mockRestore();
+	});
+
+	it('evicts a failed channel title preflight before retrying', async () => {
+		const channelId = 'UC1234567890';
+		let channelBrowseRequests = 0;
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (request.url.includes('/navigation/resolve_url')) {
+				return { json: {}, text: JSON.stringify({ endpoint: { browseEndpoint: { browseId: channelId } } }) };
+			}
+			if (body.includes(`"browseId":"${channelId}"`)) {
+				channelBrowseRequests += 1;
+				if (channelBrowseRequests === 1) {
+					throw new Error('Temporary channel failure');
+				}
+				return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Recovered Channel' } } }) };
+			}
+			if (body.includes('"browseId":"VLUULF1234567890"')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						contents: [{
+							playlistVideoRenderer: {
+								videoId: 'recovered01',
+								title: { simpleText: 'Recovered video' },
+							},
+						}],
+					}),
+				};
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const svc = new YouTubeService();
+		const url = 'https://www.youtube.com/@channel';
+		await expect(svc.fetchChannelTitle(url)).rejects.toThrow('Temporary channel failure');
+		expect(await svc.fetchChannelTitle(url)).toBe('Recovered Channel');
+		await svc.fetchChannel(url, { contentTypes: ['videos'], videoLimit: 1 });
+
+		expect(channelBrowseRequests).toBe(2);
+		spy.mockRestore();
+	});
+
+	it('does not retain channel metadata from execution-only calls', async () => {
+		const channelId = 'UC1234567890';
+		let channelBrowseRequests = 0;
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (body.includes(`"browseId":"${channelId}"`)) {
+				channelBrowseRequests += 1;
+				return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Execution Channel' } } }) };
+			}
+			if (body.includes('"browseId":"VLUULF1234567890"')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						contents: [{
+							playlistVideoRenderer: {
+								videoId: 'execution01',
+								title: { simpleText: 'Execution video' },
+							},
+						}],
+					}),
+				};
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const svc = new YouTubeService();
+		const url = `https://www.youtube.com/channel/${channelId}`;
+		await svc.fetchChannel(url, { contentTypes: ['videos'], videoLimit: 1 });
+		await svc.fetchChannel(url, { contentTypes: ['videos'], videoLimit: 1 });
+
+		expect(channelBrowseRequests).toBe(2);
+		spy.mockRestore();
+	});
+
+	it('shares channel metadata requests between concurrent title resolution and execution', async () => {
+		const channelId = 'UC1234567890';
+		let resolveRequests = 0;
+		let channelBrowseRequests = 0;
+		let feedBrowseRequests = 0;
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (request.url.includes('/navigation/resolve_url')) {
+				resolveRequests += 1;
+				return { json: {}, text: JSON.stringify({ endpoint: { browseEndpoint: { browseId: channelId } } }) };
+			}
+			if (body.includes(`"browseId":"${channelId}"`)) {
+				channelBrowseRequests += 1;
+				return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Shared Channel' } } }) };
+			}
+			if (body.includes('"browseId":"VLUULF1234567890"')) {
+				feedBrowseRequests += 1;
+				return {
+					json: {},
+					text: JSON.stringify({
+						contents: [{
+							playlistVideoRenderer: {
+								videoId: 'regular0001',
+								title: { simpleText: 'Regular video' },
+							},
+						}],
+					}),
+				};
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const svc = new YouTubeService();
+		const url = 'https://www.youtube.com/@channel';
+		const [title, channel] = await Promise.all([
+			svc.fetchChannelTitle(url),
+			svc.fetchChannel(url, { contentTypes: ['videos'], videoLimit: 1 }),
+		]);
+
+		expect(title).toBe('Shared Channel');
+		expect(channel.title).toBe('Shared Channel');
+		expect(resolveRequests).toBe(1);
+		expect(channelBrowseRequests).toBe(1);
+		expect(feedBrowseRequests).toBe(1);
+		spy.mockRestore();
+	});
+
+	it('collects only selected channel content types with a per-type limit and deduplicates videos', async () => {
+		const channelId = 'UC_x5XG1OV2P6uZZ5FSM9Ttw';
+		const channelTail = channelId.slice(2);
+		const browseBodies: string[] = [];
+		const playlistPayload = (videoId: string, title: string) => ({
+			contents: [{
+				playlistVideoRenderer: {
+					videoId,
+					index: { simpleText: '1' },
+					title: { simpleText: title },
+				},
+			}],
+		});
+
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (request.url.includes('/navigation/resolve_url')) {
+				return { json: {}, text: JSON.stringify({ endpoint: { browseEndpoint: { browseId: channelId } } }) };
+			}
+			if (request.url.includes('/youtubei/v1/browse')) {
+				browseBodies.push(body);
+				if (body.includes(`"browseId":"${channelId}"`)) {
+					return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Channel &amp; Name' } } }) };
+				}
+				if (body.includes(`"browseId":"VLUULF${channelTail}"`)) {
+					return { json: {}, text: JSON.stringify(playlistPayload('regular0001', 'Regular video')) };
+				}
+				if (body.includes(`"browseId":"VLUUSH${channelTail}"`)) {
+					return { json: {}, text: JSON.stringify(playlistPayload('short000001', 'Short video')) };
+				}
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const svc = new YouTubeService();
+		const channel = await svc.fetchChannel('https://www.youtube.com/@channel', {
+			contentTypes: ['videos', 'shorts'],
+			videoLimit: 1,
+		});
+
+		expect(channel).toEqual({
+			url: 'https://www.youtube.com/@channel',
+			channelId,
+			title: 'Channel & Name',
+			contentTypes: ['videos', 'shorts'],
+			entries: [
+				{
+					videoId: 'regular0001',
+					url: 'https://www.youtube.com/watch?v=regular0001',
+					position: 1,
+					title: 'Regular video',
+					contentType: 'videos',
+				},
+				{
+					videoId: 'short000001',
+					url: 'https://www.youtube.com/watch?v=short000001',
+					position: 2,
+					title: 'Short video',
+					contentType: 'shorts',
+				},
+			],
+		});
+		expect(browseBodies.some((body) => body.includes(`VLUULV${channelTail}`))).toBe(false);
+		spy.mockRestore();
+	});
+
+	it('counts only completed stream replays toward the stream limit', async () => {
+		const channelId = 'UC1234567890';
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (body.includes(`"browseId":"${channelId}"`)) {
+				return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Stream Channel' } } }) };
+			}
+			if (body.includes('"browseId":"VLUULV1234567890"')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						contents: [
+							{
+								playlistVideoRenderer: {
+									videoId: 'live0000001',
+									title: { simpleText: 'Live now' },
+									thumbnailOverlays: [{
+										thumbnailOverlayTimeStatusRenderer: {
+											style: 'DEFAULT',
+											text: { simpleText: 'LIVE NOW' },
+										},
+									}],
+								},
+							},
+							{
+								playlistVideoRenderer: {
+									videoId: 'replay00001',
+									title: { simpleText: 'Completed replay' },
+								},
+							},
+						],
+					}),
+				};
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const channel = await new YouTubeService().fetchChannel(
+			`https://www.youtube.com/channel/${channelId}`,
+			{ contentTypes: ['streams'], videoLimit: 1 },
+		);
+
+		expect(channel.entries).toHaveLength(1);
+		expect(channel.entries[0]).toMatchObject({
+			videoId: 'replay00001',
+			contentType: 'streams',
+		});
+		spy.mockRestore();
+	});
+
+	it('skips live and upcoming entries in video and short feeds before applying each limit', async () => {
+		const channelId = 'UC1234567890';
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (body.includes(`"browseId":"${channelId}"`)) {
+				return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Mixed Channel' } } }) };
+			}
+			if (body.includes('"browseId":"VLUULF1234567890"')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						contents: [
+							{
+								playlistVideoRenderer: {
+									videoId: 'live-video01',
+									title: { simpleText: 'Live video' },
+									badges: [{ metadataBadgeRenderer: { style: 'BADGE_STYLE_TYPE_LIVE_NOW' } }],
+								},
+							},
+							{
+								playlistVideoRenderer: {
+									videoId: 'video-replay',
+									title: { simpleText: 'Completed video' },
+								},
+							},
+						],
+					}),
+				};
+			}
+			if (body.includes('"browseId":"VLUUSH1234567890"')) {
+				return {
+					json: {},
+					text: JSON.stringify({
+						contents: [
+							{
+								playlistVideoRenderer: {
+									videoId: 'upcoming001',
+									title: { simpleText: 'Upcoming short' },
+									upcomingEventData: { startTime: '123' },
+								},
+							},
+							{
+								playlistVideoRenderer: {
+									videoId: 'short-replay',
+									title: { simpleText: 'Completed short' },
+								},
+							},
+						],
+					}),
+				};
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const channel = await new YouTubeService().fetchChannel(
+			`https://www.youtube.com/channel/${channelId}`,
+			{ contentTypes: ['videos', 'shorts'], videoLimit: 1 },
+		);
+
+		expect(channel.entries.map(({ videoId, contentType }) => ({ videoId, contentType }))).toEqual([
+			{ videoId: 'video-replay', contentType: 'videos' },
+			{ videoId: 'short-replay', contentType: 'shorts' },
+		]);
+		spy.mockRestore();
+	});
+
+	it('deduplicates a video that appears in more than one selected channel feed', async () => {
+		const channelId = 'UC1234567890';
+		const item = (videoId: string, title: string) => ({
+			playlistVideoRenderer: { videoId, title: { simpleText: title } },
+		});
+		const spy = vi.spyOn(obsidianMock, 'requestUrl').mockImplementation(async (request) => {
+			const body = typeof request.body === 'string' ? request.body : '';
+			if (body.includes(`"browseId":"${channelId}"`)) {
+				return { json: {}, text: JSON.stringify({ metadata: { channelMetadataRenderer: { title: 'Channel' } } }) };
+			}
+			if (body.includes('"browseId":"VLUULF1234567890"')) {
+				return { json: {}, text: JSON.stringify({ contents: [item('shared00001', 'Shared')] }) };
+			}
+			if (body.includes('"browseId":"VLUUSH1234567890"')) {
+				return { json: {}, text: JSON.stringify({ contents: [item('shared00001', 'Shared'), item('short000001', 'Short')] }) };
+			}
+			throw new Error(`Unexpected request: ${request.url} ${body}`);
+		});
+
+		const channel = await new YouTubeService().fetchChannel(
+			`https://www.youtube.com/channel/${channelId}`,
+			{ contentTypes: ['videos', 'shorts'], videoLimit: null },
+		);
+
+		expect(channel.entries.map(({ videoId, contentType }) => ({ videoId, contentType }))).toEqual([
+			{ videoId: 'shared00001', contentType: 'videos' },
+			{ videoId: 'short000001', contentType: 'shorts' },
+		]);
 		spy.mockRestore();
 	});
 });

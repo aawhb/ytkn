@@ -8,6 +8,7 @@ import type { GenerationFormState } from './generationFormState';
 import { buildGenerationFormState, seedTemplateControlValues } from './generationFormState';
 import { buildGenerationSubmit } from './generationSubmit';
 import type {
+	ChannelContentType,
 	ControlDeclaration,
 	GenerationOptions,
 	InstructionMode,
@@ -25,8 +26,8 @@ import type {
 import { renderModelChainRows } from '../shared/modelChainRows';
 import {
 	classifyUrls,
-	isPlaylistUrl,
-	isYouTubeUrl,
+	extractChannelRef,
+	extractUnsupportedChannelTab,
 	parseUrls,
 } from '../../youtube/urls';
 import {
@@ -57,6 +58,9 @@ export class GenerationOptionsModal extends Modal {
 	private folderSettingEl?: HTMLElement;
 	private openCreatedNoteSettingEl?: HTMLElement;
 	private playlistQuickSettingEl?: HTMLElement;
+	private channelQuickSettingEls: HTMLElement[] = [];
+	private channelContentInputs = new Map<ChannelContentType, HTMLInputElement>();
+	private lastExplicitChannelTabKey: string | null = null;
 	private perVideoReportSettingEl?: HTMLElement;
 	private preferredLangSettingEl?: HTMLElement;
 	private tldrCalloutSettingEl?: HTMLElement;
@@ -92,6 +96,7 @@ export class GenerationOptionsModal extends Modal {
 			initialOptions: this.initialOptions,
 			hasActiveNote: this.hasActiveNote,
 		});
+		this.lastExplicitChannelTabKey = this.explicitChannelTabSelection(this.state.url)?.key ?? null;
 
 		const wrap = contentEl.createDiv({ cls: 'ytkn-modal' });
 
@@ -158,6 +163,7 @@ export class GenerationOptionsModal extends Modal {
 				.setValue(this.state.url)
 				.onChange((value) => {
 					this.state.url = value;
+					this.syncChannelSelectionFromUrl(value);
 					this.autoGrowUrlField(textarea.inputEl);
 					this.setHint(playlistHintEl);
 				});
@@ -203,23 +209,32 @@ export class GenerationOptionsModal extends Modal {
 			const classifications = classifyUrls(urls);
 			const videos = classifications.filter((c) => c === 'video').length;
 			const playlists = classifications.filter((c) => c === 'playlist').length;
+			const channels = classifications.filter((c) => c === 'channel').length;
 			const invalid = classifications.filter((c) => c === 'invalid').length;
 			const parts: string[] = [];
 			if (videos > 0) parts.push(`${videos} video${videos > 1 ? 's' : ''}`);
 			if (playlists > 0) parts.push(`${playlists} playlist${playlists > 1 ? 's' : ''}`);
+			if (channels > 0) parts.push(`${channels} channel${channels > 1 ? 's' : ''}`);
 			if (invalid > 0) parts.push(`${invalid} invalid`);
 			hintEl.setText(`${urls.length} URLs detected: ${parts.join(', ')}.`);
 			hintEl.show();
 		} else {
-			const isPlaylist = isPlaylistUrl(trimmed);
-			if (isPlaylist) {
+			const classification = classifyUrls([trimmed])[0];
+			const unsupportedChannelTab = extractUnsupportedChannelTab(trimmed);
+			if (classification === 'playlist') {
 				hintEl.setText('Playlist detected.');
 				hintEl.show();
-			} else if (isYouTubeUrl(trimmed)) {
+			} else if (classification === 'channel') {
+				hintEl.setText('Channel detected.');
+				hintEl.show();
+			} else if (classification === 'video') {
 				hintEl.setText('Single video detected.');
 				hintEl.show();
+			} else if (unsupportedChannelTab) {
+				hintEl.setText(`The channel ${unsupportedChannelTab} tab isn't supported. Use a Home, Videos, Shorts, or Live channel link.`);
+				hintEl.show();
 			} else {
-				hintEl.setText('URL does not look like a YouTube link.');
+				hintEl.setText('URL is not a supported YouTube link.');
 				hintEl.show();
 			}
 		}
@@ -228,8 +243,41 @@ export class GenerationOptionsModal extends Modal {
 	}
 
 	private syncPlaylistContextVisibility(): void {
-		const isPlaylist = isPlaylistUrl(this.state.url.trim());
-		this.playlistQuickSettingEl?.toggle(isPlaylist);
+		const classifications = classifyUrls(parseUrls(this.state.url.trim()));
+		const hasPlaylist = classifications.includes('playlist');
+		const hasChannel = classifications.includes('channel');
+		this.playlistQuickSettingEl?.toggle(hasPlaylist || hasChannel);
+		for (const settingEl of this.channelQuickSettingEls) {
+			settingEl.toggle(hasChannel);
+		}
+	}
+
+	private explicitChannelTabSelection(value: string): { key: string; contentType: ChannelContentType } | null {
+		const urls = parseUrls(value.trim());
+		if (urls.length !== 1) {
+			return null;
+		}
+		const ref = extractChannelRef(urls[0]);
+		const contentType = ref?.tab === 'videos'
+			? 'videos'
+			: ref?.tab === 'shorts'
+				? 'shorts'
+				: ref?.tab === 'streams' ? 'streams' : null;
+		return ref && contentType
+			? { key: `${ref.kind}:${ref.value}:${ref.tab}`, contentType }
+			: null;
+	}
+
+	private syncChannelSelectionFromUrl(value: string): void {
+		const selection = this.explicitChannelTabSelection(value);
+		if (!selection || selection.key === this.lastExplicitChannelTabKey) {
+			return;
+		}
+		this.lastExplicitChannelTabKey = selection.key;
+		this.state.channelContentTypes = [selection.contentType];
+		for (const [contentType, input] of this.channelContentInputs) {
+			input.checked = contentType === selection.contentType;
+		}
 	}
 
 	private renderQuickArea(wrap: HTMLElement): void {
@@ -423,6 +471,70 @@ export class GenerationOptionsModal extends Modal {
 			);
 		this.playlistQuickSettingEl = playlistSetting.settingEl;
 		playlistSetting.settingEl.addClass('ytkn-modal__quick-full');
+
+		this.renderChannelControls(quickGrid);
+	}
+
+	private renderChannelControls(containerEl: HTMLElement): void {
+		const contentSetting = new Setting(containerEl)
+			.setName(SETTING_COPY.channelContent.name);
+		contentSetting.settingEl.addClass('ytkn-modal__quick-full');
+		contentSetting.settingEl.addClass('ytkn-channel-content-setting');
+
+		for (const contentType of ['videos', 'shorts', 'streams'] as const) {
+			const label = contentSetting.controlEl.createEl('label', { cls: 'ytkn-channel-content-option' });
+			const checkbox = label.createEl('input', { attr: { type: 'checkbox' } });
+			checkbox.checked = this.state.channelContentTypes.includes(contentType);
+			this.channelContentInputs.set(contentType, checkbox);
+			checkbox.addEventListener('change', () => {
+				const selected = new Set(this.state.channelContentTypes);
+				if (checkbox.checked) {
+					selected.add(contentType);
+				} else {
+					selected.delete(contentType);
+				}
+				this.state.channelContentTypes = (['videos', 'shorts', 'streams'] as ChannelContentType[])
+					.filter((type) => selected.has(type));
+			});
+			label.createSpan({ text: SETTING_COPY.channelContent.options![contentType] });
+		}
+
+		let limitInput: HTMLInputElement;
+		const limitSetting = new Setting(containerEl)
+			.setName(SETTING_COPY.channelItemsPerType.name)
+			.addDropdown((dropdown) => dropdown
+				.addOptions(SETTING_COPY.channelItemsPerType.options!)
+				.setValue(this.state.channelVideoLimit ? 'limited' : 'all')
+				.onChange((value) => {
+					const unlimited = value === 'all';
+					limitSetting.settingEl.toggleClass('ytkn-channel-limit-setting--unlimited', unlimited);
+					limitInput.hidden = unlimited;
+					if (value === 'all') {
+						this.state.channelVideoLimit = '';
+						limitInput.disabled = true;
+					} else {
+						this.state.channelVideoLimit = limitInput.value || '10';
+						limitInput.value = this.state.channelVideoLimit;
+						limitInput.disabled = false;
+					}
+				}))
+			.addText((text) => {
+				text
+					.setPlaceholder(SETTING_COPY.channelItemsPerType.placeholder!)
+					.setValue(this.state.channelVideoLimit || '10')
+					.setDisabled(!this.state.channelVideoLimit)
+					.onChange((value) => (this.state.channelVideoLimit = value));
+				limitInput = text.inputEl;
+				limitInput.type = 'number';
+				limitInput.min = '1';
+				limitInput.step = '1';
+				limitInput.hidden = !this.state.channelVideoLimit;
+			});
+		limitSetting.settingEl.addClass('ytkn-modal__quick-full');
+		limitSetting.settingEl.addClass('ytkn-channel-limit-setting');
+		limitSetting.settingEl.toggleClass('ytkn-channel-limit-setting--unlimited', !this.state.channelVideoLimit);
+
+		this.channelQuickSettingEls = [contentSetting.settingEl, limitSetting.settingEl];
 	}
 
 	private createSection(containerEl: HTMLElement, title: string): HTMLElement {

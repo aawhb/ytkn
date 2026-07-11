@@ -34,6 +34,8 @@ function makeOptions(overrides: Partial<EffectiveGenerationOptions> = {}): Effec
 		linkTimestamps: false,
 		tldrCalloutAtTop: false,
 		...overrides,
+		channelContentTypes: overrides.channelContentTypes ?? ['videos', 'shorts', 'streams'],
+		channelVideoLimit: overrides.channelVideoLimit !== undefined ? overrides.channelVideoLimit : 10,
 	};
 }
 

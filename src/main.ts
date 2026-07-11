@@ -8,7 +8,7 @@ import type {
 import { SettingsTab } from './ui/settings/settingsTab';
 import { notifyError } from './ui/shared/notifications';
 import { YouTubeService } from './youtube/youtubeService';
-import { classifyUrls, isYouTubeUrl } from './youtube/urls';
+import { classifyUrls, extractUnsupportedChannelTab, isYouTubeUrl } from './youtube/urls';
 import { SettingsService } from './settings/settingsService';
 import { GenerationService } from './generation/generationService';
 import { INSERT_AT_CARET_REQUIRES_NOTE } from './generation/constants';
@@ -156,6 +156,8 @@ export class YTKN extends Plugin {
 			generateAiSummary: outputDefaults.generateAiSummary,
 			transcriptMode: outputDefaults.transcriptMode,
 			playlistMode: outputDefaults.playlistMode,
+			channelContentTypes: outputDefaults.channelContentTypes,
+			channelVideoLimit: outputDefaults.channelVideoLimit,
 			transcriptLanguageMode: outputDefaults.transcriptLanguageMode,
 			preferredTranscriptLanguage: outputDefaults.preferredTranscriptLanguage,
 			transcriptFailureMode: outputDefaults.transcriptFailureMode,
@@ -197,11 +199,14 @@ export class YTKN extends Plugin {
 				const classifications = classifyUrls(urls);
 				const invalidIdx = classifications.indexOf('invalid');
 				if (invalidIdx >= 0) {
-					new Notice(`URL #${invalidIdx + 1} is not a YouTube link: ${urls[invalidIdx]}`);
+					const unsupportedChannelTab = extractUnsupportedChannelTab(urls[invalidIdx]);
+					new Notice(unsupportedChannelTab
+						? `URL #${invalidIdx + 1} uses the unsupported channel tab "${unsupportedChannelTab}". Use a channel Home, Videos, Shorts, or Live link.`
+						: `URL #${invalidIdx + 1} is not a supported YouTube link: ${urls[invalidIdx]}`);
 					return;
 				}
 
-				const validClassifications = classifications as Array<'video' | 'playlist'>;
+				const validClassifications = classifications as Array<'video' | 'playlist' | 'channel'>;
 				const targetPolicy = this.resolveBatchTargetPolicy(
 					target,
 					options,
@@ -227,7 +232,7 @@ export class YTKN extends Plugin {
 		target: NoteInsertionTarget | null,
 		options: GenerationOptions,
 		urlCount: number,
-		classifications: Array<'video' | 'playlist'>,
+		classifications: Array<'video' | 'playlist' | 'channel'>,
 	): BatchTargetPolicy | null {
 		if (options.noteDestinationMode === 'folder') {
 			return buildFolderTargetPolicy();
@@ -237,8 +242,8 @@ export class YTKN extends Plugin {
 			return null;
 		}
 		// Editor-target batches cannot safely expand playlist URLs into many per-video writes.
-		if (urlCount > 1 && options.playlistMode === 'per-video' && classifications.includes('playlist')) {
-			new Notice("Multi-URL paste with editor target can't include playlists in per-video mode. Switch playlist mode to combined, switch destination to a folder, or remove playlist links.");
+		if (urlCount > 1 && options.playlistMode === 'per-video' && classifications.some((kind) => kind === 'playlist' || kind === 'channel')) {
+			new Notice("Multi-URL paste with editor target can't include playlists or channels in per-video mode. Switch playlist handling to combined, switch destination to a folder, or remove collection links.");
 			return null;
 		}
 		if (options.noteDestinationMode === 'current-note' && urlCount === 1) {

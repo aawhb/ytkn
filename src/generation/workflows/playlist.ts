@@ -4,10 +4,10 @@ import { isAbortError } from '../../queue/progress';
 import { renderPlaylistNote } from '../../rendering/playlistNote';
 import type {
 	PlaylistEntry,
-	PlaylistResponse,
 	PlaylistRunReportEntry,
-	PlaylistTranscriptResponse,
 	TranscriptResponse,
+	VideoCollectionResponse,
+	VideoCollectionTranscriptResponse,
 } from '../../types';
 import { thumbnailUrlForQuality } from '../../youtube/metadata';
 import { isMetadataOnlyRun, shouldGenerateAiSummary } from '../aiPolicy';
@@ -37,6 +37,11 @@ interface CombinedPlaylistTranscripts {
 	reportEntries: PlaylistRunReportEntry[];
 }
 
+function collectionLabel(collection: VideoCollectionResponse, capitalize = false): string {
+	const label = 'channelId' in collection ? 'channel' : 'playlist';
+	return capitalize ? `${label[0].toUpperCase()}${label.slice(1)}` : label;
+}
+
 function requireCombinedInitialTarget(
 	initialTarget: NoteInsertionTarget | null,
 	effectiveOptions: EffectiveGenerationOptions,
@@ -48,7 +53,7 @@ function requireCombinedInitialTarget(
 
 async function resolveCombinedTarget(
 	context: GenerationWorkflowContext,
-	playlist: PlaylistResponse,
+	playlist: VideoCollectionResponse,
 	initialTarget: NoteInsertionTarget | null,
 	effectiveOptions: EffectiveGenerationOptions,
 ): Promise<CombinedPlaylistTarget> {
@@ -74,7 +79,7 @@ async function resolveCombinedTarget(
 
 async function fetchCombinedPlaylistTranscripts(
 	context: GenerationWorkflowContext,
-	playlist: PlaylistResponse,
+	playlist: VideoCollectionResponse,
 	targetInfo: CombinedPlaylistTarget,
 	effectiveOptions: EffectiveGenerationOptions,
 	progressState: ProgressState,
@@ -94,7 +99,7 @@ async function fetchCombinedPlaylistTranscripts(
 			if (!targetInfo.isAppendMode) {
 				await context.targets.showProgress(targetInfo.target, entry.url, `Fetching transcript ${index + 1}/${playlist.entries.length}...`, progressState);
 			}
-			context.onStatusBar(`Fetching playlist transcript ${index + 1}/${playlist.entries.length}...`);
+			context.onStatusBar(`Fetching ${collectionLabel(playlist)} transcript ${index + 1}/${playlist.entries.length}...`);
 			const transcriptResult = await fetchTranscriptForUrl(context.youtubeService, entry.url, effectiveOptions, signal);
 			const transcript = transcriptResult.transcript;
 
@@ -147,12 +152,13 @@ async function writeCombinedNote(
 
 async function cancelCombinedPlaylist(
 	context: GenerationWorkflowContext,
+	collection: VideoCollectionResponse,
 	target: NoteInsertionTarget,
 	reportEntries: PlaylistRunReportEntry[],
 ): Promise<{ notePath: null; entries: PlaylistRunReportEntry[]; warnings: string[] }> {
 	await context.targets.deleteTargetIfDisposable(target);
 	const { completed, canceled } = countPlaylistOutcomes(reportEntries);
-	new Notice(`Playlist generation canceled (${completed} completed, ${canceled} canceled).`);
+	new Notice(`${collectionLabel(collection, true)} generation canceled (${completed} completed, ${canceled} canceled).`);
 	return { notePath: null, entries: reportEntries, warnings: [] };
 }
 
@@ -166,7 +172,7 @@ function notifyRenderWarnings(warnings: string[]): void {
 
 async function generateCombinedMetadataPlaylistNote(
 	context: GenerationWorkflowContext,
-	playlist: PlaylistResponse,
+	playlist: VideoCollectionResponse,
 	initialTarget: NoteInsertionTarget | null,
 	effectiveOptions: EffectiveGenerationOptions,
 	progressState: ProgressState,
@@ -180,23 +186,23 @@ async function generateCombinedMetadataPlaylistNote(
 	const targetInfo = await resolveCombinedTarget(context, playlist, initialTarget, effectiveOptions);
 
 	if (!targetInfo.isAppendMode) {
-		await context.targets.showProgress(targetInfo.target, playlist.url, 'Rendering playlist metadata...', progressState);
+		await context.targets.showProgress(targetInfo.target, playlist.url, `Rendering ${collectionLabel(playlist)} metadata...`, progressState);
 	}
-	context.onStatusBar('Rendering playlist metadata...');
+	context.onStatusBar(`Rendering ${collectionLabel(playlist)} metadata...`);
 
-	const playlistForRender: PlaylistTranscriptResponse = { ...playlist, transcripts: [] };
+	const playlistForRender: VideoCollectionTranscriptResponse = { ...playlist, transcripts: [] };
 	const { content, warnings } = renderPlaylistNote(playlistForRender, null, null, effectiveOptions, null, targetInfo.isAppendMode ? 'fragment' : 'standalone');
 	notifyRenderWarnings(warnings);
 	const notePath = await writeCombinedNote(context, targetInfo, content, progressState);
 
 	const entries = playlist.entries.map((entry) => buildPlaylistReportEntry(entry, 'completed', { notePath }));
-	new Notice(`Playlist metadata note generated (${entries.length} completed).`);
+	new Notice(`${collectionLabel(playlist, true)} metadata note generated (${entries.length} completed).`);
 	return { notePath, entries, warnings };
 }
 
 async function generateCombinedTranscriptPlaylistNote(
 	context: GenerationWorkflowContext,
-	playlist: PlaylistResponse,
+	playlist: VideoCollectionResponse,
 	initialTarget: NoteInsertionTarget | null,
 	effectiveOptions: EffectiveGenerationOptions,
 	progressState: ProgressState,
@@ -213,20 +219,20 @@ async function generateCombinedTranscriptPlaylistNote(
 	);
 
 	if (signal.aborted) {
-		return cancelCombinedPlaylist(context, targetInfo.target, reportEntries);
+		return cancelCombinedPlaylist(context, playlist, targetInfo.target, reportEntries);
 	}
 
 	if (transcripts.length === 0) {
 		await context.targets.deleteTargetIfDisposable(targetInfo.target);
-		throw new Error('No playlist transcripts could be fetched.');
+		throw new Error(`No ${collectionLabel(playlist)} transcripts could be fetched.`);
 	}
 
 	if (!targetInfo.isAppendMode) {
-		await context.targets.showProgress(targetInfo.target, playlist.url, 'Rendering playlist transcripts...', progressState);
+		await context.targets.showProgress(targetInfo.target, playlist.url, `Rendering ${collectionLabel(playlist)} transcripts...`, progressState);
 	}
-	context.onStatusBar('Rendering playlist transcripts...');
+	context.onStatusBar(`Rendering ${collectionLabel(playlist)} transcripts...`);
 
-	const playlistWithTranscripts: PlaylistTranscriptResponse = { ...playlist, transcripts };
+	const playlistWithTranscripts: VideoCollectionTranscriptResponse = { ...playlist, transcripts };
 	const thumbnailUrl = transcripts[0] ? thumbnailUrlForQuality(transcripts[0].videoId, 'medium') : null;
 	const { content, warnings } = renderPlaylistNote(playlistWithTranscripts, thumbnailUrl, null, effectiveOptions, null, targetInfo.isAppendMode ? 'fragment' : 'standalone');
 	notifyRenderWarnings(warnings);
@@ -237,13 +243,13 @@ async function generateCombinedTranscriptPlaylistNote(
 	const notePath = await writeCombinedNote(context, targetInfo, content, progressState);
 	const finalEntries = reportEntries.map((e) => (e.outcome === 'completed' ? { ...e, notePath } : e));
 	const { completed, skipped, failed } = countPlaylistOutcomes(finalEntries);
-	new Notice(`Playlist transcript note generated (${completed} completed, ${skipped} skipped, ${failed} failed).`);
+	new Notice(`${collectionLabel(playlist, true)} transcript note generated (${completed} completed, ${skipped} skipped, ${failed} failed).`);
 	return { notePath, entries: finalEntries, warnings };
 }
 
 async function generateCombinedPlaylistNote(
 	context: GenerationWorkflowContext,
-	playlist: PlaylistResponse,
+	playlist: VideoCollectionResponse,
 	initialTarget: NoteInsertionTarget | null,
 	effectiveOptions: EffectiveGenerationOptions,
 	aiContext: AiContentContext | null,
@@ -276,14 +282,14 @@ async function generateCombinedPlaylistNote(
 					targetInfo.target,
 					entry.url,
 					generateSummary
-						? `Summarizing playlist video ${index + 1}/${playlist.entries.length}...`
-						: `Extracting playlist add-ons ${index + 1}/${playlist.entries.length}...`,
+						? `Summarizing ${collectionLabel(playlist)} video ${index + 1}/${playlist.entries.length}...`
+						: `Extracting ${collectionLabel(playlist)} add-ons ${index + 1}/${playlist.entries.length}...`,
 					progressState,
 				);
 			}
 			context.onStatusBar(generateSummary
-				? `Summarizing playlist video ${index + 1}/${playlist.entries.length}...`
-				: `Extracting playlist add-ons ${index + 1}/${playlist.entries.length}...`);
+				? `Summarizing ${collectionLabel(playlist)} video ${index + 1}/${playlist.entries.length}...`
+				: `Extracting ${collectionLabel(playlist)} add-ons ${index + 1}/${playlist.entries.length}...`);
 			const aiResult = await generateAiText(
 				context, aiContext, transcript, entry.url, targetInfo.target, progressState, signal, generateSummary,
 			);
@@ -294,15 +300,19 @@ async function generateCombinedPlaylistNote(
 	);
 
 	if (signal.aborted) {
-		return cancelCombinedPlaylist(context, targetInfo.target, reportEntries);
+		return cancelCombinedPlaylist(context, playlist, targetInfo.target, reportEntries);
 	}
 
 	if (videoSummaries.length === 0) {
 		await context.targets.deleteTargetIfDisposable(targetInfo.target);
-		throw new Error(generateSummary ? 'No playlist videos could be summarized.' : 'No playlist videos could be processed for AI add-ons.');
+		throw new Error(generateSummary
+			? `No ${collectionLabel(playlist)} videos could be summarized.`
+			: `No ${collectionLabel(playlist)} videos could be processed for AI add-ons.`);
 	}
 
-	const finalProgress = generateSummary ? 'Generating combined playlist summary...' : 'Generating combined playlist add-ons...';
+	const finalProgress = generateSummary
+		? `Generating combined ${collectionLabel(playlist)} summary...`
+		: `Generating combined ${collectionLabel(playlist)} add-ons...`;
 	if (!targetInfo.isAppendMode) {
 		await context.targets.showProgress(targetInfo.target, playlist.url, finalProgress, progressState);
 	}
@@ -310,7 +320,7 @@ async function generateCombinedPlaylistNote(
 
 	let summary: string;
 	try {
-		const playlistWithTranscripts: PlaylistTranscriptResponse = { ...playlist, transcripts };
+		const playlistWithTranscripts: VideoCollectionTranscriptResponse = { ...playlist, transcripts };
 		const synthesis = await generateAiCompletion(
 			aiContext,
 			generateSummary
@@ -322,12 +332,12 @@ async function generateCombinedPlaylistNote(
 		aiWarnings.push(...synthesis.warnings);
 	} catch (error) {
 		if (isAbortError(error, signal)) {
-			return cancelCombinedPlaylist(context, targetInfo.target, reportEntries);
+			return cancelCombinedPlaylist(context, playlist, targetInfo.target, reportEntries);
 		}
 		throw error;
 	}
 
-	const playlistWithTranscripts: PlaylistTranscriptResponse = { ...playlist, transcripts };
+	const playlistWithTranscripts: VideoCollectionTranscriptResponse = { ...playlist, transcripts };
 	const thumbnailUrl = transcripts[0] ? thumbnailUrlForQuality(transcripts[0].videoId, 'medium') : null;
 	const template = generateSummary && effectiveOptions.instructionMode !== 'manual'
 		? getTemplate(effectiveOptions.instructionTemplate)
@@ -340,13 +350,13 @@ async function generateCombinedPlaylistNote(
 	const notePath = await writeCombinedNote(context, targetInfo, content, progressState);
 	const finalEntries = reportEntries.map((e) => (e.outcome === 'completed' ? { ...e, notePath } : e));
 	const { completed, skipped, failed } = countPlaylistOutcomes(finalEntries);
-	new Notice(`Playlist note generated (${completed} completed, ${skipped} skipped, ${failed} failed).`);
+	new Notice(`${collectionLabel(playlist, true)} note generated (${completed} completed, ${skipped} skipped, ${failed} failed).`);
 	return { notePath, entries: finalEntries, warnings: [...aiWarnings, ...renderWarnings] };
 }
 
 async function generatePerVideoPlaylistNotes(
 	context: GenerationWorkflowContext,
-	playlist: PlaylistResponse,
+	playlist: VideoCollectionResponse,
 	initialTarget: NoteInsertionTarget | null,
 	effectiveOptions: EffectiveGenerationOptions,
 	aiContext: AiContentContext | null,
@@ -354,7 +364,7 @@ async function generatePerVideoPlaylistNotes(
 	signal: AbortSignal,
 ): Promise<PlaylistRunReportEntry[]> {
 	if (effectiveOptions.noteDestinationMode === 'append-to-active-note') {
-		throw new Error('Append to active note is not supported with per-video playlist mode. Switch to "Combined" playlist mode or choose a different destination.');
+		throw new Error('Append to active note is not supported with per-video collection mode. Switch playlist handling to "Combined" or choose a different destination.');
 	}
 
 	const reportEntries: PlaylistRunReportEntry[] = [];
@@ -379,8 +389,8 @@ async function generatePerVideoPlaylistNotes(
 			}
 
 			context.onStatusBar(metadataOnly
-				? `Fetching playlist video metadata ${index + 1}/${playlist.entries.length}...`
-				: `Fetching playlist transcript ${index + 1}/${playlist.entries.length}...`);
+				? `Fetching ${collectionLabel(playlist)} video metadata ${index + 1}/${playlist.entries.length}...`
+				: `Fetching ${collectionLabel(playlist)} transcript ${index + 1}/${playlist.entries.length}...`);
 			const videoData = await fetchVideoDataForUrl(context.youtubeService, entry.url, effectiveOptions, signal);
 			const transcript = videoData.transcript;
 
@@ -431,27 +441,29 @@ async function generatePerVideoPlaylistNotes(
 
 	const { completed, skipped, failed, canceled } = countPlaylistOutcomes(reportEntries);
 	if (signal.aborted) {
-		new Notice(`Playlist generation canceled (${completed} completed, ${canceled} canceled).`);
+		new Notice(`${collectionLabel(playlist, true)} generation canceled (${completed} completed, ${canceled} canceled).`);
 	} else {
-		new Notice(`Playlist generation finished (${completed} completed, ${skipped} skipped, ${failed} failed).`);
+		new Notice(`${collectionLabel(playlist, true)} generation finished (${completed} completed, ${skipped} skipped, ${failed} failed).`);
 	}
 	return reportEntries;
 }
 
-export async function generatePlaylistNotes(
+async function generateVideoCollectionNotes(
 	context: GenerationWorkflowContext,
 	url: string,
+	kind: 'playlist' | 'channel',
+	fetchCollection: () => Promise<VideoCollectionResponse>,
 	initialTarget: NoteInsertionTarget | null,
 	effectiveOptions: EffectiveGenerationOptions,
 	aiContext: AiContentContext | null,
 	progressState: ProgressState,
 	signal: AbortSignal,
-): Promise<{ playlist: PlaylistResponse; notePath: string | null; entries: PlaylistRunReportEntry[]; warnings: string[] }> {
+): Promise<{ playlist: VideoCollectionResponse; notePath: string | null; entries: PlaylistRunReportEntry[]; warnings: string[] }> {
 	if (effectiveOptions.noteDestinationMode === 'current-note') {
 		if (!initialTarget) {
 			throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
 		}
-		await context.targets.showProgress(initialTarget, url, 'Fetching playlist...', progressState);
+		await context.targets.showProgress(initialTarget, url, `Fetching ${kind}...`, progressState);
 	} else if (effectiveOptions.noteDestinationMode === 'append-to-active-note') {
 		if (!initialTarget) {
 			throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
@@ -459,9 +471,9 @@ export async function generatePlaylistNotes(
 		// Append mode must not write progress markers.
 	}
 
-	context.onStatusBar('Fetching playlist…');
-	new Notice('Fetching playlist videos…');
-	const playlist = await context.youtubeService.fetchPlaylist(url);
+	context.onStatusBar(`Fetching ${kind}…`);
+	new Notice(`Fetching ${kind} videos…`);
+	const playlist = await fetchCollection();
 
 	if (effectiveOptions.noteDestinationMode === 'folder') {
 		await context.targets.ensureFolderExists(effectiveOptions.noteDestinationFolder ?? '');
@@ -478,4 +490,53 @@ export async function generatePlaylistNotes(
 		context, playlist, initialTarget, effectiveOptions, aiContext, progressState, signal,
 	);
 	return { playlist, notePath: null, entries, warnings: [] };
+}
+
+export async function generatePlaylistNotes(
+	context: GenerationWorkflowContext,
+	url: string,
+	initialTarget: NoteInsertionTarget | null,
+	effectiveOptions: EffectiveGenerationOptions,
+	aiContext: AiContentContext | null,
+	progressState: ProgressState,
+	signal: AbortSignal,
+): Promise<{ playlist: Extract<VideoCollectionResponse, { playlistId: string }>; notePath: string | null; entries: PlaylistRunReportEntry[]; warnings: string[] }> {
+	const result = await generateVideoCollectionNotes(
+		context,
+		url,
+		'playlist',
+		() => context.youtubeService.fetchPlaylist(url),
+		initialTarget,
+		effectiveOptions,
+		aiContext,
+		progressState,
+		signal,
+	);
+	return { ...result, playlist: result.playlist as Extract<VideoCollectionResponse, { playlistId: string }> };
+}
+
+export async function generateChannelNotes(
+	context: GenerationWorkflowContext,
+	url: string,
+	initialTarget: NoteInsertionTarget | null,
+	effectiveOptions: EffectiveGenerationOptions,
+	aiContext: AiContentContext | null,
+	progressState: ProgressState,
+	signal: AbortSignal,
+): Promise<{ channel: Extract<VideoCollectionResponse, { channelId: string }>; notePath: string | null; entries: PlaylistRunReportEntry[]; warnings: string[] }> {
+	const result = await generateVideoCollectionNotes(
+		context,
+		url,
+		'channel',
+		() => context.youtubeService.fetchChannel(url, {
+			contentTypes: effectiveOptions.channelContentTypes,
+			videoLimit: effectiveOptions.channelVideoLimit,
+		}),
+		initialTarget,
+		effectiveOptions,
+		aiContext,
+		progressState,
+		signal,
+	);
+	return { ...result, channel: result.playlist as Extract<VideoCollectionResponse, { channelId: string }> };
 }

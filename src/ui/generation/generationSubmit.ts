@@ -1,6 +1,6 @@
 import type { GenerationOptions } from '../../types';
 import { getTemplate } from '../../ai/templates/registry';
-import { parseUrls } from '../../youtube/urls';
+import { isChannelUrl, parseUrls } from '../../youtube/urls';
 import { shouldGenerateAiSummary, shouldUseAi } from '../../aiOutputPolicy';
 import type { GenerationFormState } from './generationFormState';
 
@@ -21,6 +21,9 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 	const trimmedUrl = state.url.trim();
 	const parsedTemperature = Number(state.temperature.trim());
 	const parsedTimeoutSecs = state.requestTimeoutSeconds.trim() ? Number(state.requestTimeoutSeconds.trim()) : undefined;
+	const parsedChannelVideoLimit = state.channelVideoLimit.trim()
+		? Number(state.channelVideoLimit.trim())
+		: null;
 	const trimmedManualInstructions = state.manualInstructions.trim();
 	const trimmedFolder = state.noteDestinationFolder.trim();
 	const effectiveUseAi = shouldUseAi(state);
@@ -33,6 +36,16 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 	const parsedUrls = parseUrls(trimmedUrl);
 	const urls = dedupeUrls(parsedUrls);
 	const duplicateCount = parsedUrls.length - urls.length;
+	const hasChannelUrl = urls.some(isChannelUrl);
+
+	if (hasChannelUrl && state.channelContentTypes.length === 0) {
+		return failure('Select at least one channel content type.', duplicateCount);
+	}
+	if (hasChannelUrl && parsedChannelVideoLimit !== null && (
+		!Number.isInteger(parsedChannelVideoLimit) || parsedChannelVideoLimit < 1
+	)) {
+		return failure('Items per content type must be a positive whole number, or choose All available.', duplicateCount);
+	}
 
 	if (
 		!Number.isFinite(parsedTemperature) ||
@@ -81,6 +94,8 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 			generateAiSummary: effectiveGenerateAiSummary,
 			transcriptMode: state.transcriptMode,
 			playlistMode: state.playlistMode,
+			channelContentTypes: state.channelContentTypes,
+			channelVideoLimit: parsedChannelVideoLimit,
 			transcriptLanguageMode: state.transcriptLanguageMode,
 			preferredTranscriptLanguage: state.preferredTranscriptLanguage,
 			transcriptFailureMode: state.transcriptFailureMode,

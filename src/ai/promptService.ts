@@ -1,9 +1,9 @@
 import type {
 	InstructionConfig,
 	ModelConfig,
-	PlaylistTranscriptResponse,
 	Template,
 	TranscriptResponse,
+	VideoCollectionTranscriptResponse,
 } from '../types';
 import {
 	getTemplate,
@@ -208,7 +208,7 @@ ${chunkSummaryText}`;
 	}
 
 	buildPlaylistSynthesisPrompt(
-		playlist: PlaylistTranscriptResponse,
+		playlist: VideoCollectionTranscriptResponse,
 		videoSummaries: Array<{ transcript: TranscriptResponse; summary: string }>,
 	): string {
 		const summaryText = videoSummaries
@@ -219,19 +219,24 @@ ${chunkSummaryText}`;
 ${summary.trim()}`)
 			.join('\n\n');
 
-		return `${this.buildInstructionBlock('playlist')}
+		const isChannel = 'channelId' in playlist;
+		const collectionName = isChannel ? 'channel selection' : 'playlist';
+		const urlLabel = isChannel ? 'Channel URL' : 'Playlist URL';
+		const metadataLabel = isChannel ? 'Channel selection metadata' : 'Playlist metadata';
 
-You are creating a single knowledge note for an entire YouTube playlist. Use only the summarized material below. Do not invent details that are not present in the provided video summaries.
+		return `${this.buildInstructionBlock('playlist', true, collectionName)}
+
+You are creating a single knowledge note for an entire YouTube ${collectionName}. Use only the summarized material below. Do not invent details that are not present in the provided video summaries.
 
 Follow these non-negotiable rules:
 - Do not output a \`## Source\` section. Source metadata is rendered separately.
 - Do not output transcript sections or long verbatim quotes.
-- Synthesize recurring themes, differences between videos, and practical takeaways across the playlist.
-- Treat the playlist as one cohesive resource, but mention standout videos when they add important context.
+- Synthesize recurring themes, differences between videos, and practical takeaways across the ${collectionName}.
+- Treat the ${collectionName} as one cohesive resource, but mention standout videos when they add important context.
 
-Playlist metadata:
+${metadataLabel}:
 - Title: ${playlist.title}
-- Playlist URL: ${playlist.url}
+- ${urlLabel}: ${playlist.url}
 - Video count: ${playlist.transcripts.length}
 
 Video summaries:
@@ -239,7 +244,7 @@ ${summaryText}`;
 	}
 
 	buildPlaylistAddonsSynthesisPrompt(
-		playlist: PlaylistTranscriptResponse,
+		playlist: VideoCollectionTranscriptResponse,
 		videoAddonNotes: Array<{ transcript: TranscriptResponse; summary: string }>,
 	): string {
 		const addonText = videoAddonNotes
@@ -250,9 +255,10 @@ ${summaryText}`;
 ${summary.trim()}`)
 			.join('\n\n');
 
+		const collectionName = 'channelId' in playlist ? 'channel selection' : 'playlist';
 		return `${this.buildPlaylistAddonInstructions(playlist)}
 
-Use the per-video add-on notes below instead of raw transcripts to produce the requested add-on sections for the playlist as a whole. Do not mention chunks or per-video processing in the final answer.
+Use the per-video add-on notes below instead of raw transcripts to produce the requested add-on sections for the ${collectionName} as a whole. Do not mention chunks or per-video processing in the final answer.
 
 Per-video add-on notes:
 ${addonText}`;
@@ -333,7 +339,11 @@ ${lines}`;
 		return getTemplate(this.instructionConfig.template);
 	}
 
-	private buildInstructionBlock(context: 'video' | 'playlist', includeAddons = true): string {
+	private buildInstructionBlock(
+		context: 'video' | 'playlist',
+		includeAddons = true,
+		collectionName = 'playlist',
+	): string {
 		const addons = includeAddons ? this.buildInstructionAddons() : '';
 		if (this.instructionConfig.mode === 'manual') {
 			return [this.instructionConfig.manualInstructions.trim(), addons].filter(Boolean).join('\n\n');
@@ -341,7 +351,7 @@ ${lines}`;
 
 		const template = this.getPromptTemplate();
 		const playlistPrefix = context === 'playlist'
-			? 'Apply the same template to the playlist as a whole, using the provided per-video summaries instead of a raw transcript.\n\n'
+			? `Apply the same template to the ${collectionName} as a whole, using the provided per-video summaries instead of a raw transcript.\n\n`
 			: '';
 
 		const directiveParts = [
@@ -362,14 +372,17 @@ ${lines}`;
 		});
 	}
 
-	private buildPlaylistAddonInstructions(playlist: PlaylistTranscriptResponse): string {
+	private buildPlaylistAddonInstructions(playlist: VideoCollectionTranscriptResponse): string {
+		const isChannel = 'channelId' in playlist;
+		const urlLabel = isChannel ? 'Channel URL' : 'Playlist URL';
+		const metadataLabel = isChannel ? 'Channel selection metadata' : 'Playlist metadata';
 		return `${ADDON_BASE_INSTRUCTIONS}
 
 ${this.buildInstructionAddons()}
 
-Playlist metadata (renderer adds this automatically — do not repeat it inside the body):
+${metadataLabel} (renderer adds this automatically — do not repeat it inside the body):
 - Title: ${playlist.title}
-- Playlist URL: ${playlist.url}
+- ${urlLabel}: ${playlist.url}
 - Video count: ${playlist.transcripts.length}`;
 	}
 

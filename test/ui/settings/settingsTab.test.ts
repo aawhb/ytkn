@@ -43,6 +43,8 @@ function makeFakeSettings() {
 			generateAiSummary: true,
 			transcriptMode: 'none',
 			playlistMode: 'per-video',
+			channelContentTypes: ['videos', 'shorts', 'streams'],
+			channelVideoLimit: 10,
 			transcriptLanguageMode: 'auto',
 			preferredTranscriptLanguage: '',
 			transcriptFailureMode: 'skip',
@@ -96,6 +98,71 @@ function renderSettingsTab(tab: SettingsTab): void {
 }
 
 describe('SettingsTab', () => {
+	it('renders and saves default channel content selections', async () => {
+		const plugin = makeFakePlugin();
+		const tab = createSettingsTab(plugin);
+		renderSettingsTab(tab);
+
+		const contentRow = tab.containerEl.querySelector('.ytkn-channel-content-setting');
+		expect(contentRow).toBeDefined();
+		expect(contentRow?.className).toContain('ytkn-setting-row--fit-control');
+		expect(contentRow?.querySelector('.setting-item-name')?.textContent).toBe('Channel');
+		const shortOption = Array.from(contentRow!.querySelectorAll('.ytkn-channel-content-option')).find(
+			(option) => option.textContent?.trim() === 'Shorts',
+		);
+		const checkbox = shortOption?.querySelector('input') as HTMLInputElement;
+		checkbox.checked = false;
+		checkbox.dispatchEvent(new Event('change'));
+
+		await vi.waitFor(() => expect(plugin.settings.updateOutputDefaults).toHaveBeenCalledWith(
+			expect.objectContaining({ channelContentTypes: ['videos', 'streams'] }),
+		));
+		const streamOption = Array.from(contentRow!.querySelectorAll('.ytkn-channel-content-option')).find(
+			(option) => option.textContent?.trim() === 'Stream replays',
+		);
+		const streamCheckbox = streamOption?.querySelector('input') as HTMLInputElement;
+		streamCheckbox.checked = false;
+		streamCheckbox.dispatchEvent(new Event('change'));
+		await vi.waitFor(() => expect(plugin.settings.updateOutputDefaults).toHaveBeenCalledWith(
+			expect.objectContaining({ channelContentTypes: ['videos'] }),
+		));
+		expect(SETTING_COPY.channelItemsPerType.name).toBe('Items per content type');
+		expect(tab.containerEl.textContent).toContain('Items per content type');
+	});
+
+	it('hides the channel item count when the default is All available', async () => {
+		const plugin = makeFakePlugin();
+		const defaults = plugin.settings.getOutputDefaults();
+		plugin.settings.getOutputDefaults.mockReturnValue({
+			...defaults,
+			channelVideoLimit: null,
+		});
+		const tab = createSettingsTab(plugin);
+		renderSettingsTab(tab);
+
+		const limitRow = Array.from(tab.containerEl.querySelectorAll('.setting-item')).find(
+			(row) => row.querySelector('.setting-item-name')?.textContent === SETTING_COPY.channelItemsPerType.name,
+		);
+		const limitSelect = limitRow?.querySelector('select') as HTMLSelectElement;
+		const limitInput = limitRow?.querySelector('input[type="number"]') as HTMLInputElement;
+		expect(limitSelect.value).toBe('all');
+		expect(limitInput.hidden).toBe(true);
+
+		limitSelect.value = 'limited';
+		limitSelect.dispatchEvent(new Event('change'));
+		expect(limitInput.hidden).toBe(false);
+		await vi.waitFor(() => expect(plugin.settings.updateOutputDefaults).toHaveBeenCalledWith(
+			expect.objectContaining({ channelVideoLimit: 10 }),
+		));
+
+		limitSelect.value = 'all';
+		limitSelect.dispatchEvent(new Event('change'));
+		expect(limitInput.hidden).toBe(true);
+		await vi.waitFor(() => expect(plugin.settings.updateOutputDefaults).toHaveBeenCalledWith(
+			expect.objectContaining({ channelVideoLimit: null }),
+		));
+	});
+
 	it('renders the plugin title and current settings sections', () => {
 		const plugin = makeFakePlugin();
 		const tab = createSettingsTab(plugin);

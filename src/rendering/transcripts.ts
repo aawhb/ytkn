@@ -1,4 +1,4 @@
-import type { GenerationOptions, PlaylistTranscriptResponse, TranscriptLine, TranscriptResponse } from '../types';
+import type { GenerationOptions, TranscriptLine, TranscriptResponse, VideoCollectionTranscriptResponse } from '../types';
 import { normalizeWhitespace } from '../utils';
 import { renderCollapsedCallout } from './callouts';
 
@@ -150,7 +150,7 @@ export function buildTranscriptDetails(
 }
 
 export function buildPlaylistTranscriptDetails(
-	playlist: PlaylistTranscriptResponse,
+	playlist: VideoCollectionTranscriptResponse,
 	transcriptMode: GenerationOptions['transcriptMode'],
 	options: GenerationOptions | undefined,
 ): string {
@@ -158,5 +158,9 @@ export function buildPlaylistTranscriptDetails(
 
 ${buildTranscriptBody(transcript, transcriptMode, options)}`);
 
-	return renderCollapsedCallout('note', 'Playlist transcripts', sections.join('\n\n'));
+	return renderCollapsedCallout(
+		'note',
+		'channelId' in playlist ? 'Channel transcripts' : 'Playlist transcripts',
+		sections.join('\n\n'),
+	);
 }

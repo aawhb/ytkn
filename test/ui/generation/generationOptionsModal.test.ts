@@ -14,6 +14,7 @@ import { App } from 'obsidian';
 const VIDEO_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
 const VIDEO_URL_2 = 'https://www.youtube.com/watch?v=oHg5SJYRHA0';
 const PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PLtest12345';
+const CHANNEL_URL = 'https://www.youtube.com/@channel';
 const INVALID_URL = 'https://example.com/not-youtube';
 
 const sampleModel: ModelConfig = {
@@ -386,6 +387,66 @@ describe('GenerationOptionsModal submit — multi-URL', () => {
 		expect(text).toContain('Playlist detected.');
 		expect(text).not.toContain('requires AI');
 		expect(text).not.toContain('transcript-only');
+	});
+
+	it('distinguishes unsupported channel tabs from videos', () => {
+		const modal = openWithUrl('https://www.youtube.com/@channel/playlists');
+		const text = modal.contentEl.textContent ?? '';
+
+		expect(text).toContain("The channel playlists tab isn't supported.");
+		expect(text).not.toContain('Single video detected.');
+		expect(modal.contentEl.querySelector<HTMLElement>('.ytkn-channel-content-setting')?.style.display).toBe('none');
+	});
+
+	it('shows channel content checkboxes and unlimited per-type selection for channel URLs', () => {
+		const modal = openWithUrl(CHANNEL_URL, {
+			channelContentTypes: ['videos', 'streams'],
+			channelVideoLimit: null,
+		});
+
+		expect(modal.contentEl.textContent).toContain('Channel detected.');
+		const contentRow = modal.contentEl.querySelector('.ytkn-channel-content-setting');
+		expect(contentRow?.className).toContain('ytkn-setting-row--fit-control');
+		expect(contentRow?.querySelector('.setting-item-name')?.textContent).toBe('Channel');
+		expect(contentRow?.querySelector('.setting-item-description')?.textContent).toBe('');
+		const options = Array.from(modal.contentEl.querySelectorAll('.ytkn-channel-content-option'));
+		expect(options.map((option) => option.textContent?.trim())).toEqual(['Videos', 'Shorts', 'Stream replays']);
+		expect(options.map((option) => (option.querySelector('input') as HTMLInputElement).checked)).toEqual([true, false, true]);
+		const limitRow = modal.contentEl.querySelector('.ytkn-channel-limit-setting');
+		expect(limitRow?.className).toContain('ytkn-setting-row--fit-control');
+		expect(limitRow?.querySelector('.setting-item-name')?.textContent).toBe('Items per content type');
+		expect(limitRow?.querySelector('.setting-item-description')?.textContent).toBe('');
+		const limitSelect = limitRow?.querySelector('select') as HTMLSelectElement;
+		const limitInput = limitRow?.querySelector('input[type="number"]') as HTMLInputElement;
+		expect(limitSelect.value).toBe('all');
+		expect(limitInput.hidden).toBe(true);
+
+		limitSelect.value = 'limited';
+		limitSelect.dispatchEvent(new Event('change'));
+		expect(limitInput.hidden).toBe(false);
+		expect(limitInput.value).toBe('10');
+
+		limitSelect.value = 'all';
+		limitSelect.dispatchEvent(new Event('change'));
+		expect(limitInput.hidden).toBe(true);
+
+		clickSubmit(modal);
+		expect(onSubmit).toHaveBeenCalledOnce();
+		const [, submitted] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
+		expect(submitted.channelContentTypes).toEqual(['videos', 'streams']);
+		expect(submitted.channelVideoLimit).toBeNull();
+	});
+
+	it('selects the matching content type when an explicit channel tab is pasted', () => {
+		const modal = openWithUrl('', {
+			channelContentTypes: ['videos', 'shorts', 'streams'],
+		});
+		const textarea = modal.contentEl.querySelector('textarea.ytkn-modal__url-input') as HTMLTextAreaElement;
+		textarea.value = 'https://www.youtube.com/@channel/streams';
+		textarea.dispatchEvent(new Event('input'));
+
+		const options = Array.from(modal.contentEl.querySelectorAll('.ytkn-channel-content-option'));
+		expect(options.map((option) => (option.querySelector('input') as HTMLInputElement).checked)).toEqual([false, false, true]);
 	});
 
 	it('multi-URL valid paste passes all URLs to onSubmit', () => {

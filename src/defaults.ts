@@ -17,6 +17,8 @@ export const DEFAULT_TRANSCRIPT_LANGUAGE_MODE = 'auto';
 export const DEFAULT_PREFERRED_TRANSCRIPT_LANGUAGE = '';
 
 export const DEFAULT_PLAYLIST_MODE = 'per-video';
+export const DEFAULT_CHANNEL_CONTENT_TYPES = ['videos', 'shorts', 'streams'] as const;
+export const DEFAULT_CHANNEL_VIDEO_LIMIT = 10;
 export const DEFAULT_TRANSCRIPT_FAILURE_MODE = 'skip';
 export const DEFAULT_INCLUDE_RUN_REPORT = true;
 export const DEFAULT_RUN_REPORT_LOCATION = 'generated-note';

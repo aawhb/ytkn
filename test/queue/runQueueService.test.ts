@@ -205,6 +205,51 @@ describe('RunQueueService', () => {
 			svc.cancelAll();
 			await new Promise((r) => setTimeout(r, 20));
 		});
+
+		it('preserves channel identity and selected content when a queued channel is canceled', async () => {
+			const worker = makeWorker({ executeDelay: 100 });
+			const svc = new RunQueueService(worker);
+			const batch = svc.enqueueBatch({
+				urls: [
+					{ url: 'https://youtube.com/watch?v=abcdefghijk', kind: 'video' },
+					{ url: 'https://youtube.com/@channel', kind: 'channel' },
+				],
+				options: { channelContentTypes: ['shorts', 'streams'], channelVideoLimit: null },
+				targetPolicy: buildFolderTargetPolicy(),
+				reportPolicy: { include: false, location: 'generated-note' },
+			});
+			await flushMicrotasks();
+
+			svc.cancelRun(batch.runIds[1]);
+			const entry = svc.getSnapshot().history.find((candidate) => candidate.runId === batch.runIds[1]);
+
+			expect(entry).toMatchObject({
+				kind: 'channel',
+				channelUrl: 'https://youtube.com/@channel',
+				contentTypes: ['shorts', 'streams'],
+				outcome: 'canceled',
+			});
+			svc.cancelAll();
+		});
+
+		it('preserves Shorts identity when a queued Short is canceled', async () => {
+			const worker = makeWorker({ executeDelay: 100 });
+			const svc = new RunQueueService(worker);
+			const batch = svc.enqueueBatch({
+				...makeInput(),
+				urls: [
+					{ url: 'https://youtube.com/watch?v=abcdefghijk', kind: 'video' },
+					{ url: 'https://youtube.com/shorts/short000001', kind: 'video' },
+				],
+			});
+			await flushMicrotasks();
+
+			svc.cancelRun(batch.runIds[1]);
+			const entry = svc.getSnapshot().history.find((candidate) => candidate.runId === batch.runIds[1]);
+
+			expect(entry).toMatchObject({ kind: 'video', contentType: 'shorts', outcome: 'canceled' });
+			svc.cancelAll();
+		});
 	});
 
 	describe('cancelAll', () => {
@@ -324,6 +369,21 @@ describe('RunQueueService', () => {
 			const snap = svc.getSnapshot();
 			const entry = batch.outcomeEntries[0] ?? snap.history.find((e) => e.batchId === batch.batchId);
 			expect(entry?.displayTitle).toMatch(/^#\d+ · video:/);
+		});
+
+		it('keeps the parsed channel handle in the exact fallback when title resolution fails', async () => {
+			const worker = makeWorker({ resolveTitle: undefined });
+			const svc = new RunQueueService(worker);
+			const batch = svc.enqueueBatch({
+				urls: [{ url: 'https://youtube.com/@GoogleDevelopers/streams', kind: 'channel' }],
+				options: { channelContentTypes: ['streams'] },
+				targetPolicy: buildFolderTargetPolicy(),
+				reportPolicy: { include: false, location: 'generated-note' },
+			});
+			await flushMicrotasks();
+
+			const entry = batch.outcomeEntries[0];
+			expect(entry?.displayTitle).toBe(`#${entry?.ordinal} · channel:@GoogleDevelopers`);
 		});
 	});
 

@@ -53,6 +53,48 @@ describe('buildGenerationSubmit', () => {
 		expect(result.options.openCreatedNote).toBe(true);
 	});
 
+	it('passes selected channel types and unlimited mode through the submit payload', () => {
+		const result = buildGenerationSubmit({
+			...baseState(),
+			url: 'https://www.youtube.com/@channel',
+			channelContentTypes: ['videos', 'streams'],
+			channelVideoLimit: '',
+		});
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) throw new Error(result.message);
+		expect(result.options.channelContentTypes).toEqual(['videos', 'streams']);
+		expect(result.options.channelVideoLimit).toBeNull();
+	});
+
+	it('requires at least one content type for channel URLs', () => {
+		const result = buildGenerationSubmit({
+			...baseState(),
+			url: 'https://www.youtube.com/@channel',
+			channelContentTypes: [],
+		});
+
+		expect(result).toEqual({
+			ok: false,
+			message: 'Select at least one channel content type.',
+			duplicateCount: 0,
+		});
+	});
+
+	it('requires a positive whole-number channel limit or unlimited mode', () => {
+		const result = buildGenerationSubmit({
+			...baseState(),
+			url: 'https://www.youtube.com/@channel',
+			channelVideoLimit: '2.5',
+		});
+
+		expect(result).toEqual({
+			ok: false,
+			message: 'Items per content type must be a positive whole number, or choose All available.',
+			duplicateCount: 0,
+		});
+	});
+
 	it('passes the model chain through and mirrors the first entry as modelId', () => {
 		const result = buildGenerationSubmit({
 			...baseState(),

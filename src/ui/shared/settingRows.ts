@@ -14,12 +14,14 @@ export function stampSettingRowClasses(containerEl: HTMLElement): void {
 		const hasSelect = controlEl.querySelector(':scope > select') !== null;
 		const hasNumberInput = controlEl.querySelector(':scope > input[type="number"]') !== null;
 		const hasTextButton = controlEl.querySelector(':scope > button:not(.clickable-icon)') !== null;
+		const hasInlineOptions = controlEl.querySelector(':scope > .ytkn-channel-content-option') !== null;
+		const isChannelLimitSetting = settingEl.classList.contains('ytkn-channel-limit-setting');
 		const hasProviderHeaderControls = settingEl.classList.contains('ytkn-settings__provider-header');
 		const shouldStayStacked =
-			(settingEl.closest('.ytkn-modal__quick-grid') !== null && (hasSelect || hasNumberInput)) ||
+			(settingEl.closest('.ytkn-modal__quick-grid') !== null && (hasSelect || hasNumberInput) && !isChannelLimitSetting) ||
 			(settingEl.classList.contains('ytkn-modal__model-setting') && hasSelect);
 		const shouldFitControl =
-			(hasSelect || hasNumberInput || hasTextButton || hasProviderHeaderControls) &&
+			(hasSelect || hasNumberInput || hasTextButton || hasInlineOptions || hasProviderHeaderControls) &&
 			!shouldStayStacked;
 
 		settingEl.toggleClass(

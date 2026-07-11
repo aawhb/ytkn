@@ -1,4 +1,5 @@
 import type {
+	ChannelContentType,
 	InstructionMode,
 	MediaEmbedMode,
 	NoteDestinationMode,
@@ -49,6 +50,8 @@ type SharedSettingCopy = {
 	transcriptLanguage: SettingFieldCopy<Record<TranscriptLanguageMode, string>>;
 	preferredLanguageCode: SettingFieldCopy;
 	playlistHandling: SettingFieldCopy<Record<PlaylistMode, string>>;
+	channelContent: SettingFieldCopy<Record<ChannelContentType, string>>;
+	channelItemsPerType: SettingFieldCopy<Record<'limited' | 'all', string>>;
 	transcriptFailure: SettingFieldCopy<Record<TranscriptFailureMode, string>>;
 	includeRunReport: SettingFieldCopy;
 	runReportLocation: SettingFieldCopy<Record<RunReportLocation, string>>;
@@ -187,6 +190,24 @@ export const SETTING_COPY: SharedSettingCopy = {
 		options: {
 			'per-video': 'Per video: multiple individual notes',
 			combined: 'Combined: single aggregated note',
+		},
+	},
+	channelContent: {
+		name: 'Channel',
+		desc: 'Choose which channel tabs to process. Active and upcoming streams are skipped.',
+		options: {
+			videos: 'Videos',
+			shorts: 'Shorts',
+			streams: 'Stream replays',
+		},
+	},
+	channelItemsPerType: {
+		name: 'Items per content type',
+		desc: 'Applied separately to Videos, Shorts, and Stream replays.',
+		placeholder: '10',
+		options: {
+			limited: 'Latest',
+			all: 'All available',
 		},
 	},
 	transcriptFailure: {

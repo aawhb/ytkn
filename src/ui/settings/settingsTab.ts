@@ -1,6 +1,7 @@
 import type { App, Plugin } from 'obsidian';
 import { Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
 import type {
+	ChannelContentType,
 	InstructionConfig,
 	InstructionMode,
 	InstructionTemplate,
@@ -457,6 +458,79 @@ export class SettingsTab extends PluginSettingTab {
 						});
 					}),
 			);
+
+		const channelContentSetting = new Setting(containerEl)
+			.setName(SETTING_COPY.channelContent.name)
+			.setDesc(SETTING_COPY.channelContent.desc!);
+		channelContentSetting.settingEl.addClass('ytkn-channel-content-setting');
+		let selectedChannelContentTypes = [...outputDefaults.channelContentTypes];
+		for (const contentType of ['videos', 'shorts', 'streams'] as const) {
+			const label = channelContentSetting.controlEl.createEl('label', { cls: 'ytkn-channel-content-option' });
+			const checkbox = label.createEl('input', { attr: { type: 'checkbox' } });
+			checkbox.checked = selectedChannelContentTypes.includes(contentType);
+			checkbox.addEventListener('change', () => {
+				const selected = new Set(selectedChannelContentTypes);
+				if (checkbox.checked) {
+					selected.add(contentType);
+				} else {
+					selected.delete(contentType);
+				}
+				const channelContentTypes = (['videos', 'shorts', 'streams'] as ChannelContentType[])
+					.filter((type) => selected.has(type));
+				if (channelContentTypes.length === 0) {
+					checkbox.checked = true;
+					new Notice('Select at least one channel content type.');
+					return;
+				}
+				selectedChannelContentTypes = channelContentTypes;
+				void this.updateOutputDefaults({ channelContentTypes });
+			});
+			label.createSpan({ text: SETTING_COPY.channelContent.options![contentType] });
+		}
+
+		let limitInput: HTMLInputElement;
+		const channelLimitSetting = new Setting(containerEl)
+			.setName(SETTING_COPY.channelItemsPerType.name)
+			.setDesc(SETTING_COPY.channelItemsPerType.desc!)
+			.addDropdown((dropdown) => dropdown
+				.addOptions(SETTING_COPY.channelItemsPerType.options!)
+				.setValue(outputDefaults.channelVideoLimit === null ? 'all' : 'limited')
+				.onChange(async (value) => {
+					const unlimited = value === 'all';
+					channelLimitSetting.settingEl.toggleClass('ytkn-channel-limit-setting--unlimited', unlimited);
+					limitInput.hidden = unlimited;
+					if (value === 'all') {
+						limitInput.disabled = true;
+						await this.updateOutputDefaults({ channelVideoLimit: null });
+					} else {
+						limitInput.disabled = false;
+						await this.updateOutputDefaults({
+							channelVideoLimit: Number.parseInt(limitInput.value, 10) || 10,
+						});
+					}
+				}))
+			.addText((text) => {
+				text
+					.setPlaceholder(SETTING_COPY.channelItemsPerType.placeholder!)
+					.setValue(String(outputDefaults.channelVideoLimit ?? 10))
+					.setDisabled(outputDefaults.channelVideoLimit === null)
+					.onChange(async (value) => {
+						const limit = Number(value);
+						if (Number.isInteger(limit) && limit >= 1) {
+							await this.updateOutputDefaults({ channelVideoLimit: limit });
+						}
+					});
+				limitInput = text.inputEl;
+				limitInput.type = 'number';
+				limitInput.min = '1';
+				limitInput.step = '1';
+				limitInput.hidden = outputDefaults.channelVideoLimit === null;
+			});
+		channelLimitSetting.settingEl.addClass('ytkn-channel-limit-setting');
+		channelLimitSetting.settingEl.toggleClass(
+			'ytkn-channel-limit-setting--unlimited',
+			outputDefaults.channelVideoLimit === null,
+		);
 
 		new Setting(containerEl)
 			.setName(SETTING_COPY.transcriptFailure.name)
