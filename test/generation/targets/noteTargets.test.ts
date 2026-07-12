@@ -1,4 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('obsidian', async () => {
+	const mod = await import('../../mocks/obsidian');
+	class TFile {
+		extension = 'md';
+		parent = { path: 'Notes' };
+		constructor(public path: string) { }
+	}
+	class MarkdownView { }
+	return { ...mod, MarkdownView, TFile };
+});
+
+import { TFile } from 'obsidian';
 import { buildSafeBaseName, NoteTargetWriter } from '../../../src/generation/targets/noteTargets';
 
 describe('note target helpers', () => {
@@ -139,5 +152,53 @@ describe('note target helpers', () => {
 		expect(app.vault.createFolder).toHaveBeenCalledWith('Notes/Nested');
 		expect(app.vault.create).toHaveBeenCalledWith('Notes/Nested/Video.md', '');
 		expect(target.createdByPlugin).toBe(true);
+	});
+
+	it('resolves an unchanged queued selection target', async () => {
+		const file = Object.assign(new TFile(), { path: 'Notes/Video.md' });
+		const app = {
+			workspace: { getActiveViewOfType: vi.fn(() => null) },
+			vault: {
+				getAbstractFileByPath: vi.fn(() => file),
+				cachedRead: vi.fn(async () => 'before selected after'),
+			},
+		};
+		const writer = new NoteTargetWriter(app as any, vi.fn());
+
+		const target = await writer.resolveInitialTarget({
+			initialTargetRef: {
+				filePath: file.path,
+				mode: 'replace-range',
+				fromOffset: 7,
+				toOffset: 15,
+				expectedContent: 'before selected after',
+				createdByPlugin: false,
+			},
+		} as any);
+
+		expect(target).toMatchObject({ file, fromOffset: 7, toOffset: 15 });
+	});
+
+	it('rejects a queued selection target after the note changes', async () => {
+		const file = Object.assign(new TFile(), { path: 'Notes/Video.md' });
+		const app = {
+			workspace: { getActiveViewOfType: vi.fn(() => null) },
+			vault: {
+				getAbstractFileByPath: vi.fn(() => file),
+				cachedRead: vi.fn(async () => 'edited before selected after'),
+			},
+		};
+		const writer = new NoteTargetWriter(app as any, vi.fn());
+
+		await expect(writer.resolveInitialTarget({
+			initialTargetRef: {
+				filePath: file.path,
+				mode: 'replace-range',
+				fromOffset: 7,
+				toOffset: 15,
+				expectedContent: 'before selected after',
+				createdByPlugin: false,
+			},
+		} as any)).rejects.toThrow('The target note changed while this run was waiting.');
 	});
 });

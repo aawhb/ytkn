@@ -31,7 +31,11 @@ export function buildProgressContent({ startMarker, endMarker }: ProgressMarkers
 	];
 
 	if (options.errorMessage) {
-		lines.splice(3, 0, `> Error: ${options.errorMessage}`);
+		const errorMessage = options.errorMessage
+			.replace(/\s+/g, ' ')
+			.slice(0, 500)
+			.replace(/[\\`*_{}[\]<>()#+.!|]/g, '\\$&');
+		lines.splice(3, 0, `> Error: ${errorMessage}`);
 	}
 
 	lines.push(endMarker);

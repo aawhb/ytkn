@@ -44,6 +44,19 @@ describe('progress markers', () => {
 		expect(errorLineIndex).toBeGreaterThan(-1);
 		expect(errorLineIndex).toBeLessThan(videoLineIndex);
 	});
+
+	it('renders remote error text as a bounded single Markdown line', () => {
+		const markers = buildProgressMarkers('job-safe');
+		const content = buildProgressContent(markers, {
+			url: 'https://yt/safe',
+			status: 'Failed',
+			kind: 'failure',
+			errorMessage: 'Bad response\n> [!danger] injected `code`',
+		});
+
+		expect(content).toContain('Error: Bad response \\> \\[\\!danger\\] injected \\`code\\`');
+		expect(content).not.toContain('\n> [!danger]');
+	});
 });
 
 describe('findProgressRange', () => {

@@ -335,16 +335,16 @@ describe('RunQueueService', () => {
 				persistBatchReport: vi.fn().mockResolvedValue(undefined),
 			};
 			const svc = new RunQueueService(worker);
-			const opts = { generateAiSummary: true, modelId: 'original' };
+			const opts = { generateAiSummary: true, modelIds: ['original'] };
 			svc.enqueueBatch({
 				urls: [{ url: 'https://youtube.com/watch?v=v1', kind: 'video' }],
 				options: opts,
 				targetPolicy: buildFolderTargetPolicy(),
 				reportPolicy: { include: false, location: 'generated-note' },
 			});
-			opts.modelId = 'mutated';
+			opts.modelIds[0] = 'mutated';
 			await flushMicrotasks();
-			expect(receivedOptions[0]?.modelId).toBe('original');
+			expect(receivedOptions[0]?.modelIds).toEqual(['original']);
 		});
 	});
 
@@ -428,6 +428,51 @@ describe('RunQueueService', () => {
 			svc.enqueueBatch(makeInput(1, false));
 			await flushMicrotasks();
 			expect(worker.persistCalls).toHaveLength(0);
+		});
+
+		it('continues with later runs when report persistence fails', async () => {
+			const executed: number[] = [];
+			const onBatchReportError = vi.fn();
+			const persistBatchReport = vi.fn()
+				.mockRejectedValueOnce(new Error('report write failed'))
+				.mockResolvedValueOnce(undefined);
+			const worker: RunWorker = {
+				executeRun: vi.fn(async (run: QueuedRun) => {
+					executed.push(run.ordinal);
+					return makeEntry(run);
+				}),
+				resolveTitle: vi.fn().mockRejectedValue(new Error()),
+				persistBatchReport,
+				onBatchReportError,
+			};
+			const svc = new RunQueueService(worker);
+
+			svc.enqueueBatch(makeInput(1, true));
+			svc.enqueueBatch(makeInput(1, true));
+			await flushMicrotasks();
+
+			expect(executed).toHaveLength(2);
+			expect(persistBatchReport).toHaveBeenCalledTimes(2);
+			expect(onBatchReportError).toHaveBeenCalledTimes(1);
+			expect(svc.getSnapshot().history).toHaveLength(2);
+		});
+
+		it('continues when report-error notification fails', async () => {
+			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+			const worker = makeWorker();
+			worker.persistBatchReport = vi.fn().mockRejectedValue(new Error('report write failed'));
+			worker.onBatchReportError = vi.fn(() => { throw new Error('notification failed'); });
+			const svc = new RunQueueService(worker);
+
+			svc.enqueueBatch(makeInput(1, true));
+			svc.enqueueBatch(makeInput(1, true));
+			await flushMicrotasks();
+
+			expect(worker.executeRun).toHaveBeenCalledTimes(2);
+			expect(consoleSpy).toHaveBeenCalledWith(
+				'Batch report error callback failed:',
+				expect.any(Error),
+			);
 		});
 
 		it('notifies onBatchFinalized for every finished batch, reports on or off', async () => {

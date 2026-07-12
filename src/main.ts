@@ -34,8 +34,10 @@ export class YTKN extends Plugin {
 	private generationService!: GenerationService;
 	private statusBarEl?: HTMLElement;
 	private runQueue!: RunQueueService;
+	private unloaded = false;
 
 	async onload(): Promise<void> {
+		this.unloaded = false;
 		try {
 			await this.initializeServices();
 			this.initializeStatusBar();
@@ -46,15 +48,18 @@ export class YTKN extends Plugin {
 				() => this.openQueueModal(),
 			));
 			this.registerCommands();
-			window.setTimeout(() => {
-				void this.showReleaseNotesIfUpdated();
-			}, 0);
+			this.app.workspace.onLayoutReady(() => {
+				if (!this.unloaded) {
+					void this.showReleaseNotesIfUpdated();
+				}
+			});
 		} catch (error) {
 			notifyError('YT Knowledge Notes failed to load', error);
 		}
 	}
 
 	onunload(): void {
+		this.unloaded = true;
 		this.runQueue?.cancelAll();
 		this.statusBarEl?.detach();
 		this.statusBarEl = undefined;
@@ -75,6 +80,7 @@ export class YTKN extends Plugin {
 			resolveTitle: (run, signal) => this.generationService.resolveTitle(run, signal),
 			persistBatchReport: (batch, report) => this.generationService.persistBatchReport(batch, report),
 			onBatchFinalized: (batch) => this.generationService.onBatchFinalized(batch),
+			onBatchReportError: (_batch, error) => notifyError("Couldn't save the run report", error),
 		});
 		this.runQueue.on(() => this.renderStatusBar());
 	}
@@ -98,7 +104,7 @@ export class YTKN extends Plugin {
 
 		this.addCommand({
 			id: 'cancel-all-queued',
-			name: 'Cancel all queued',
+			name: 'Cancel all runs',
 			callback: () => {
 				const snap = this.runQueue.getSnapshot();
 				if (!snap.current && snap.queued.length === 0) {
@@ -106,7 +112,7 @@ export class YTKN extends Plugin {
 					return;
 				}
 				this.runQueue.cancelAll();
-				new Notice('Cancel requested. Waiting for the running step to stop.');
+				new Notice('Cancel requested. The current step will stop as soon as possible.');
 			},
 		});
 
@@ -174,7 +180,6 @@ export class YTKN extends Plugin {
 			linkTimestamps: outputDefaults.linkTimestamps,
 			tldrCalloutAtTop: outputDefaults.tldrCalloutAtTop,
 			modelIds,
-			modelId: modelIds[0],
 			instructionMode: instructionConfig.mode,
 			instructionTemplate: instructionConfig.template,
 			manualInstructions: instructionConfig.manualInstructions,
@@ -241,9 +246,9 @@ export class YTKN extends Plugin {
 			new Notice(INSERT_AT_CARET_REQUIRES_NOTE);
 			return null;
 		}
-		// Editor-target batches cannot safely expand playlist URLs into many per-video writes.
+		// Editor-target batches cannot safely expand playlists or channels into many per-video writes.
 		if (urlCount > 1 && options.playlistMode === 'per-video' && classifications.some((kind) => kind === 'playlist' || kind === 'channel')) {
-			new Notice("Multi-URL paste with editor target can't include playlists or channels in per-video mode. Switch playlist handling to combined, switch destination to a folder, or remove collection links.");
+			new Notice('A multi-URL run cannot create one note per video from a playlist or channel when using the current note. Choose One combined note, choose Folder, or remove the playlist or channel URL.');
 			return null;
 		}
 		if (options.noteDestinationMode === 'current-note' && urlCount === 1) {
@@ -252,6 +257,7 @@ export class YTKN extends Plugin {
 				mode: 'replace-range',
 				fromOffset: target.fromOffset,
 				toOffset: target.toOffset,
+				expectedContent: target.expectedContent,
 				createdByPlugin: target.createdByPlugin,
 			};
 			return buildEditorReplaceRangeFirstPolicy(ref);
@@ -295,7 +301,7 @@ export class YTKN extends Plugin {
 
 		let text: string;
 		if (current) {
-			text = `YouTube · ${current.displayTitle} — Working…`;
+			text = `YouTube · ${current.displayTitle} · Working…`;
 			if (queuedCount > 0) text += ` (${queuedCount} queued)`;
 		} else {
 			text = `YouTube · ${queuedCount} queued`;
@@ -330,6 +336,7 @@ export class YTKN extends Plugin {
 				file,
 				fromOffset: fileContent.length,
 				toOffset: fileContent.length,
+				expectedContent: fileContent,
 				jobId: createJobId(),
 				createdByPlugin: false,
 				finalized: false,
@@ -343,6 +350,7 @@ export class YTKN extends Plugin {
 			file,
 			fromOffset: editor.posToOffset(editor.getCursor('from')),
 			toOffset: editor.posToOffset(editor.getCursor('to')),
+			expectedContent: editor.getValue(),
 			jobId: createJobId(),
 			createdByPlugin: false,
 			finalized: false,

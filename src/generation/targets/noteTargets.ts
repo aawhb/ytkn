@@ -1,5 +1,5 @@
 import type { App, WorkspaceLeaf } from 'obsidian';
-import { Notice, TFile } from 'obsidian';
+import { MarkdownView, Notice, TFile } from 'obsidian';
 import type { ProgressMarkers } from '../../queue/progress';
 import {
 	buildProgressContent,
@@ -19,6 +19,7 @@ export interface NoteInsertionTarget {
 	file: TFile;
 	fromOffset: number;
 	toOffset: number;
+	expectedContent?: string;
 	jobId: string;
 	createdByPlugin: boolean;
 	finalized: boolean;
@@ -162,8 +163,8 @@ export class NoteTargetWriter {
 		titleToRenameTo: string | null,
 		progressState: ProgressState,
 	): Promise<void> {
-		await this.showProgress(target, progressState.url, 'Rendering note...', progressState);
-		this.onStatusBar('Rendering note...');
+		await this.showProgress(target, progressState.url, 'Rendering note…', progressState);
+		this.onStatusBar('Rendering note…');
 		await this.writeContentToTarget(target, content);
 
 		if (titleToRenameTo) {
@@ -199,6 +200,16 @@ export class NoteTargetWriter {
 				createdByPlugin: ref.createdByPlugin,
 				finalized: false,
 			};
+		}
+
+		if (ref.expectedContent !== undefined) {
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+			const currentContent = activeView?.file?.path === file.path
+				? activeView.editor.getValue()
+				: await this.app.vault.cachedRead(file);
+			if (currentContent !== ref.expectedContent) {
+				throw new Error('The target note changed while this run was waiting. Start the run again to use the current selection or cursor.');
+			}
 		}
 
 		return {

@@ -21,7 +21,6 @@ const mocks = vi.hoisted(() => {
 		getOutputDefaults: ReturnType<typeof vi.fn>;
 		getInstructionConfig: ReturnType<typeof vi.fn>;
 		getModelIds: ReturnType<typeof vi.fn>;
-		getSelectedModel: ReturnType<typeof vi.fn>;
 		getModels: ReturnType<typeof vi.fn>;
 		getTemperature: ReturnType<typeof vi.fn>;
 		getRequestTimeoutMs: ReturnType<typeof vi.fn>;
@@ -53,6 +52,7 @@ vi.mock('obsidian', () => {
 		app = {
 			workspace: {
 				getActiveViewOfType: vi.fn(() => null),
+				onLayoutReady: vi.fn((callback: () => void) => callback()),
 			},
 			vault: {
 				cachedRead: vi.fn(async () => ''),
@@ -134,7 +134,6 @@ vi.mock('../src/settings/settingsService', () => ({
 			controlValues: {},
 		}));
 		getModelIds = vi.fn(() => []);
-		getSelectedModel = vi.fn(() => null);
 		getModels = vi.fn(() => []);
 		getTemperature = vi.fn(() => 0.3);
 		getRequestTimeoutMs = vi.fn(() => 300000);
@@ -297,7 +296,7 @@ describe('YTKN plugin lifecycle', () => {
 		mocks.runQueueInstances[0].emit({ type: 'title-resolved' });
 
 		expect(plugin.statusBarItems[0].textContent).toBe(
-			'YouTube · #7 · Resolved title — Working… (1 queued)',
+			'YouTube · #7 · Resolved title · Working… (1 queued)',
 		);
 	});
 
