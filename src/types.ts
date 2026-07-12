@@ -1,4 +1,3 @@
-// Provider and settings
 export type ProviderType = 'openai' | 'openai-compatible' | 'anthropic' | 'gemini';
 export type TranscriptMode = 'none' | 'readable' | 'timestamped';
 export type PlaylistMode = 'per-video' | 'combined';
@@ -91,10 +90,7 @@ export type RawStoredProvider = StoredProvider & {
 
 export interface StoredSettings {
 	providers: StoredProvider[];
-	/** Ordered model chain; entry 0 is the primary, the rest are fallbacks. */
 	modelIds: string[];
-	/** Mirror of modelIds[0], kept for configs written by older plugin versions. */
-	selectedModelId: string | null;
 	outputDefaults: OutputDefaults;
 	instructionConfig: InstructionConfig;
 	temperature: number;
@@ -105,7 +101,6 @@ export interface StoredSettings {
 export interface PluginSettings {
 	loadSettings(): Promise<void>;
 	hasSavedSettings(): boolean;
-	getSelectedModel(): ModelConfig | null;
 	getSelectedModels(): ModelConfig[];
 	getModelIds(): string[];
 	updateModelIds(modelIds: string[]): Promise<void>;
@@ -123,7 +118,6 @@ export interface PluginSettings {
 	updateModel(modelName: string, modelDisplayName: string, providerName: string): Promise<void>;
 	deleteProvider(provider: ProviderConfig): Promise<void>;
 	deleteModel(providerName: string, modelName: string): Promise<void>;
-	updateActiveModel(modelId: string): Promise<void>;
 	updateInstructionConfig(patch: Partial<InstructionConfig>): Promise<void>;
 	updateOutputDefaults(outputDefaults: OutputDefaults): Promise<void>;
 	updateTemperature(temperature: number): Promise<void>;
@@ -134,7 +128,6 @@ export interface PluginSettings {
 	validateModelId(modelId: string): boolean;
 }
 
-// Generation options and providers
 export interface GenerationOptions {
 	useAi?: boolean;
 	generateAiSummary?: boolean;
@@ -158,9 +151,7 @@ export interface GenerationOptions {
 	noteDestinationMode?: NoteDestinationMode;
 	noteDestinationFolder?: string;
 	openCreatedNote?: boolean;
-	/** Ordered per-run model chain; falls back to `modelId`, then the settings chain. */
 	modelIds?: string[];
-	modelId?: string;
 	temperature?: number;
 	requestTimeoutMs?: number;
 	includeFrontmatter?: boolean;
@@ -175,7 +166,6 @@ export interface AIModelProvider {
 	summarizeVideo(prompt: string, signal?: AbortSignal): Promise<string>;
 }
 
-// YouTube, transcripts, and playlists
 export interface TranscriptLine {
 	text: string;
 	offset: number;
@@ -232,7 +222,6 @@ export type VideoCollectionResponse = PlaylistResponse | ChannelResponse;
 
 export interface ChannelFetchOptions {
 	contentTypes: ChannelContentType[];
-	/** Maximum entries fetched from each selected type; null means all entries. */
 	videoLimit: number | null;
 }
 
@@ -265,7 +254,6 @@ export interface PlaylistRunReportEntry {
 	warnings?: string[];
 }
 
-// Templates and rendering metadata
 interface SectionDeclaration {
 	id: string;
 	heading: string;
@@ -307,7 +295,6 @@ export interface Template {
 	controls?: ControlDeclaration[];
 }
 
-// Queue and reporting
 export type QueueRunOutcome = 'completed' | 'skipped' | 'failed' | 'canceled';
 
 export type QueueRunReportEntry =

@@ -429,7 +429,7 @@ describe('GenerationService metadata-only runs', () => {
 				useAi: true,
 				generateAiSummary: false,
 				tldrCalloutAtTop: true,
-				modelId: 'Ollama:local-model',
+				modelIds: ['Ollama:local-model'],
 			})),
 			new AbortController().signal,
 		);
@@ -464,7 +464,7 @@ describe('GenerationService metadata-only runs', () => {
 				useAi: true,
 				generateAiSummary: false,
 				tldrCalloutAtTop: true,
-				modelId: 'Ollama:local-model',
+				modelIds: ['Ollama:local-model'],
 				playlistMode: 'per-video',
 			}), 'playlist'),
 			new AbortController().signal,
@@ -505,7 +505,7 @@ describe('GenerationService metadata-only runs', () => {
 				includeMindmap: true,
 				transcriptMode: 'none',
 				playlistMode: 'combined',
-				modelId: 'Ollama:local-model',
+				modelIds: ['Ollama:local-model'],
 			}), 'playlist'),
 			new AbortController().signal,
 		);
@@ -549,7 +549,7 @@ describe('GenerationService metadata-only runs', () => {
 				includeMindmap: true,
 				transcriptMode: 'none',
 				playlistMode: 'combined',
-				modelId: 'Ollama:local-model',
+				modelIds: ['Ollama:local-model'],
 			}), 'playlist'),
 			new AbortController().signal,
 		);

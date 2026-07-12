@@ -10,11 +10,7 @@ import type {
 	StoredProvider,
 	StoredSettings,
 } from '../types';
-import {
-	DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST,
-	DEFAULT_REQUEST_TIMEOUT_MS,
-	DEFAULT_TEMPERATURE,
-} from '../defaults';
+import { DEFAULT_REQUEST_TIMEOUT_MS, DEFAULT_TEMPERATURE } from '../defaults';
 import { normalizeRequestTimeoutMs } from '../ai/providers/shared';
 import { formatModelId, parseModelId } from '../modelId';
 import type { RawOutputDefaults } from './normalizeSettings';
@@ -36,6 +32,12 @@ interface SettingsHost {
 	saveData(data: unknown): Promise<void>;
 }
 
+type RawStoredSettings = Partial<StoredSettings> & {
+	providers?: RawStoredProvider[];
+	outputDefaults?: RawOutputDefaults;
+	selectedModelId?: string | null;
+};
+
 export class SettingsService implements PluginSettings {
 	private settings: StoredSettings;
 	private loadedSettingsExisted = false;
@@ -45,20 +47,9 @@ export class SettingsService implements PluginSettings {
 	}
 
 	async loadSettings(): Promise<void> {
-		const loaded = (await this.host.loadData()) as { settings?: Partial<Omit<StoredSettings, 'providers'>> & { providers?: RawStoredProvider[]; outputDefaults?: RawOutputDefaults } } | undefined;
+		const loaded = (await this.host.loadData()) as { settings?: RawStoredSettings } | undefined;
 		const savedSettings = loaded?.settings;
 		this.loadedSettingsExisted = savedSettings !== undefined;
-
-		// One-shot migration: honor addAlias=false by removing 'aliases' from the allowlist.
-		if (savedSettings?.outputDefaults && savedSettings.outputDefaults.addAlias === false) {
-			const raw = savedSettings.outputDefaults.frontmatterPropertyAllowlist
-				?? DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST;
-			savedSettings.outputDefaults.frontmatterPropertyAllowlist = raw
-				.split(/[\s,]+/)
-				.map((s) => s.trim())
-				.filter((s) => s.length > 0 && s !== 'aliases')
-				.join(' ');
-		}
 
 		const savedModelIds = Array.isArray(savedSettings?.modelIds)
 			? savedSettings.modelIds.filter((id): id is string => typeof id === 'string')
@@ -69,7 +60,6 @@ export class SettingsService implements PluginSettings {
 		const normalized: StoredSettings = {
 			providers: this.normalizeProviders(savedSettings?.providers),
 			modelIds: savedModelIds,
-			selectedModelId: savedSettings?.selectedModelId ?? null,
 			outputDefaults: normalizeOutputDefaults(savedSettings?.outputDefaults),
 			instructionConfig: normalizeInstructionConfig(savedSettings?.instructionConfig),
 			temperature: normalizeTemperature(savedSettings?.temperature),
@@ -84,10 +74,6 @@ export class SettingsService implements PluginSettings {
 		if (needsSave) {
 			await this.saveData();
 		}
-	}
-
-	getSelectedModel(): ModelConfig | null {
-		return this.getSelectedModels()[0] ?? null;
 	}
 
 	getSelectedModels(): ModelConfig[] {
@@ -120,7 +106,6 @@ export class SettingsService implements PluginSettings {
 			seen.add(modelId);
 			return true;
 		});
-		this.settings.selectedModelId = this.settings.modelIds[0] ?? null;
 	}
 
 	getProviders(): ProviderConfig[] {
@@ -314,10 +299,6 @@ export class SettingsService implements PluginSettings {
 		await this.saveData();
 	}
 
-	async updateActiveModel(modelId: string): Promise<void> {
-		await this.updateModelIds([modelId, ...this.settings.modelIds.filter((id) => id !== modelId)]);
-	}
-
 	async updateInstructionConfig(patch: Partial<InstructionConfig>): Promise<void> {
 		this.settings.instructionConfig = normalizeInstructionConfig({
 			...this.settings.instructionConfig,
@@ -371,7 +352,6 @@ export class SettingsService implements PluginSettings {
 		return {
 			providers: [],
 			modelIds: [],
-			selectedModelId: null,
 			outputDefaults: normalizeOutputDefaults(),
 			instructionConfig: normalizeInstructionConfig(),
 			temperature: DEFAULT_TEMPERATURE,
@@ -381,26 +361,17 @@ export class SettingsService implements PluginSettings {
 	}
 
 	private normalizeProviders(providers?: RawStoredProvider[]): StoredProvider[] {
-		return (providers ?? []).map((provider) => {
-			// Migrate legacy OpenAI providers with custom URLs to openai-compatible.
-			const storedType = provider.type as string;
-			const type =
-				storedType === 'openai' && provider.url && !provider.url.includes('api.openai.com')
-					? ('openai-compatible' as const)
-					: provider.type;
-
-			return {
+		return (providers ?? []).map((provider) => ({
 				name: provider.name,
-				type,
+				type: provider.type,
 				apiKeySecretId: provider.apiKeySecretId?.trim() || undefined,
-				url: type === 'openai-compatible' ? provider.url : undefined,
+				url: provider.type === 'openai-compatible' ? provider.url : undefined,
 				models: (provider.models ?? []).map((model) => ({
 					name: model.name,
 					displayName: model.displayName || model.name,
 					contextWindow: normalizeContextWindow(model.contextWindow),
 				})),
-			};
-		});
+			}));
 	}
 
 	private async saveData(): Promise<void> {

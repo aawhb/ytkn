@@ -90,12 +90,12 @@ describe('buildGenerationSubmit', () => {
 
 		expect(result).toEqual({
 			ok: false,
-			message: 'Items per content type must be a positive whole number, or choose All available.',
+			message: 'Items per selected type must be a positive whole number, or choose All available.',
 			duplicateCount: 0,
 		});
 	});
 
-	it('passes the model chain through and mirrors the first entry as modelId', () => {
+	it('passes the model chain through', () => {
 		const result = buildGenerationSubmit({
 			...baseState(),
 			useAi: true,
@@ -106,7 +106,6 @@ describe('buildGenerationSubmit', () => {
 		expect(result.ok).toBe(true);
 		if (!result.ok) throw new Error(result.message);
 		expect(result.options.modelIds).toEqual(['OpenAI:gpt-test', 'Local:qwen']);
-		expect(result.options.modelId).toBe('OpenAI:gpt-test');
 	});
 
 	it('rejects AI runs with an empty model chain', () => {

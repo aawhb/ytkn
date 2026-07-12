@@ -82,7 +82,7 @@ export function resolveEffectiveGenerationOptions(
 		noteDestinationMode: options.noteDestinationMode ?? outputDefaults.noteDestinationMode,
 		noteDestinationFolder: options.noteDestinationFolder ?? outputDefaults.noteDestinationFolder,
 		openCreatedNote: options.openCreatedNote ?? outputDefaults.openCreatedNote,
-		modelIds: options.modelIds ?? (options.modelId ? [options.modelId] : settings.getModelIds()),
+		modelIds: options.modelIds ?? settings.getModelIds(),
 		temperature: options.temperature ?? settings.getTemperature(),
 		requestTimeoutMs: options.requestTimeoutMs ?? settings.getRequestTimeoutMs(),
 		includeFrontmatter: options.includeFrontmatter ?? outputDefaults.includeFrontmatter,

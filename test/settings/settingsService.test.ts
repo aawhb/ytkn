@@ -61,7 +61,7 @@ describe('SettingsService current contracts', () => {
 
 		expect(manager.hasSavedSettings()).toBe(false);
 		expect(manager.getProviders()).toEqual([]);
-		expect(manager.getSelectedModel()).toBeNull();
+		expect(manager.getSelectedModels()).toEqual([]);
 		expect(manager.getOutputDefaults()).toMatchObject({
 			useAi: DEFAULT_USE_AI,
 			generateAiSummary: DEFAULT_GENERATE_AI_SUMMARY,
@@ -92,10 +92,10 @@ describe('SettingsService current contracts', () => {
 			displayName: 'Qwen 3.5 4B',
 			provider: { name: 'Local', type: 'openai-compatible', apiKey: '', url: 'http://localhost:11434/v1' },
 		});
-		await manager.updateActiveModel('Local:qwen3.5:4b');
+		await manager.updateModelIds(['Local:qwen3.5:4b']);
 
 		expect(manager.validateModelId('Local:qwen3.5:4b')).toBe(true);
-		expect(manager.getSelectedModel()?.name).toBe('qwen3.5:4b');
+		expect(manager.getSelectedModels()[0]?.name).toBe('qwen3.5:4b');
 
 		const added = await manager.mergeProviderModels('Local', [
 			{ name: 'qwen3.5:4b', displayName: 'Qwen updated', contextWindow: 262144 },
@@ -181,14 +181,14 @@ describe('SettingsService current contracts', () => {
 		const stale = makeManager({ settings: { providers: [geminiProvider], selectedModelId: 'Missing:Model' } });
 		await stale.manager.loadSettings();
 
-		expect(stale.manager.getSelectedModel()).toBeNull();
+		expect(stale.manager.getSelectedModels()).toEqual([]);
 		expect(stale.plugin.saveData).toHaveBeenCalled();
 
 		const valid = makeManager({ settings: { providers: [geminiProvider], selectedModelId: 'Gemini:gemini-1.5-flash' } });
 		await valid.manager.loadSettings();
 
-		expect(valid.manager.getSelectedModel()?.name).toBe('gemini-1.5-flash');
-		expect(valid.manager.getSelectedModel()?.provider.apiKey).toBe('test-key');
+		expect(valid.manager.getSelectedModels()[0]?.name).toBe('gemini-1.5-flash');
+		expect(valid.manager.getSelectedModels()[0]?.provider.apiKey).toBe('test-key');
 	});
 
 	it('normalizes persisted output defaults without overwriting explicit current choices', async () => {
@@ -367,18 +367,17 @@ describe('SettingsService model chain', () => {
 
 		expect(manager.getModelIds()).toEqual(['Local:qwen3.5:4b']);
 		expect(manager.getSelectedModels().map((m) => m.name)).toEqual(['qwen3.5:4b']);
-		expect(manager.getSelectedModel()?.name).toBe('qwen3.5:4b');
 	});
 
-	it('persists the chain and mirrors selectedModelId to the first entry', async () => {
+	it('persists only the canonical model chain', async () => {
 		const { plugin, manager } = await makeWithTwoModels();
 
 		await manager.updateModelIds(['Local:llama3.2', 'Local:qwen3.5:4b']);
 
 		expect(manager.getModelIds()).toEqual(['Local:llama3.2', 'Local:qwen3.5:4b']);
 		expect(plugin.data?.settings?.modelIds).toEqual(['Local:llama3.2', 'Local:qwen3.5:4b']);
-		expect(plugin.data?.settings?.selectedModelId).toBe('Local:llama3.2');
-		expect(manager.getSelectedModel()?.name).toBe('llama3.2');
+		expect(plugin.data?.settings?.selectedModelId).toBeUndefined();
+		expect(manager.getSelectedModels()[0]?.name).toBe('llama3.2');
 	});
 
 	it('drops invalid and duplicate entries when updating the chain', async () => {
@@ -389,7 +388,7 @@ describe('SettingsService model chain', () => {
 		expect(manager.getModelIds()).toEqual(['Local:qwen3.5:4b']);
 	});
 
-	it('prunes stale chain entries on load and re-derives the mirror', async () => {
+	it('prunes stale chain entries on load', async () => {
 		const { manager } = makeManager({
 			settings: {
 				providers: [{ name: 'Local', type: 'openai-compatible', url: 'http://localhost:11434/v1', models: [{ name: 'llama3.2', displayName: 'Llama' }] }],
@@ -400,7 +399,7 @@ describe('SettingsService model chain', () => {
 		await manager.loadSettings();
 
 		expect(manager.getModelIds()).toEqual(['Local:llama3.2']);
-		expect(manager.getSelectedModel()?.name).toBe('llama3.2');
+		expect(manager.getSelectedModels()[0]?.name).toBe('llama3.2');
 	});
 
 	it('keeps the chain in sync when providers are renamed or models deleted', async () => {
@@ -412,10 +411,10 @@ describe('SettingsService model chain', () => {
 
 		await manager.deleteModel('Ollama', 'qwen3.5:4b');
 		expect(manager.getModelIds()).toEqual(['Ollama:llama3.2']);
-		expect(manager.getSelectedModel()?.name).toBe('llama3.2');
+		expect(manager.getSelectedModels()[0]?.name).toBe('llama3.2');
 
 		await manager.deleteProvider({ name: 'Ollama', type: 'openai-compatible', apiKey: '' });
 		expect(manager.getModelIds()).toEqual([]);
-		expect(manager.getSelectedModel()).toBeNull();
+		expect(manager.getSelectedModels()).toEqual([]);
 	});
 });

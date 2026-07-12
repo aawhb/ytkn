@@ -30,7 +30,7 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 	const effectiveGenerateAiSummary = shouldGenerateAiSummary(state);
 
 	if (!trimmedUrl) {
-		return failure('Paste a YouTube video or playlist URL to continue.');
+		return failure('Paste at least one YouTube video, playlist, or channel URL.');
 	}
 
 	const parsedUrls = parseUrls(trimmedUrl);
@@ -44,7 +44,7 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 	if (hasChannelUrl && parsedChannelVideoLimit !== null && (
 		!Number.isInteger(parsedChannelVideoLimit) || parsedChannelVideoLimit < 1
 	)) {
-		return failure('Items per content type must be a positive whole number, or choose All available.', duplicateCount);
+		return failure('Items per selected type must be a positive whole number, or choose All available.', duplicateCount);
 	}
 
 	if (
@@ -113,7 +113,6 @@ export function buildGenerationSubmit(state: GenerationFormState): GenerationSub
 			linkTimestamps: state.linkTimestamps,
 			tldrCalloutAtTop: state.tldrCalloutAtTop,
 			modelIds: state.modelIds,
-			modelId: state.modelIds[0],
 			instructionMode: state.instructionMode,
 			instructionTemplate: state.instructionTemplate,
 			manualInstructions: trimmedManualInstructions,

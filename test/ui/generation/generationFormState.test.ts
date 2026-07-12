@@ -26,22 +26,14 @@ describe('buildGenerationFormState', () => {
 		expect(state.modelIds).toEqual(['OpenAI:gpt-test']);
 	});
 
-	it('seeds the model chain from saved options, falling back to the legacy single model', () => {
+	it('seeds the model chain from saved options', () => {
 		const fromChain = buildGenerationFormState({
 			initialUrl: '',
 			availableModels: [model],
 			initialOptions: { modelIds: ['A:one', 'B:two'] },
 			hasActiveNote: true,
 		});
-		const fromLegacy = buildGenerationFormState({
-			initialUrl: '',
-			availableModels: [model],
-			initialOptions: { modelId: 'C:three' },
-			hasActiveNote: true,
-		});
-
 		expect(fromChain.modelIds).toEqual(['A:one', 'B:two']);
-		expect(fromLegacy.modelIds).toEqual(['C:three']);
 	});
 
 	it('defaults openCreatedNote off and honors saved defaults', () => {

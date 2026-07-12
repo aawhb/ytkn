@@ -50,8 +50,6 @@ export type RawOutputDefaults = Partial<Omit<OutputDefaults, 'mediaEmbedMode' | 
 	mediaEmbedMode?: unknown;
 	channelContentTypes?: unknown;
 	channelVideoLimit?: unknown;
-	includeThumbnail?: boolean;
-	addAlias?: boolean;
 };
 
 function normalizeOneOf<T extends string>(value: unknown, allowedValues: readonly T[], fallback: T): T {
@@ -215,13 +213,9 @@ function normalizeSourceSectionPosition(value?: SourceSectionPosition): SourceSe
 	return normalizeOneOf(value, VALID_SOURCE_SECTION_POSITIONS, DEFAULT_SOURCE_SECTION_POSITION);
 }
 
-function normalizeMediaEmbedMode(value?: unknown, legacyIncludeThumbnail?: boolean): MediaEmbedMode {
+function normalizeMediaEmbedMode(value?: unknown): MediaEmbedMode {
 	if (VALID_MEDIA_EMBED_MODES.includes(value as MediaEmbedMode)) {
 		return value as MediaEmbedMode;
-	}
-
-	if (value === undefined && legacyIncludeThumbnail === false) {
-		return 'none';
 	}
 
 	return DEFAULT_MEDIA_EMBED_MODE;
@@ -250,7 +244,7 @@ export function normalizeOutputDefaults(outputDefaults?: RawOutputDefaults): Out
 		transcriptLanguageMode: normalizeTranscriptLanguageMode(outputDefaults?.transcriptLanguageMode),
 		preferredTranscriptLanguage: normalizePreferredTranscriptLanguage(outputDefaults?.preferredTranscriptLanguage),
 		transcriptFailureMode: normalizeTranscriptFailureMode(outputDefaults?.transcriptFailureMode),
-		mediaEmbedMode: normalizeMediaEmbedMode(outputDefaults?.mediaEmbedMode, outputDefaults?.includeThumbnail),
+		mediaEmbedMode: normalizeMediaEmbedMode(outputDefaults?.mediaEmbedMode),
 		includeRunReport: outputDefaults?.includeRunReport ?? DEFAULT_INCLUDE_RUN_REPORT,
 		runReportLocation: normalizeRunReportLocation(outputDefaults?.runReportLocation),
 		useVideoTitleAsNoteName: outputDefaults?.useVideoTitleAsNoteName ?? DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,

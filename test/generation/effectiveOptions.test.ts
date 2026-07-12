@@ -6,7 +6,6 @@ function createSettings(overrides: Partial<PluginSettings> = {}): PluginSettings
 	return {
 		loadSettings: async () => undefined,
 		hasSavedSettings: () => true,
-		getSelectedModel: () => null,
 		getProviders: () => [],
 		getModels: () => [],
 		getInstructionConfig: () => ({
@@ -54,7 +53,6 @@ function createSettings(overrides: Partial<PluginSettings> = {}): PluginSettings
 		updateModel: async () => undefined,
 		deleteProvider: async () => undefined,
 		deleteModel: async () => undefined,
-		updateActiveModel: async () => undefined,
 		updateInstructionConfig: async () => undefined,
 		updateOutputDefaults: async () => undefined,
 		updateTemperature: async () => undefined,
@@ -111,15 +109,13 @@ describe('resolveEffectiveGenerationOptions', () => {
 		expect(effective.channelVideoLimit).toBeNull();
 	});
 
-	it('resolves the model chain from per-run list, legacy single model, then settings', () => {
+	it('resolves the model chain from per-run options, then settings', () => {
 		const settings = createSettings({
 			getModelIds: () => ['A:one', 'B:two'],
 		} as never);
 
 		expect(resolveEffectiveGenerationOptions({}, settings).modelIds).toEqual(['A:one', 'B:two']);
 		expect(resolveEffectiveGenerationOptions({ modelIds: ['B:two'] }, settings).modelIds).toEqual(['B:two']);
-		expect(resolveEffectiveGenerationOptions({ modelId: 'C:three' }, settings).modelIds).toEqual(['C:three']);
-		expect(resolveEffectiveGenerationOptions({ modelIds: ['A:one'], modelId: 'C:three' }, settings).modelIds).toEqual(['A:one']);
 	});
 
 	it('resolves openCreatedNote from saved defaults and per-run overrides', () => {
