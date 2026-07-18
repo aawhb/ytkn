@@ -66,6 +66,7 @@ export class GenerationOptionsModal extends Modal {
 	private tldrCalloutSettingEl?: HTMLElement;
 	private mindmapSettingEl?: HTMLElement;
 	private memorableQuotesSettingEl?: HTMLElement;
+	private aiSectionDividerEl?: HTMLElement;
 	private controlsAreaEl?: HTMLElement;
 	private frontmatterTagsSettingEl?: HTMLElement;
 	private frontmatterPropertyAllowlistSettingEl?: HTMLElement;
@@ -401,7 +402,7 @@ export class GenerationOptionsModal extends Modal {
 		this.memorableQuotesSettingEl = memorableQuotesSetting.settingEl;
 		memorableQuotesSetting.settingEl.addClass('ytkn-modal__quick-full');
 
-		quickGrid.createDiv({ cls: 'ytkn-modal__quick-divider' });
+		this.aiSectionDividerEl = quickGrid.createDiv({ cls: 'ytkn-modal__quick-divider' });
 
 		new Setting(quickGrid)
 			.setName(SETTING_COPY.outputDestination.name)
@@ -833,6 +834,7 @@ export class GenerationOptionsModal extends Modal {
 		this.tldrCalloutSettingEl?.toggle(this.state.useAi);
 		this.mindmapSettingEl?.toggle(this.state.useAi);
 		this.memorableQuotesSettingEl?.toggle(this.state.useAi);
+		this.aiSectionDividerEl?.toggle(this.state.useAi);
 		this.aiModelSettingEl?.toggle(this.state.useAi);
 		this.aiModelChainEl?.toggle(this.state.useAi);
 		this.temperatureSettingEl?.toggle(this.state.useAi);

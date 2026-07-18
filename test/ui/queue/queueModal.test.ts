@@ -7,16 +7,16 @@ vi.mock('obsidian', async () => {
 
 import { App } from 'obsidian';
 import { QueueModal } from '../../../src/ui/queue/queueModal';
-import {
-	RunQueueService,
+import type {
 	RunWorker,
 	QueuedRun,
-	buildFolderTargetPolicy,
 	BatchEnqueueInput,
 } from '../../../src/queue/runQueueService';
-import { QueueRunReportEntry } from '../../../src/types';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+import {
+	RunQueueService,
+	buildFolderTargetPolicy,
+} from '../../../src/queue/runQueueService';
+import type { QueueRunReportEntry } from '../../../src/types';
 
 function makeWorker(): RunWorker {
 	return {
@@ -42,8 +42,6 @@ async function flush(): Promise<void> {
 	await new Promise<void>((r) => setTimeout(r, 30));
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
-
 describe('QueueModal', () => {
 	let app: App;
 
@@ -58,8 +56,12 @@ describe('QueueModal', () => {
 		const modal = new QueueModal(app, svc);
 		modal.open();
 
+		expect(modal.contentEl.querySelector('h2')?.textContent).toBe('Generation queue');
+		const brandMark = modal.contentEl.querySelector('.ytkn-queue-modal__mark.ytkn-brand-mark');
+		expect(brandMark?.getAttribute('aria-hidden')).toBe('true');
 		const empty = modal.contentEl.querySelector('.ytkn-queue-modal__empty');
 		expect(empty).not.toBeNull();
+		expect(empty?.textContent).toContain('Queue is clear');
 	});
 
 	it('renders active run section when run is current', async () => {
@@ -138,6 +140,29 @@ describe('QueueModal', () => {
 		expect(completedBadge).not.toBeNull();
 	});
 
+	it('limits visible history while reporting the full recent count', () => {
+		const history = Array.from({ length: 12 }, (_, index): QueueRunReportEntry => ({
+			kind: 'video',
+			runId: `run-${index}`,
+			batchId: 'batch',
+			ordinal: index + 1,
+			url: `https://youtube.com/watch?v=vid${index}`,
+			displayTitle: `Video ${index}`,
+			outcome: 'completed',
+		}));
+		const service = {
+			on: vi.fn(() => vi.fn()),
+			getSnapshot: vi.fn(() => ({ current: null, queued: [], history })),
+		} as unknown as RunQueueService;
+		const modal = new QueueModal(app, service);
+
+		modal.open();
+
+		expect(modal.contentEl.textContent).toContain('Recent results (12)');
+		expect(modal.contentEl.querySelectorAll('.ytkn-queue-modal__row')).toHaveLength(10);
+		expect(modal.contentEl.textContent).toContain('Showing the 10 most recent results.');
+	});
+
 	it('cancel-one button calls cancelRun on the service', async () => {
 		const worker: RunWorker = {
 			executeRun: vi.fn((_run: QueuedRun, signal: AbortSignal) =>
@@ -156,7 +181,6 @@ describe('QueueModal', () => {
 		const modal = new QueueModal(app, svc);
 		modal.open();
 
-		// Click the first cancel button (for the queued run, not the running one)
 		const cancelBtns = modal.contentEl.querySelectorAll('.ytkn-queue-modal__cancel-btn');
 		expect(cancelBtns.length).toBeGreaterThanOrEqual(2);
 		(cancelBtns[1] as HTMLButtonElement).click();
@@ -185,9 +209,14 @@ describe('QueueModal', () => {
 		modal.open();
 
 		const cancelAllBtn = Array.from(modal.contentEl.querySelectorAll('button')).find(
-			(b) => b.textContent === 'Cancel all',
+			(b) => b.textContent === 'Cancel all runs',
 		) as HTMLButtonElement | undefined;
 		expect(cancelAllBtn).toBeDefined();
+		const activeCard = Array.from(modal.contentEl.querySelectorAll('.ytkn-card')).find(
+			(card) => card.textContent?.includes('Active'),
+		);
+		expect(cancelAllBtn!.compareDocumentPosition(activeCard!))
+			.toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 		cancelAllBtn!.click();
 		expect(cancelAllSpy).toHaveBeenCalledTimes(1);
 
@@ -209,14 +238,11 @@ describe('QueueModal', () => {
 		const modal = new QueueModal(app, svc);
 		modal.open();
 
-		// Initially empty
 		expect(modal.contentEl.querySelector('.ytkn-queue-modal__empty')).not.toBeNull();
 
-		// Enqueue something and let it complete
 		svc.enqueueBatch(makeInput(1));
 		await flush();
 
-		// After completion, history exists → empty state gone, recent results shown
 		expect(modal.contentEl.querySelector('.ytkn-queue-modal__empty')).toBeNull();
 		expect(modal.contentEl.querySelector('.ytkn-queue__badge--completed')).not.toBeNull();
 	});
@@ -233,7 +259,6 @@ describe('QueueModal', () => {
 		modal.open();
 		modal.close();
 
-		// After close, contentEl should be empty (onClose called contentEl.empty())
 		expect(modal.contentEl.innerHTML).toBe('');
 	});
 });

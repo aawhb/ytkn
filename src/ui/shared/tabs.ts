@@ -8,7 +8,7 @@ export interface TabDefinition {
 
 export const SETTINGS_TABS: TabDefinition[] = [
 	{ id: 'general', label: 'General', icon: 'settings' },
-	{ id: 'genai', label: 'GenAI', icon: 'bot' },
+	{ id: 'genai', label: 'AI', icon: 'bot' },
 ];
 
 export const DEFAULT_SETTINGS_TAB_ID = 'general';
@@ -29,9 +29,11 @@ export class TabGroup {
 
 		this.navEl = this.containerEl.createDiv({ cls: 'ytkn-tabs' });
 		this.navEl.setAttribute('role', 'tablist');
+		this.navEl.setAttribute('aria-orientation', 'horizontal');
 
 		this.panelsContainerEl = this.containerEl.createDiv({ cls: 'ytkn-tabs-panels' });
 
+		const tabIds = tabDefs.map((definition) => definition.id);
 		tabDefs.forEach(def => {
 			const tabEl = this.navEl.createEl('button', { cls: 'ytkn-tab' });
 			tabEl.setAttribute('role', 'tab');
@@ -47,6 +49,25 @@ export class TabGroup {
 
 			tabEl.addEventListener('click', () => {
 				this.setActiveTab(def.id);
+			});
+			tabEl.addEventListener('keydown', (event) => {
+				const currentIndex = tabIds.indexOf(def.id);
+				const nextIndex = event.key === 'Home'
+					? 0
+					: event.key === 'End'
+						? tabIds.length - 1
+						: event.key === 'ArrowRight'
+							? (currentIndex + 1) % tabIds.length
+							: event.key === 'ArrowLeft'
+								? (currentIndex - 1 + tabIds.length) % tabIds.length
+								: -1;
+				if (nextIndex < 0) {
+					return;
+				}
+				event.preventDefault();
+				const nextTabId = tabIds[nextIndex];
+				this.setActiveTab(nextTabId);
+				this.tabs.get(nextTabId)?.focus();
 			});
 
 			this.tabs.set(def.id, tabEl);
@@ -79,7 +100,9 @@ export class TabGroup {
 		});
 
 		this.panels.forEach((panelEl, id) => {
-			panelEl.toggleClass('is-active', id === tabId);
+			const isActive = id === tabId;
+			panelEl.toggleClass('is-active', isActive);
+			panelEl.hidden = !isActive;
 		});
 
 		this.activeTabId = tabId;

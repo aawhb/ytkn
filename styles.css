@@ -1261,9 +1261,39 @@
 	width: 100%;
 }
 
+.ytkn-queue-modal {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-4);
+}
+
+.ytkn-queue-modal__header {
+	padding-bottom: var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ytkn-queue-modal__header-copy {
+	min-width: 0;
+}
+
+.ytkn-queue-modal__title {
+	margin: 0;
+	font-size: var(--h2-size);
+}
+
+.ytkn-queue-modal__summary {
+	margin: var(--size-2-1) 0 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}
+
+.ytkn-queue-modal>.ytkn-card {
+	margin-bottom: 0;
+}
+
 .ytkn-queue-modal__row {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: var(--size-4-2);
 	padding: var(--size-4-2) 0;
 	border-bottom: 1px solid var(--background-modifier-border);
@@ -1278,19 +1308,26 @@
 	display: flex;
 	flex-direction: column;
 	gap: var(--size-2-1);
-	overflow: hidden;
+	min-width: 0;
 }
 
 .ytkn-queue-modal__run-title {
-	flex: 1;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	font-weight: var(--font-medium);
+	line-height: var(--line-height-tight);
+	overflow-wrap: anywhere;
+}
+
+.ytkn-queue-modal__row-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	flex: 0 0 auto;
 }
 
 .ytkn-queue__badge {
 	padding: var(--size-2-1) var(--size-4-1);
-	border-radius: var(--radius-s);
+	border-radius: var(--radius-m);
+	background: var(--background-secondary);
 	font-size: var(--font-ui-small);
 	font-weight: var(--font-semibold);
 	white-space: nowrap;
@@ -1298,6 +1335,7 @@
 
 .ytkn-queue__badge--running {
 	color: var(--interactive-accent);
+	background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
 }
 
 .ytkn-queue__badge--queued {
@@ -1306,10 +1344,12 @@
 
 .ytkn-queue__badge--completed {
 	color: var(--text-success);
+	background: color-mix(in srgb, var(--text-success) 12%, transparent);
 }
 
 .ytkn-queue__badge--failed {
 	color: var(--text-error);
+	background: color-mix(in srgb, var(--text-error) 12%, transparent);
 }
 
 .ytkn-queue__badge--canceled {
@@ -1321,6 +1361,7 @@
 }
 
 .ytkn-queue-modal__cancel-btn {
+	min-height: var(--ytkn-control-min-height);
 	background: transparent;
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-s);
@@ -1335,21 +1376,55 @@
 	border-color: var(--text-error);
 }
 
-.ytkn-queue-modal__empty {
-	color: var(--text-muted);
-	text-align: center;
-	padding: var(--size-4-4);
+.ytkn-queue-modal__cancel-btn:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
 }
 
-.ytkn-queue-modal__footer {
-	margin-top: var(--size-4-3);
-	padding-top: var(--size-4-3);
-	border-top: 1px solid var(--background-modifier-border);
+.ytkn-queue-modal__empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--size-4-2);
+	color: var(--text-muted);
+	text-align: center;
+	padding: var(--size-4-6) var(--size-4-4);
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	background: var(--background-secondary);
+}
+
+.ytkn-queue-modal__empty-icon {
+	display: flex;
+	color: var(--text-success);
+}
+
+.ytkn-queue-modal__empty h3,
+.ytkn-queue-modal__empty p {
+	margin: 0;
+}
+
+.ytkn-queue-modal__controls {
+	padding-bottom: var(--size-4-3);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ytkn-queue-modal__controls .setting-item {
+	padding: 0;
+	border: 0;
 }
 
 .ytkn-queue-modal__reason {
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
+	overflow-wrap: anywhere;
+}
+
+.ytkn-queue-modal__history-note {
+	margin: var(--size-4-2) 0 0;
+	color: var(--text-faint);
+	font-size: var(--font-ui-small);
+	text-align: center;
 }
 
 .ytkn-whats-new-modal {
@@ -1606,6 +1681,24 @@
 }
 
 @media (max-width: 720px) {
+	.ytkn-queue-modal {
+		gap: var(--size-4-3);
+	}
+
+	.ytkn-queue-modal__row {
+		flex-direction: column;
+		gap: var(--size-4-2);
+	}
+
+	.ytkn-queue-modal__row-info,
+	.ytkn-queue-modal__row-actions {
+		width: 100%;
+	}
+
+	.ytkn-queue-modal__row-actions {
+		justify-content: space-between;
+	}
+
 	.ytkn-modal__quick-grid {
 		grid-template-columns: 1fr;
 	}

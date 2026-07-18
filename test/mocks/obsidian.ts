@@ -2,7 +2,7 @@ export class Notice {
 	constructor(_msg?: string) { }
 }
 
-export async function requestUrl(): Promise<{ text: string; json: unknown }> {
+export async function requestUrl(_request: { url: string; body?: string }): Promise<{ text: string; json: unknown }> {
 	throw new Error('requestUrl mock not implemented for this test');
 }
 
@@ -119,12 +119,22 @@ export class Setting {
 	}
 
 	addToggle(cb: (toggle: MockToggle) => void): this {
+		const inputEl = document.createElement('input');
+		inputEl.type = 'checkbox';
+		this.controlEl.appendChild(inputEl);
 		const toggle: MockToggle = {
 			_value: false,
 			_cb: null,
 			getValue() { return this._value; },
-			setValue(v: boolean): MockToggle { this._value = v; return this; },
-			onChange(cb: (v: boolean) => void): MockToggle { this._cb = cb; return this; },
+			setValue(v: boolean): MockToggle { this._value = v; inputEl.checked = v; return this; },
+			onChange(cb: (v: boolean) => void): MockToggle {
+				this._cb = cb;
+				inputEl.addEventListener('change', () => {
+					this._value = inputEl.checked;
+					cb(inputEl.checked);
+				});
+				return this;
+			},
 		};
 		cb(toggle);
 		return this;

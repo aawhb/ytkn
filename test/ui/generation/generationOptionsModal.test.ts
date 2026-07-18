@@ -124,6 +124,28 @@ describe('GenerationOptionsModal', () => {
 		expect(disabledSetting?.style.display).toBe('none');
 	});
 
+	it('hides the AI section divider when Use AI is turned off', () => {
+		const modal = new GenerationOptionsModal(
+			app,
+			'',
+			[sampleModel],
+			{ useAi: true },
+			onSubmit,
+		);
+		modal.open();
+
+		const divider = modal.contentEl.querySelector<HTMLElement>('.ytkn-modal__quick-divider');
+		const useAiToggle = modal.contentEl.querySelector<HTMLInputElement>(
+			'.ytkn-modal__quick-toggle input[type="checkbox"]',
+		);
+		expect(divider?.style.display).toBe('');
+
+		useAiToggle!.checked = false;
+		useAiToggle!.dispatchEvent(new Event('change'));
+
+		expect(divider?.style.display).toBe('none');
+	});
+
 	it('keeps AI add-ons visible when AI is enabled and summary is disabled', () => {
 		const modal = new GenerationOptionsModal(
 			app,
