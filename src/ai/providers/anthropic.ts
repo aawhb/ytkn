@@ -1,38 +1,48 @@
-import Anthropic from '@anthropic-ai/sdk';
-import type { MessageCreateParamsNonStreaming } from '@anthropic-ai/sdk/resources/messages';
 import { DEFAULT_ANTHROPIC_MAX_TOKENS } from '../../defaults';
 import { AbstractProvider } from './base';
+import { requestUrlJson } from './requestUrlJson';
+
+const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
+
+interface AnthropicContentBlock {
+	type?: string;
+	text?: string;
+}
+
+interface AnthropicMessageResponse {
+	content?: AnthropicContentBlock[];
+	stop_reason?: string;
+}
 
 export class AnthropicProvider extends AbstractProvider {
 	protected readonly providerName = 'Anthropic';
-	private client: Anthropic;
 
 	constructor(
-		apiKey: string,
+		private readonly apiKey: string,
 		model: string,
 		temperature: number,
 		requestTimeoutMs: number,
 	) {
 		super(model, temperature, requestTimeoutMs);
-		// dangerouslyAllowBrowser is required because Obsidian runs in an Electron
-		// renderer; the SDK refuses to instantiate otherwise.
-		this.client = new Anthropic({
-			apiKey,
-			dangerouslyAllowBrowser: true,
-			timeout: this.requestTimeoutMs,
-		});
 	}
 
 	protected async requestCompletion(prompt: string, signal?: AbortSignal): Promise<{ text: string; truncated: boolean }> {
-		const request: MessageCreateParamsNonStreaming = {
-			model: this.model,
-			max_tokens: DEFAULT_ANTHROPIC_MAX_TOKENS,
-			messages: [{ role: 'user', content: prompt }],
-		};
-
-		const response = await this.client.messages.create(request, signal ? { signal } : undefined);
-		const text = response.content
-			.flatMap((block) => (block.type === 'text' ? [block.text] : []))
+		const response = await requestUrlJson<AnthropicMessageResponse>(ANTHROPIC_MESSAGES_URL, {
+			method: 'POST',
+			headers: {
+				'x-api-key': this.apiKey,
+				'anthropic-version': '2023-06-01',
+			},
+			body: {
+				model: this.model,
+				max_tokens: DEFAULT_ANTHROPIC_MAX_TOKENS,
+				messages: [{ role: 'user', content: prompt }],
+			},
+			timeoutMs: this.requestTimeoutMs,
+			signal,
+		});
+		const text = (response.content ?? [])
+			.flatMap((block) => (block.type === 'text' && block.text ? [block.text] : []))
 			.join('\n\n')
 			.trim();
 

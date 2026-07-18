@@ -1,23 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as obsidian from 'obsidian';
-
-let mockFetch: ReturnType<typeof vi.fn>;
-
-vi.mock('../../../src/utils', async (importOriginal) => {
-	const original = await importOriginal<Record<string, unknown>>();
-	return {
-		...original,
-		get fetchFn() {
-			return mockFetch;
-		},
-	};
-});
-
 import { discoverProviderModels } from '../../../src/ai/providers/discovery';
-import { requestUrlJson } from '../../../src/ai/providers/requestUrlJson';
 
-function modelResponse(modelIds: string[], status = 200): any {
-	const payload = { data: modelIds.map((id) => ({ id })) };
+function jsonResponse(payload: unknown, status = 200): any {
 	return {
 		status,
 		headers: { 'content-type': 'application/json' },
@@ -29,132 +14,47 @@ function modelResponse(modelIds: string[], status = 200): any {
 
 afterEach(() => {
 	vi.restoreAllMocks();
-	mockFetch = vi.fn();
-	vi.useRealTimers();
 });
 
-describe('requestUrlJson browser fallback boundary', () => {
-	it('does not fall back after a logical cancellation', async () => {
-		vi.spyOn(obsidian, 'requestUrl').mockReturnValue(new Promise(() => undefined) as any);
-		mockFetch = vi.fn().mockResolvedValue({ status: 200, text: async () => '{"ok":true}' });
-		const controller = new AbortController();
-		const options = {
-			fallbackToFetch: true,
-			signal: controller.signal,
-		} as unknown as NonNullable<Parameters<typeof requestUrlJson>[1]>;
-		const request = requestUrlJson('https://api.example.com/models', options);
+describe('discoverProviderModels', () => {
+	it('uses the native transport and sorts OpenAI models', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(jsonResponse({
+			data: [{ id: 'gpt-z' }, { id: 'gpt-a' }],
+		}));
 
-		controller.abort(new Error('Canceled'));
-
-		await expect(request).rejects.toThrow('Canceled');
-		expect(mockFetch).not.toHaveBeenCalled();
-	});
-
-	it('does not fall back after a logical timeout', async () => {
-		vi.useFakeTimers();
-		vi.spyOn(obsidian, 'requestUrl').mockReturnValue(new Promise(() => undefined) as any);
-		mockFetch = vi.fn().mockResolvedValue({ status: 200, text: async () => '{"ok":true}' });
-		const options = {
-			fallbackToFetch: true,
-			timeoutMs: 50,
-		} as unknown as NonNullable<Parameters<typeof requestUrlJson>[1]>;
-		const request = requestUrlJson('https://api.example.com/models', options);
-		const expectation = expect(request).rejects.toThrow('Request timed out after 50ms');
-
-		await vi.advanceTimersByTimeAsync(50);
-
-		await expectation;
-		expect(mockFetch).not.toHaveBeenCalled();
-	});
-});
-
-describe('discoverProviderModels — openai-compatible with Ollama', () => {
-	it('retains the browser fallback when the Obsidian transport itself fails', async () => {
-		vi.spyOn(obsidian, 'requestUrl').mockRejectedValue(new Error('native transport unavailable'));
-		mockFetch = vi.fn().mockResolvedValue({
-			status: 200,
-			text: async () => JSON.stringify({ data: [{ id: 'llama3' }] }),
+		const models = await discoverProviderModels({
+			name: 'OpenAI', type: 'openai', apiKey: 'key', models: [],
 		});
+
+		expect(models.map((model) => model.name)).toEqual(['gpt-a', 'gpt-z']);
+		expect(requestUrlSpy).toHaveBeenCalledWith(expect.objectContaining({
+			url: 'https://api.openai.com/v1/models',
+			headers: { Authorization: 'Bearer key' },
+		}));
+	});
+
+	it('uses the standard compatible endpoint with optional authentication', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(jsonResponse({
+			data: [{ id: 'mistral' }, { id: 'llama3' }],
+		}));
 
 		const models = await discoverProviderModels({
 			name: 'Local',
 			type: 'openai-compatible',
-			apiKey: '',
-			url: 'http://localhost:11434/v1',
-			models: [],
-		});
-
-		expect(models[0].name).toBe('llama3');
-		expect(mockFetch).toHaveBeenCalledWith(
-			'http://localhost:11434/v1/models',
-			expect.objectContaining({ method: 'GET' }),
-		);
-	});
-
-	it('uses the CORS-free Obsidian transport and returns sorted models', async () => {
-		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(modelResponse(['mistral', 'llama3']));
-
-		const models = await discoverProviderModels({
-			name: 'Local',
-			type: 'openai-compatible',
-			apiKey: '',
-			url: 'http://localhost:11434/v1',
+			apiKey: 'gateway-key',
+			url: 'http://localhost:11434/v1///',
 			models: [],
 		});
 
 		expect(models.map((model) => model.name)).toEqual(['llama3', 'mistral']);
 		expect(requestUrlSpy).toHaveBeenCalledWith(expect.objectContaining({
 			url: 'http://localhost:11434/v1/models',
-			method: 'GET',
-			throw: false,
-		}));
-	});
-
-	it('returns standard discovered model fields only', async () => {
-		vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(modelResponse(['llama3']));
-
-		const models = await discoverProviderModels({
-			name: 'Local',
-			type: 'openai-compatible',
-			apiKey: '',
-			url: 'http://localhost:11434/v1',
-			models: [],
-		});
-
-		expect(models).toEqual([{
-			name: 'llama3',
-			displayName: 'llama3',
-			contextWindow: undefined,
-		}]);
-	});
-});
-
-describe('discoverProviderModels — openai-compatible with non-Ollama URL', () => {
-	it('uses the standard models endpoint and bearer authentication', async () => {
-		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(modelResponse(['model-a']));
-
-		const models = await discoverProviderModels({
-			name: 'Custom',
-			type: 'openai-compatible',
-			apiKey: 'gateway-key',
-			url: 'https://api.example.com/openai',
-			models: [],
-		});
-
-		expect(models[0]).toEqual({
-			name: 'model-a',
-			displayName: 'model-a',
-			contextWindow: undefined,
-		});
-		expect(requestUrlSpy).toHaveBeenCalledWith(expect.objectContaining({
-			url: 'https://api.example.com/openai/models',
 			headers: { Authorization: 'Bearer gateway-key' },
 		}));
 	});
 
-	it('preserves the native HTTP error instead of falling back to browser fetch', async () => {
-		vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(modelResponse([], 401));
-		mockFetch = vi.fn();
+	it('preserves native HTTP errors', async () => {
+		vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(jsonResponse({}, 401));
 
 		await expect(discoverProviderModels({
 			name: 'Custom',
@@ -162,7 +62,53 @@ describe('discoverProviderModels — openai-compatible with non-Ollama URL', () 
 			apiKey: 'bad-key',
 			url: 'https://api.example.com/openai',
 			models: [],
-		})).rejects.toThrow('Request failed: 401 request denied');
-		expect(mockFetch).not.toHaveBeenCalled();
+		})).rejects.toMatchObject({ status: 401 });
+	});
+
+	it('follows Anthropic cursor pagination', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl')
+			.mockResolvedValueOnce(jsonResponse({
+				data: [{ id: 'claude-z', display_name: 'Zulu' }],
+				has_more: true,
+				last_id: 'cursor-1',
+			}))
+			.mockResolvedValueOnce(jsonResponse({
+				data: [{ id: 'claude-a', display_name: 'Alpha' }],
+				has_more: false,
+			}));
+
+		const models = await discoverProviderModels({
+			name: 'Anthropic', type: 'anthropic', apiKey: 'key', models: [],
+		});
+
+		expect(models.map((model) => model.name)).toEqual(['claude-a', 'claude-z']);
+		expect((requestUrlSpy.mock.calls[1][0] as any).url).toContain('after_id=cursor-1');
+		expect((requestUrlSpy.mock.calls[0][0] as any).headers).toMatchObject({
+			'x-api-key': 'key',
+			'anthropic-version': '2023-06-01',
+		});
+	});
+
+	it('follows Gemini pagination and filters unsupported models', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl')
+			.mockResolvedValueOnce(jsonResponse({
+				models: [
+					{ name: 'models/embed', supportedGenerationMethods: ['embedContent'] },
+					{ name: 'models/gemini-z', displayName: 'Zulu', supportedGenerationMethods: ['generateContent'] },
+				],
+				nextPageToken: 'page-2',
+			}))
+			.mockResolvedValueOnce(jsonResponse({
+				models: [{ name: 'models/gemini-a', displayName: 'Alpha', supportedGenerationMethods: ['generateContent'] }],
+			}));
+
+		const models = await discoverProviderModels({
+			name: 'Gemini', type: 'gemini', apiKey: 'key', models: [],
+		});
+
+		expect(models.map((model) => model.name)).toEqual(['gemini-a', 'gemini-z']);
+		expect((requestUrlSpy.mock.calls[0][0] as any).url).not.toContain('key=');
+		expect((requestUrlSpy.mock.calls[0][0] as any).headers).toEqual({ 'x-goog-api-key': 'key' });
+		expect((requestUrlSpy.mock.calls[1][0] as any).url).toContain('pageToken=page-2');
 	});
 });

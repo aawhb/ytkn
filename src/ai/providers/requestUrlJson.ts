@@ -1,27 +1,22 @@
 import { requestUrl, type RequestUrlResponse } from 'obsidian';
-import { fetchFn, getErrorMessage } from '../../utils';
+import { getErrorMessage } from '../../utils';
 
 const MAX_ERROR_BODY_LENGTH = 1000;
 
-interface RequestUrlJsonBaseOptions {
+interface RequestUrlJsonOptions {
 	method?: 'GET' | 'POST';
 	headers?: Record<string, string>;
 	body?: unknown;
+	signal?: AbortSignal;
+	timeoutMs?: number;
 }
 
-type RequestUrlJsonOptions = RequestUrlJsonBaseOptions & (
-	| {
-		fallbackToFetch: true;
-		method?: 'GET';
-		signal?: never;
-		timeoutMs?: never;
+export class RequestUrlHttpError extends Error {
+	constructor(message: string, readonly status: number) {
+		super(message);
+		this.name = 'RequestUrlHttpError';
 	}
-	| {
-		fallbackToFetch?: false;
-		signal?: AbortSignal;
-		timeoutMs?: number;
-	}
-);
+}
 
 export async function requestUrlJson<T>(url: string, options: RequestUrlJsonOptions = {}): Promise<T> {
 	if (options.signal?.aborted) {
@@ -30,27 +25,21 @@ export async function requestUrlJson<T>(url: string, options: RequestUrlJsonOpti
 
 	const method = options.method ?? 'GET';
 	const body = options.body === undefined ? undefined : JSON.stringify(options.body);
-	const canFallbackToFetch = options.fallbackToFetch === true
-		&& method === 'GET'
-		&& options.signal === undefined
-		&& options.timeoutMs === undefined;
-	let response: Pick<RequestUrlResponse, 'status' | 'text'>;
-	try {
-		response = await waitForResponse(
-			requestUrl({ url, method, headers: options.headers, body, throw: false }),
-			options.signal,
-			options.timeoutMs,
-		);
-	} catch (requestError) {
-		if (!canFallbackToFetch || !fetchFn) {
-			throw asError(requestError);
-		}
-		response = await requestWithFetch(url, method, options.headers, body, requestError);
-	}
+	const headers = body === undefined
+		? options.headers
+		: { 'Content-Type': 'application/json', ...options.headers };
+	const response = await waitForResponse(
+		requestUrl({ url, method, headers, body, throw: false }),
+		options.signal,
+		options.timeoutMs,
+	);
 
 	if (response.status < 200 || response.status >= 300) {
 		const responseBody = boundedResponseBody(response.text);
-		throw new Error(`Request failed: ${response.status}${responseBody ? ` ${responseBody}` : ''}`);
+		throw new RequestUrlHttpError(
+			`Request failed: ${response.status}${responseBody ? ` ${responseBody}` : ''}`,
+			response.status,
+		);
 	}
 
 	try {
@@ -106,23 +95,6 @@ function waitForResponse(
 			(error: unknown) => settle(() => reject(asError(error))),
 		);
 	});
-}
-
-async function requestWithFetch(
-	url: string,
-	method: 'GET' | 'POST',
-	headers: Record<string, string> | undefined,
-	body: string | undefined,
-	requestError: unknown,
-): Promise<Pick<RequestUrlResponse, 'status' | 'text'>> {
-	try {
-		const response = await fetchFn!(url, { method, headers, body });
-		return { status: response.status, text: await response.text() };
-	} catch (fetchError) {
-		throw new Error(
-			`Obsidian request failed (${getErrorMessage(requestError)}); browser fallback failed (${getErrorMessage(fetchError)})`,
-		);
-	}
 }
 
 function abortReason(signal: AbortSignal): Error {

@@ -53,8 +53,6 @@
 		"vitest": "^4.1.6"
 	},
 	"dependencies": {
-		"@anthropic-ai/sdk": "^0.96.0",
-		"@google/generative-ai": "^0.24.1",
-		"openai": "^6.38.0"
+		"html-entities": "^2.6.0"
 	}
 }

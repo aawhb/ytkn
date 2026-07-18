@@ -1,37 +1,80 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AbstractProvider } from './base';
+import { requestUrlJson } from './requestUrlJson';
+
+const GEMINI_API_ROOT = 'https://generativelanguage.googleapis.com/v1beta';
+
+interface GeminiPart {
+	text?: string;
+}
+
+interface GeminiCandidate {
+	content?: { parts?: GeminiPart[] };
+	finishReason?: string;
+	finishMessage?: string;
+}
+
+interface GeminiResponse {
+	candidates?: GeminiCandidate[];
+	promptFeedback?: { blockReason?: string; blockReasonMessage?: string };
+}
+
+const BLOCKED_FINISH_REASONS = new Set([
+	'SAFETY',
+	'RECITATION',
+	'BLOCKLIST',
+	'PROHIBITED_CONTENT',
+	'SPII',
+]);
 
 export class GeminiProvider extends AbstractProvider {
 	protected readonly providerName = 'Gemini';
-	private client: GoogleGenerativeAI;
 
 	constructor(
-		apiKey: string,
+		private readonly apiKey: string,
 		model: string,
 		temperature: number,
 		requestTimeoutMs: number,
 	) {
 		super(model, temperature, requestTimeoutMs);
-		this.client = new GoogleGenerativeAI(apiKey);
 	}
 
-	// The Gemini SDK does not accept AbortSignal for generateContent; cancellation
-	// is best-effort and in-flight requests run to completion.
-	protected async requestCompletion(prompt: string, _signal?: AbortSignal): Promise<{ text: string; truncated: boolean }> {
-		const model = this.client.getGenerativeModel(
+	protected async requestCompletion(prompt: string, signal?: AbortSignal): Promise<{ text: string; truncated: boolean }> {
+		const modelPath = normalizeModelPath(this.model);
+		const response = await requestUrlJson<GeminiResponse>(
+			`${GEMINI_API_ROOT}/${modelPath}:generateContent`,
 			{
-				model: this.model,
-				generationConfig: {
-					temperature: this.temperature,
+				method: 'POST',
+				headers: { 'x-goog-api-key': this.apiKey },
+				body: {
+					contents: [{ role: 'user', parts: [{ text: prompt }] }],
+					generationConfig: { temperature: this.temperature },
 				},
+				timeoutMs: this.requestTimeoutMs,
+				signal,
 			},
-			{ timeout: this.requestTimeoutMs },
 		);
 
-		const result = await model.generateContent(prompt);
-		const response = result.response;
-		const text = response.text();
+		if (response.promptFeedback?.blockReason) {
+			throw new Error(
+				`Gemini blocked the prompt: ${response.promptFeedback.blockReasonMessage ?? response.promptFeedback.blockReason}`,
+			);
+		}
 
-		return { text, truncated: String(response.candidates?.[0]?.finishReason) === 'MAX_TOKENS' };
+		const candidate = response.candidates?.[0];
+		if (candidate?.finishReason && BLOCKED_FINISH_REASONS.has(candidate.finishReason)) {
+			throw new Error(
+				`Gemini blocked the response: ${candidate.finishMessage ?? candidate.finishReason}`,
+			);
+		}
+
+		const text = (candidate?.content?.parts ?? [])
+			.flatMap((part) => part.text ? [part.text] : [])
+			.join('');
+		return { text, truncated: candidate?.finishReason === 'MAX_TOKENS' };
 	}
+}
+
+function normalizeModelPath(model: string): string {
+	const path = model.includes('/') ? model : `models/${model}`;
+	return path.split('/').map(encodeURIComponent).join('/');
 }

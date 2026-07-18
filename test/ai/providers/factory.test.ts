@@ -1,13 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createProvider } from '../../../src/ai/providers/factory';
 import { AnthropicProvider } from '../../../src/ai/providers/anthropic';
 import { GeminiProvider } from '../../../src/ai/providers/gemini';
 import { OpenAIProvider } from '../../../src/ai/providers/openai';
 import type { ModelConfig } from '../../../src/types';
-
-vi.mock('@anthropic-ai/sdk');
-vi.mock('@google/generative-ai');
-vi.mock('openai');
 
 function makeConfig(type: string, url?: string): ModelConfig {
 	return {

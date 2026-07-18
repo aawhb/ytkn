@@ -95,8 +95,3 @@ export function resolveUniqueNotePath(
 export function createJobId(): string {
 	return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
-
-export type FetchLike = typeof fetch;
-
-export const fetchFn: FetchLike | undefined =
-	typeof activeWindow === 'undefined' ? undefined : activeWindow.fetch.bind(activeWindow);

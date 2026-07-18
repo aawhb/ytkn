@@ -1,4 +1,3 @@
-import OpenAI from 'openai';
 import { DEFAULT_OPENAI_COMPATIBLE_URL } from '../../defaults';
 import { AbstractProvider } from './base';
 import { requestUrlJson } from './requestUrlJson';
@@ -27,20 +26,9 @@ interface ChatCompletionRequest {
 	[key: string]: unknown;
 }
 
-interface ChatClient {
-	chat: {
-		completions: {
-			create: (
-				options: ChatCompletionRequest,
-				requestOptions?: { signal?: AbortSignal },
-			) => Promise<ChatCompletionResponse>;
-		};
-	};
-}
-
 export class OpenAIProvider extends AbstractProvider {
 	protected readonly providerName: string;
-	private client: ChatClient;
+	private readonly baseUrl: string;
 
 	constructor(
 		providerType: OpenAIProviderType,
@@ -52,9 +40,11 @@ export class OpenAIProvider extends AbstractProvider {
 	) {
 		super(model, temperature, requestTimeoutMs);
 		this.providerName = providerType === 'openai' ? 'OpenAI' : 'OpenAI-compatible';
-		this.client = providerType === 'openai'
-			? this.createOfficialClient()
-			: this.createCompatibleClient(baseUrl);
+		this.baseUrl = (
+			providerType === 'openai'
+				? 'https://api.openai.com/v1'
+				: baseUrl || DEFAULT_OPENAI_COMPATIBLE_URL
+		).replace(/\/+$/, '');
 	}
 
 	protected async requestCompletion(prompt: string, signal?: AbortSignal): Promise<{ text: string; truncated: boolean }> {
@@ -65,52 +55,19 @@ export class OpenAIProvider extends AbstractProvider {
 			stream: false,
 		};
 
-		const completion = await this.client.chat.completions.create(request, signal ? { signal } : undefined);
+		const completion = await requestUrlJson<ChatCompletionResponse>(
+			`${this.baseUrl}/chat/completions`,
+			{
+				method: 'POST',
+				headers: this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : undefined,
+				body: request,
+				timeoutMs: this.requestTimeoutMs,
+				signal,
+			},
+		);
 		const choice = completion.choices?.[0];
 		const text = choice?.message?.content ?? '';
 
 		return { text, truncated: choice?.finish_reason === 'length' };
-	}
-
-	private createOfficialClient(): ChatClient {
-		// dangerouslyAllowBrowser is required because Obsidian runs in an Electron
-		// renderer; the official SDK refuses to instantiate otherwise.
-		return new OpenAI({
-			dangerouslyAllowBrowser: true,
-			apiKey: this.apiKey,
-			timeout: this.requestTimeoutMs,
-		}) as unknown as ChatClient;
-	}
-
-	private createCompatibleClient(baseUrl?: string): ChatClient {
-		const baseUrlClean = (baseUrl || DEFAULT_OPENAI_COMPATIBLE_URL).replace(/\/$/, '');
-
-		const requestCompatibleCompletion = async (
-			options: ChatCompletionRequest,
-			signal?: AbortSignal,
-		): Promise<ChatCompletionResponse> => {
-			const payload = await requestUrlJson<unknown>(
-				`${baseUrlClean}/chat/completions`,
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
-					},
-					body: { stream: false, ...options },
-					timeoutMs: this.requestTimeoutMs,
-					signal,
-				},
-			);
-			return payload && typeof payload === 'object' ? payload : {};
-		};
-
-		return {
-			chat: {
-				completions: {
-					create: (options, requestOptions) => requestCompatibleCompletion(options, requestOptions?.signal),
-				},
-			},
-		};
 	}
 }

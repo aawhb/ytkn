@@ -1,63 +1,90 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as obsidian from 'obsidian';
 import { GeminiProvider } from '../../../src/ai/providers/gemini';
 import { TRUNCATION_NOTICE } from '../../../src/defaults';
 
-const mockGenerateContent = vi.fn();
-const mockGetGenerativeModel = vi.fn();
-
-vi.mock('@google/generative-ai', () => {
+function generateResponse(payload: Record<string, unknown>): any {
 	return {
-		GoogleGenerativeAI: vi.fn(function () {
-			return { getGenerativeModel: mockGetGenerativeModel };
-		}),
+		status: 200,
+		headers: { 'content-type': 'application/json' },
+		arrayBuffer: new ArrayBuffer(0),
+		json: payload,
+		text: JSON.stringify(payload),
 	};
-});
-
-function setupModel(text: string, finishReason?: string): void {
-	const response: any = { text: () => text };
-	if (finishReason !== undefined) {
-		response.candidates = [{ finishReason }];
-	}
-	mockGenerateContent.mockResolvedValue({ response });
-	mockGetGenerativeModel.mockReturnValue({ generateContent: mockGenerateContent });
 }
 
 describe('GeminiProvider', () => {
 	afterEach(() => {
-		vi.clearAllMocks();
+		vi.restoreAllMocks();
+		vi.useRealTimers();
 	});
 
-	it('passes only temperature in generation config', async () => {
-		setupModel('summary');
-
+	it('uses the native transport with normalized model paths', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(generateResponse({
+			candidates: [{ content: { parts: [{ text: 'summary' }] }, finishReason: 'STOP' }],
+		}));
 		const provider = new GeminiProvider('key', 'gemini-pro', 0.5, 300000);
-		await provider.summarizeVideo('prompt');
 
-		const [modelParams] = mockGetGenerativeModel.mock.calls[0];
-		expect(modelParams.generationConfig.temperature).toBe(0.5);
-		expect(modelParams.generationConfig).not.toHaveProperty('thinkingConfig');
+		await expect(provider.summarizeVideo('prompt')).resolves.toBe('summary');
+
+		const request = requestUrlSpy.mock.calls[0][0] as any;
+		expect(request).toMatchObject({
+			url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'x-goog-api-key': 'key',
+			},
+		});
+		expect(JSON.parse(request.body)).toEqual({
+			contents: [{ role: 'user', parts: [{ text: 'prompt' }] }],
+			generationConfig: { temperature: 0.5 },
+		});
 	});
 
-	it('appends TRUNCATION_NOTICE when finishReason is MAX_TOKENS', async () => {
-		setupModel('partial', 'MAX_TOKENS');
+	it('preserves resource prefixes and joins text parts', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(generateResponse({
+			candidates: [{ content: { parts: [{ text: 'first' }, { text: ' second' }] } }],
+		}));
+		const provider = new GeminiProvider('key', 'tunedModels/my model', 0.5, 300000);
 
-		const provider = new GeminiProvider('key', 'gemini-pro', 0.5, 300000);
-		const summary = await provider.summarizeVideo('prompt');
-
-		expect(summary).toBe('partial' + TRUNCATION_NOTICE);
+		await expect(provider.summarizeVideo('prompt')).resolves.toBe('first second');
+		expect((requestUrlSpy.mock.calls[0][0] as any).url)
+			.toContain('/tunedModels/my%20model:generateContent');
 	});
 
-	it('calls console.error with provider name on failure', async () => {
-		const err = new Error('api error');
-		mockGetGenerativeModel.mockReturnValue({ generateContent: vi.fn().mockRejectedValue(err) });
-		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
-
+	it('marks max-token responses as truncated', async () => {
+		vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(generateResponse({
+			candidates: [{ content: { parts: [{ text: 'partial' }] }, finishReason: 'MAX_TOKENS' }],
+		}));
 		const provider = new GeminiProvider('key', 'gemini-pro', 0.5, 300000);
-		await expect(provider.summarizeVideo('prompt')).rejects.toThrow('api error');
 
-		expect(consoleSpy).toHaveBeenCalledWith(
-			expect.stringContaining('Error generating summary with Gemini:'),
-			err,
-		);
+		await expect(provider.summarizeVideo('prompt')).resolves.toBe(`partial${TRUNCATION_NOTICE}`);
+	});
+
+	it('rejects blocked prompts and candidates', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl');
+		const provider = new GeminiProvider('key', 'gemini-pro', 0.5, 300000);
+		requestUrlSpy.mockResolvedValueOnce(generateResponse({
+			promptFeedback: { blockReason: 'SAFETY' },
+		}));
+
+		await expect(provider.summarizeVideo('prompt')).rejects.toThrow('Gemini blocked the prompt: SAFETY');
+
+		requestUrlSpy.mockResolvedValueOnce(generateResponse({
+			candidates: [{ finishReason: 'RECITATION', finishMessage: 'Citation match' }],
+		}));
+		await expect(provider.summarizeVideo('prompt')).rejects.toThrow('Gemini blocked the response: Citation match');
+	});
+
+	it('passes cancellation through the shared transport', async () => {
+		vi.spyOn(obsidian, 'requestUrl').mockReturnValue(new Promise(() => undefined) as any);
+		const controller = new AbortController();
+		const provider = new GeminiProvider('key', 'gemini-pro', 0.5, 300000);
+		const request = provider.summarizeVideo('prompt', controller.signal);
+
+		controller.abort(new Error('Canceled'));
+
+		await expect(request).rejects.toThrow('Canceled');
 	});
 });

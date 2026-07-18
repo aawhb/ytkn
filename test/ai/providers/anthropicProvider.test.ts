@@ -1,75 +1,94 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as obsidian from 'obsidian';
 import { AnthropicProvider } from '../../../src/ai/providers/anthropic';
 import { DEFAULT_ANTHROPIC_MAX_TOKENS, TRUNCATION_NOTICE } from '../../../src/defaults';
 
-const mockCreate = vi.fn();
-
-vi.mock('@anthropic-ai/sdk', () => {
+function messageResponse(
+	content: Array<{ type: string; text?: string }>,
+	stopReason = 'end_turn',
+): any {
+	const payload = { content, stop_reason: stopReason };
 	return {
-		default: vi.fn(function () {
-			return { messages: { create: mockCreate } };
-		}),
-	};
-});
-
-function makeResponse(text: string, stop_reason: string = 'end_turn'): any {
-	return {
-		content: [{ type: 'text', text }],
-		stop_reason,
+		status: 200,
+		headers: { 'content-type': 'application/json' },
+		arrayBuffer: new ArrayBuffer(0),
+		json: payload,
+		text: JSON.stringify(payload),
 	};
 }
 
 describe('AnthropicProvider', () => {
 	afterEach(() => {
-		vi.clearAllMocks();
+		vi.restoreAllMocks();
+		vi.useRealTimers();
 	});
 
-	it('uses the minimal request shape and the official Anthropic endpoint', async () => {
-		mockCreate.mockResolvedValue(makeResponse('summary'));
-
+	it('uses the official endpoint and minimal request shape', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl')
+			.mockResolvedValue(messageResponse([{ type: 'text', text: 'summary' }]));
 		const provider = new AnthropicProvider('key', 'claude-3', 0.5, 300000);
-		await provider.summarizeVideo('prompt');
 
-		const [request] = mockCreate.mock.calls[0];
-		expect(request).toEqual({
+		await expect(provider.summarizeVideo('prompt')).resolves.toBe('summary');
+
+		const request = requestUrlSpy.mock.calls[0][0] as any;
+		expect(request).toMatchObject({
+			url: 'https://api.anthropic.com/v1/messages',
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'x-api-key': 'key',
+				'anthropic-version': '2023-06-01',
+			},
+			throw: false,
+		});
+		expect(JSON.parse(request.body)).toEqual({
 			model: 'claude-3',
 			max_tokens: DEFAULT_ANTHROPIC_MAX_TOKENS,
 			messages: [{ role: 'user', content: 'prompt' }],
 		});
-		expect(Anthropic).toHaveBeenCalledWith(expect.not.objectContaining({ baseURL: expect.anything() }));
 	});
 
-	it('appends TRUNCATION_NOTICE when stop_reason is max_tokens', async () => {
-		mockCreate.mockResolvedValue(makeResponse('partial text', 'max_tokens'));
-
+	it('joins text blocks and marks truncated responses', async () => {
+		vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(messageResponse([
+			{ type: 'text', text: 'first' },
+			{ type: 'tool_use' },
+			{ type: 'text', text: 'second' },
+		], 'max_tokens'));
 		const provider = new AnthropicProvider('key', 'claude-3', 0.5, 300000);
-		const summary = await provider.summarizeVideo('prompt');
 
-		expect(summary).toBe('partial text' + TRUNCATION_NOTICE);
+		await expect(provider.summarizeVideo('prompt'))
+			.resolves.toBe(`first\n\nsecond${TRUNCATION_NOTICE}`);
 	});
 
-	it('throws when response has no text blocks', async () => {
-		mockCreate.mockResolvedValue({
-			content: [{ type: 'tool_use', id: 'toolu_1', name: 'noop', input: {} }],
-			stop_reason: 'end_turn',
-		});
-
+	it('throws when the response has no text blocks', async () => {
+		vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(messageResponse([{ type: 'tool_use' }]));
 		const provider = new AnthropicProvider('key', 'claude-3', 0.5, 300000);
-		await expect(provider.summarizeVideo('prompt')).rejects.toThrow('Anthropic returned no final text content.');
+
+		await expect(provider.summarizeVideo('prompt'))
+			.rejects.toThrow('Anthropic returned no final text content.');
 	});
 
-	it('calls console.error with provider name and rethrows on failure', async () => {
-		const err = new Error('network error');
-		mockCreate.mockRejectedValue(err);
-		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
-
+	it('passes cancellation through the shared transport', async () => {
+		vi.spyOn(obsidian, 'requestUrl').mockReturnValue(new Promise(() => undefined) as any);
+		const controller = new AbortController();
 		const provider = new AnthropicProvider('key', 'claude-3', 0.5, 300000);
+		const request = provider.summarizeVideo('prompt', controller.signal);
+
+		controller.abort(new Error('Canceled'));
+
+		await expect(request).rejects.toThrow('Canceled');
+	});
+
+	it('reports transport failures with the provider name', async () => {
+		const error = new Error('network error');
+		vi.spyOn(obsidian, 'requestUrl').mockRejectedValue(error);
+		const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+		const provider = new AnthropicProvider('key', 'claude-3', 0.5, 300000);
+
 		await expect(provider.summarizeVideo('prompt')).rejects.toThrow('network error');
-
 		expect(consoleSpy).toHaveBeenCalledWith(
 			expect.stringContaining('Error generating summary with Anthropic:'),
-			err,
+			error,
 		);
 	});
 });

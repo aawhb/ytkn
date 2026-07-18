@@ -16,7 +16,6 @@ function completionResponse(content = 'ok', finishReason = 'stop'): any {
 describe('OpenAIProvider', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
-		vi.unstubAllGlobals();
 		vi.useRealTimers();
 	});
 
@@ -142,17 +141,17 @@ describe('OpenAIProvider', () => {
 		await expect(provider.summarizeVideo('prompt')).rejects.toThrow('Failed to parse JSON response');
 	});
 
-	it('keeps official OpenAI on the official SDK transport', async () => {
-		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl');
-		const fetchMock = vi.fn().mockResolvedValue(new Response(
-			JSON.stringify({ choices: [{ message: { content: 'official summary' }, finish_reason: 'stop' }] }),
-			{ status: 200, headers: { 'content-type': 'application/json' } },
-		));
-		vi.stubGlobal('fetch', fetchMock);
+	it('uses the Obsidian transport for official OpenAI requests', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl').mockResolvedValue(completionResponse('official summary'));
 		const provider = new OpenAIProvider('openai', 'openai-key', 'gpt-test', 0.1, 300000);
 
 		await expect(provider.summarizeVideo('prompt')).resolves.toBe('official summary');
-		expect(requestUrlSpy).not.toHaveBeenCalled();
-		expect(String(fetchMock.mock.calls[0][0])).toContain('api.openai.com');
+		expect(requestUrlSpy).toHaveBeenCalledWith(expect.objectContaining({
+			url: 'https://api.openai.com/v1/chat/completions',
+			headers: expect.objectContaining({
+				Authorization: 'Bearer openai-key',
+				'Content-Type': 'application/json',
+			}),
+		}));
 	});
 });
