@@ -1,80 +1,76 @@
-# YT Knowledge Notes
+<p align="center">
+  <img src="docs/assets/ytkn-logo.svg" width="96" height="96" alt="YT Knowledge Notes logo">
+</p>
+
+<h1 align="center">YT Knowledge Notes</h1>
 
 [![Quality](https://github.com/aawhb/ytkn/actions/workflows/quality.yml/badge.svg)](https://github.com/aawhb/ytkn/actions/workflows/quality.yml)
 [![CodeQL](https://github.com/aawhb/ytkn/actions/workflows/codeql.yml/badge.svg)](https://github.com/aawhb/ytkn/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/aawhb/ytkn/badge)](https://scorecard.dev/viewer/?uri=github.com/aawhb/ytkn)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-YT Knowledge Notes (ytkn) turns YouTube videos and playlists into structured knowledge notes in Obsidian.
+YT Knowledge Notes turns YouTube videos, playlists, and channels into organized Markdown notes in Obsidian. Use it for a clean transcript and source record, an AI-assisted knowledge note, or both.
 
-Paste a YouTube URL, and generate a bookmark/transcript-only note or an AI-assisted knowledge note directly in your vault.
+## What you can create
 
-![YT Knowledge Notes Guide](https://raw.githubusercontent.com/aawhb/ytkn/main/docs/ytkn-guide01.png)
+- Source notes with video details and a readable or timestamped transcript
+- AI-assisted notes for studying, research, implementation, or general reference
+- Optional TL;DR callouts, Mermaid mind maps, and memorable quotes
+- One note per video or one combined note for a playlist or channel selection
+- Multiple notes from a queued batch of URLs
+- Optional opening of the first generated Folder note in a new tab
 
-## Why use it
+AI is optional. Transcript and metadata notes do not require an API key.
 
-- Capture videos as structured Markdown with source metadata, frontmatter, and transcript appendices predictable.
-- Pick built-in note shapes for study, research, implementation, deep dives, and full extracts. Or, provide a custom AI prompt to match the output to your needs.
-- Generate notes for a single video, multiple URLs, or an entire playlist.
-- Use OpenAI, Anthropic, Gemini, or local OpenAI-compatible models.
+## Install
 
-## Pick the note shape you need
+YT Knowledge Notes requires Obsidian `1.11.4` or newer.
 
-YT Knowledge Notes includes built-in templates for:
+### Community Plugins
 
-- **General knowledge note** - balanced summary and takeaways
-- **Study notes** - review-friendly notes with concepts and self-test
-- **Implementation note** - steps, tools, gotchas, and action items
-- **Deep dive** - durable reference notes for important ideas
-- **Full extract** - detailed capture of claims, examples, numbers, and quotes
-- **Research dossier** - evidence-aware notes for investigation
+1. Open **Settings → Community plugins** in Obsidian.
+2. Search for **YT Knowledge Notes**.
+3. Select **Install**, then **Enable**.
 
-See [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md) for the full guide and runtime controls.
+### BRAT
 
-## Installation
+Install and enable BRAT, then add `aawhb/ytkn` as a beta plugin. See [Getting started](docs/getting-started.md#install-with-brat) for the full steps.
 
-*Requires Obsidian `1.11.4` or newer.*
-
-- **Community Plugins:** install it there like any other plugin.
-- **BRAT or Manual** add `aawhb/ytkn` to BRAT or install the latest GitHub release manually.
-
-Full setup steps: [Getting started](https://github.com/aawhb/ytkn/blob/main/docs/getting-started.md)
+For a manual installation from a release, see [Install manually](docs/getting-started.md#install-manually).
 
 ## Create your first note
 
-1. Set default settings in **Obsidian Settings → YT Knowledge Notes** including optional AI provider and model.
-2. Open a note if you want to insert at the caret or append to the active note
-3. Run **YT Knowledge Notes: Generate** from Obsidian command panel
-4. Provide a YouTube video or playlist URL
-5. Choose a template, transcript mode, and destination
-6. Click **Generate**.
+1. Open the Obsidian command palette and run **YT Knowledge Notes: Generate**.
+2. Paste a YouTube video, playlist, or channel URL.
+3. If you have not configured an AI model, turn **Use AI** off.
+4. Choose where the note should go and how the transcript should appear.
+5. Select **Generate**.
 
-If you want batching, playlists, local models, or run reports, jump to [Workflows](https://github.com/aawhb/ytkn/blob/main/docs/usage.md) and [Providers](https://github.com/aawhb/ytkn/blob/main/docs/providers.md).
+For a guided first run, including optional AI setup, see [Getting started](docs/getting-started.md).
 
-## Documentation
+## User guide
 
-- [Documentation hub](https://github.com/aawhb/ytkn/blob/main/docs/README.md)
-- [Getting started](https://github.com/aawhb/ytkn/blob/main/docs/getting-started.md)
-- [Workflows](https://github.com/aawhb/ytkn/blob/main/docs/usage.md)
-- [Configuration](https://github.com/aawhb/ytkn/blob/main/docs/configuration.md)
-- [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md)
-- [Providers and local models](https://github.com/aawhb/ytkn/blob/main/docs/providers.md)
-- [Troubleshooting](https://github.com/aawhb/ytkn/blob/main/docs/troubleshooting.md)
+- [Getting started](docs/getting-started.md): install the plugin and create your first note
+- [Using YT Knowledge Notes](docs/usage.md): choose note content, destinations, templates, playlists, queue behavior, and reports
+- [AI providers and local models](docs/providers.md): connect OpenAI, Anthropic, Gemini, Ollama, or another compatible service
+- [Troubleshooting](docs/troubleshooting.md): solve common transcript, provider, playlist, and output problems
 
-## Privacy and external services
+## Privacy
 
-- The plugin does not collect telemetry and does not proxy requests through a separate service.
-- Transcript and playlist metadata requests go directly from Obsidian to YouTube.
-- AI requests go directly from Obsidian to the provider or local endpoint you configure.
-- API keys are stored in Obsidian SecretStorage. The plugin data file stores only secret IDs.
-- AI-generated content is written into your notes as returned. Review it if accuracy matters.
+- The plugin does not collect telemetry.
+- YouTube requests go directly from Obsidian to YouTube.
+- AI requests go directly from Obsidian to the provider or local server you configure. They include transcript content, your instructions, and the prompt context needed to create the selected note body and add-ons.
+- API keys are stored through Obsidian SecretStorage. The plugin stores only the selected secret IDs.
+- AI content can be inaccurate. Review generated notes when accuracy matters.
 
-See [SECURITY.md](https://github.com/aawhb/ytkn/blob/main/SECURITY.md) for the security policy and reporting guidance.
+See [SECURITY.md](SECURITY.md) for security reporting and more information about data handling.
 
-## Contributing
+## Help and feedback
 
-If you want to help improve the plugin, start with [CONTRIBUTING.md](https://github.com/aawhb/ytkn/blob/main/CONTRIBUTING.md).
+- [Report a bug](https://github.com/aawhb/ytkn/issues/new?template=bug_report.yml)
+- [Request a feature](https://github.com/aawhb/ytkn/issues/new?template=feature_request.yml)
+- [Contribute to the plugin](CONTRIBUTING.md)
 
 ## License
 
-GNU GPL v3 or later - see [LICENSE](https://github.com/aawhb/ytkn/blob/main/LICENSE).
+GNU GPL v3 or later. See [LICENSE](LICENSE).

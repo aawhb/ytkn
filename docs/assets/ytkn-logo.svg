@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="title description">
+  <title id="title">YT Knowledge Notes</title>
+  <desc id="description">A white play symbol on a rounded purple gradient square.</desc>
+  <defs>
+    <radialGradient id="brand-gradient" cx="30%" cy="20%" r="100%">
+      <stop offset="0%" stop-color="#c7a8ff" />
+      <stop offset="42%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#5b21b6" />
+    </radialGradient>
+  </defs>
+  <rect width="120" height="120" rx="40" fill="url(#brand-gradient)" />
+  <g transform="translate(25 25) scale(2.916667)" fill="#fff" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <polygon points="6 3 20 12 6 21 6 3" />
+  </g>
+</svg>

@@ -1,72 +1,96 @@
 # Getting started
 
-YT Knowledge Notes can work in two modes:
+YT Knowledge Notes works with or without AI. The shortest path is to create a transcript and source note first, then connect an AI provider only if you want an AI-generated note body or add-ons.
 
-- **Transcript-first** notes with no AI provider at all
-- **AI-assisted** notes with a configured model
+## Before you begin
 
-## What you need
+You need:
 
 - Obsidian `1.11.4` or newer
-- one or more YouTube video or playlist URLs
-- an optional AI provider and model if you want synthesis
-- an open Markdown note only if you want to insert at the caret or append to the active note
+- a YouTube video, playlist, or channel URL
+- an open Markdown note only if you want to use **Current note** or **Append to active note**
+- an optional AI provider and model for AI-assisted output
 
-## Install the plugin
+## Install from Community Plugins
 
-### Community Plugins
+1. Open **Settings → Community plugins**.
+2. Select **Browse** and search for **YT Knowledge Notes**.
+3. Select **Install**.
+4. Select **Enable**.
 
-Once YT Knowledge Notes is listed, search for **YT Knowledge Notes** in **Settings → Community plugins**, install it, and enable it.
+## Install with BRAT
 
-### Until the community listing is live
+1. Install and enable **BRAT** from Community Plugins.
+2. Open the command palette.
+3. Run **BRAT: Add a beta plugin for testing**.
+4. Enter `aawhb/ytkn`.
+5. Let BRAT install the plugin, then make sure **YT Knowledge Notes** is enabled under Community Plugins.
 
-Choose one of these temporary install paths:
+BRAT follows releases from the GitHub repository. It is intended for users who want to test versions distributed outside the Community Plugins update flow.
 
-- **BRAT** — add `aawhb/ytkn` and let BRAT keep the plugin updated from GitHub
-- **Manual install** — download the latest release, extract `main.js`, `manifest.json`, and `styles.css` into `.obsidian/plugins/ytkn/`, then reload Obsidian
+## Install manually
 
-## Decide how much AI you want
+1. Open the [latest YT Knowledge Notes release](https://github.com/aawhb/ytkn/releases/latest) and expand **Assets**.
+2. Download `main.js`, `manifest.json`, and `styles.css`. Do not download a source code archive.
+3. Create a folder named `ytkn` inside your vault's `.obsidian/plugins/` folder.
+4. Copy the three downloaded files into `.obsidian/plugins/ytkn/`.
+5. Reload Obsidian.
+6. Open **Settings → Community plugins** and enable **YT Knowledge Notes**.
 
-### Transcript-only
+## Defaults and one-time changes
 
-Use this when you want clean source notes without any API key.
+**Settings → YT Knowledge Notes** stores the choices you normally want. The generation window begins with those defaults, but changes made there apply only to that submission.
 
-1. Leave transcript mode set to **Readable** or **Timestamped**.
-2. Turn **AI summary** off in the generation modal.
-3. Generate the note.
+Once a batch enters the queue, it keeps the choices it was submitted with. Changing plugin settings later does not change work that is already queued.
 
-### AI-assisted
+## Create a note without AI
 
-Use this when you want synthesis, template-driven notes, or structured takeaways.
+This path needs no provider and no API key.
+
+1. Open a note if you want the result in the current note.
+2. Open the command palette and run **YT Knowledge Notes: Generate**.
+3. Paste a YouTube video, playlist, or channel URL.
+4. Turn **Use AI** off.
+5. Choose a destination:
+   - **Current note** replaces the current selection, or inserts at the cursor when nothing is selected.
+   - **Append to active note** adds the result to the end of the open note.
+   - **Folder** creates one or more notes in the folder you choose.
+   - With **Folder**, turn on **Open created note** if you want the first generated note in the batch to open in a new tab.
+6. Set **Transcript in note** to **Readable** or **Timestamped**.
+7. Select **Generate**.
+
+The result can include video details, note properties, source information, media, and the transcript. Use the **General** tab in the generation window if you want to change any of those parts.
+
+## Add AI-assisted content
+
+AI can create a full note body, a TL;DR callout, a mind map, memorable quotes, or any combination of those outputs.
+
+### Connect a provider
 
 1. Open **Settings → YT Knowledge Notes**.
-2. Add a provider in the **GenAI** tab.
-3. Choose or discover a model.
-4. Keep **AI summary** enabled in the generation modal.
+2. Open the **AI** tab.
+3. Add the provider you use.
+4. Select or create an Obsidian secret for the API key when the provider requires one. See [Create and select an API key secret](providers.md#create-and-select-an-api-key-secret).
+5. Select **Fetch models**, or add a model manually.
+6. Choose the model you want to use by default.
 
-Provider help lives in [Providers and local models](https://github.com/aawhb/ytkn/blob/main/docs/providers.md).
+See [AI providers and local models](providers.md) for provider-specific instructions.
 
-## Create your first note
+### Generate an AI-assisted note
 
-<!-- Screenshot slot: settings page overview -->
-<!-- Screenshot slot: generation modal quick setup -->
+1. Run **YT Knowledge Notes: Generate**.
+2. Paste a YouTube URL.
+3. Keep **Use AI** on.
+4. Keep **Generate note body** on if you want a complete AI-generated note body.
+5. Under **AI instructions**, choose **Built-in template** or **Custom instructions**.
+6. Turn the TL;DR callout, mind map, or memorable quotes on or off as needed.
+7. Choose the destination and transcript mode.
+8. Select **Generate**.
 
-1. Open **Settings → YT Knowledge Notes** and review your defaults.
-2. Open or create a note if you plan to insert at the caret or append to the active note.
-3. Run **Generate knowledge note** from the command palette.
-4. Paste a YouTube video or playlist URL.
-5. Choose:
-   - transcript-only or AI-assisted output
-   - a built-in template or manual instructions
-   - where the note should go
-   - whether the transcript should be hidden, readable, or timestamped
-6. Click **Generate**.
+If **Use AI** is on but **Generate note body** is off, the plugin can still create any enabled TL;DR callout, mind map, or memorable quotes section.
 
-The plugin writes Markdown directly into your vault. Depending on your settings, it can include frontmatter, source metadata, transcript appendices, and a run report.
+## Next steps
 
-## What to learn next
-
-- [Workflows](https://github.com/aawhb/ytkn/blob/main/docs/usage.md) for multiple URLs, playlists, queue behavior, and cancellation
-- [Configuration](https://github.com/aawhb/ytkn/blob/main/docs/configuration.md) for defaults and note structure
-- [Templates](https://github.com/aawhb/ytkn/blob/main/docs/templates.md) for picking the right note shape
-- [Troubleshooting](https://github.com/aawhb/ytkn/blob/main/docs/troubleshooting.md) if the first run does not behave as expected
+- [Using YT Knowledge Notes](usage.md) explains templates, destinations, multiple URLs, playlists, note structure, queue behavior, and reports.
+- [AI providers and local models](providers.md) covers cloud providers, local servers, secrets, and model selection.
+- [Troubleshooting](troubleshooting.md) helps when a transcript, provider, destination, or batch does not work as expected.
