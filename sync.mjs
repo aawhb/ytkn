@@ -1,6 +1,6 @@
-import { spawnSync } from 'child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
-import { basename, dirname, join, normalize } from 'path';
+import { spawnSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { basename, dirname, join, normalize } from 'node:path';
 
 loadOptionalEnvFile();
 

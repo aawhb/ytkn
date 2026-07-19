@@ -2,6 +2,7 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"noEmit": true,
+		"allowJs": true,
 		"types": ["node", "vitest"]
 	},
 	"include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"]

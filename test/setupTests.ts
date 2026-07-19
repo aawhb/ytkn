@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 
 (globalThis as any).__TEST_MOCKS_DIR = path.resolve(__dirname, 'mocks');
 (globalThis as any).activeWindow = window;

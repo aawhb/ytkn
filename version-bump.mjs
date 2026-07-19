@@ -1,6 +1,5 @@
 import { resolveTargetVersion, updateVersionFiles } from './scripts/versioning.mjs';
 
-// Main execution
 try {
 	const targetVersion = resolveTargetVersion();
 	if (!targetVersion) {

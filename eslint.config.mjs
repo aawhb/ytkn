@@ -44,6 +44,7 @@ export default defineConfig([
 			},
 		},
 		rules: {
+			'@typescript-eslint/consistent-type-imports': 'error',
 			'@typescript-eslint/ban-ts-comment': 'off',
 			'@typescript-eslint/no-empty-function': 'off',
 			'@typescript-eslint/no-unused-private-class-members': 'error',
@@ -84,6 +85,9 @@ export default defineConfig([
 			// These files intentionally use Obsidian APIs deprecated in newer typings
 			// because they remain the compatible path for minAppVersion 1.11.4.
 			'@typescript-eslint/no-deprecated': 'off',
+			// Keep the custom tabbed settings UI while supporting Obsidian before 1.13.
+			// Migrating to setting definitions is a separate user-visible redesign.
+			'obsidianmd/settings-tab/prefer-setting-definitions': 'off',
 		},
 	},
 	{

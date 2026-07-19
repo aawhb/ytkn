@@ -1,10 +1,10 @@
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 const SEMVER_REGEX = /^\d+\.\d+\.\d+$/;
 const VERSION_FLAGS = ['--plugin-version', '--version'];
 
-export function assertValidVersion(targetVersion) {
+function assertValidVersion(targetVersion) {
 	if (!SEMVER_REGEX.test(targetVersion)) {
 		throw new Error(`Invalid version format: ${targetVersion}. Expected format: x.y.z`);
 	}

@@ -70,7 +70,8 @@ describe('template registry', () => {
 		const tpl = getTemplate('implementation');
 		expect(tpl.sections).toBeDefined();
 		expect(tpl.sections!.length).toBeGreaterThan(0);
-		expect(tpl.sections!.find((s) => s.id === 'tldr')?.required).toBe(true);
+		expect(tpl.sections!.some((s) => s.id === 'tldr')).toBe(false);
+		expect(tpl.sections!.some((s) => s.id === 'approach')).toBe(true);
 		expect(tpl.frontmatter).toEqual([]);
 		expect(tpl.controls).toEqual([]);
 		expect(tpl.tags).toContain('ytkn/implementation');

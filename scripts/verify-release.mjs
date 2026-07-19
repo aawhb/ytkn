@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { verifyChangelog } from './verify-changelog.mjs';
 
 const SEMVER_REGEX = /^\d+\.\d+\.\d+$/;
 
@@ -44,5 +45,7 @@ if (packageJson.version !== tagName) {
 if (versions[tagName] !== manifest.minAppVersion) {
 	throw new Error(`versions.json must map "${tagName}" to minAppVersion "${manifest.minAppVersion}".`);
 }
+
+verifyChangelog();
 
 console.log(`Release metadata OK for ${tagName} (minAppVersion ${manifest.minAppVersion}).`);

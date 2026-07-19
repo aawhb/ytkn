@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { builtinModules } from 'node:module';
+import process from 'node:process';
+import { exec } from 'node:child_process';
 import esbuild from 'esbuild';
-import process from 'process';
-import { exec } from 'child_process';
 
 if (existsSync('.env')) {
 	process.loadEnvFile?.();
