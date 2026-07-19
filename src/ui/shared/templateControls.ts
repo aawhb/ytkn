@@ -29,9 +29,9 @@ export function renderTemplateControls(
 				.setName(name)
 				.setDesc(control.description)
 				.addDropdown((dd) => {
-					dd.addOption('', '— not set —');
+					dd.addOption('', 'Not set');
 					for (const v of control.enumValues ?? []) {
-						dd.addOption(v, v);
+						dd.addOption(v, `${v[0]?.toUpperCase() ?? ''}${v.slice(1).replace(/-/g, ' ')}`);
 					}
 					dd.setValue(current).onChange((v) => {
 						onChange(control.id, v);

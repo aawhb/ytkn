@@ -8,7 +8,7 @@ type ProviderFormMode =
 	| { kind: 'edit'; provider: ProviderConfig; originalName: string };
 
 const PROVIDER_TYPE_OPTIONS: Record<ProviderType, string> = {
-	'openai-compatible': 'OpenAI compatible (Ollama, LM Studio, etc.)',
+	'openai-compatible': 'OpenAI-compatible (Ollama, LM Studio, and others)',
 	anthropic: 'Anthropic',
 	gemini: 'Google Gemini',
 	openai: 'OpenAI',
@@ -53,7 +53,7 @@ export class ProviderFormModal extends Modal {
 
 		const isAdd = this.mode.kind === 'add';
 		contentEl.createEl('h2', {
-			text: isAdd ? 'Add AI provider' : 'Edit provider',
+			text: isAdd ? 'Add AI provider' : 'Edit AI provider',
 			cls: 'ytkn-modal__title',
 		});
 		if (isAdd) {
@@ -75,7 +75,7 @@ export class ProviderFormModal extends Modal {
 
 		new Setting(contentEl)
 			.setName('Provider type')
-			.setDesc('Select the AI provider protocol.')
+			.setDesc('Choose how the plugin connects to this provider.')
 			.addDropdown((dropdown) => {
 				for (const [value, label] of Object.entries(PROVIDER_TYPE_OPTIONS)) {
 					dropdown.addOption(value, label);
@@ -98,7 +98,7 @@ export class ProviderFormModal extends Modal {
 
 		if (this.type === 'openai-compatible') {
 			new Setting(contentEl)
-				.setName('URL')
+				.setName('Base URL')
 				.setDesc('Base URL of the OpenAI-compatible endpoint.')
 				.addText((text) => {
 					text.setPlaceholder(DEFAULT_OPENAI_COMPATIBLE_URL)

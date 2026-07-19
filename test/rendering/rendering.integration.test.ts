@@ -692,7 +692,7 @@ describe('renderQueueBatchReport', () => {
 		const result = renderQueueBatchReport(report);
 
 		expect(result).toContain('1. **Completed** · Channel Name');
-		expect(result).toContain('- Content: Videos, Shorts, Streams');
+		expect(result).toContain('- Content: Videos, Shorts, Stream replays');
 		expect(result).toContain('- Counts: 2 total, 1 completed, 1 skipped, 0 failed, 0 canceled');
 		expect(result).toContain('- Items:');
 		expect(result).toContain('1. **Completed** · Video · Video');

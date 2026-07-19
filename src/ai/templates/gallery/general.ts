@@ -7,7 +7,7 @@ export const generalTemplate: Template = {
 	body: `Produce a balanced knowledge note for a general-purpose vault.
 
 ## Key takeaways
-5-7 bullets. Durable, reusable ideas — not minor details.
+5-7 bullets with durable, reusable ideas rather than minor details.
 
 ## When this applies
 3-5 bullets phrased as concrete reuse guidance:

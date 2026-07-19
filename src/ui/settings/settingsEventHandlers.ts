@@ -16,7 +16,7 @@ export class SettingsEventHandlers {
 			await this.settings.updateModelIds(modelIds);
 			this.onChanged();
 		} catch (error) {
-			notifyError('Failed to update the AI model list', error, 'Models:', modelIds.join(', '));
+			notifyError("Couldn't update the AI model list", error, 'Models:', modelIds.join(', '));
 		}
 	}
 
@@ -44,7 +44,7 @@ export class SettingsEventHandlers {
 			await this.settings.addProvider(provider);
 			this.onChanged();
 		} catch (error) {
-			notifyError('Failed to add provider', error);
+			notifyError("Couldn't add provider", error);
 			throw error;
 		}
 	}
@@ -53,9 +53,9 @@ export class SettingsEventHandlers {
 		try {
 			await this.settings.updateProvider(provider, originalName);
 			this.onChanged();
-			new Notice(`Provider ${provider.name} updated successfully`);
+			new Notice(`Provider "${provider.name}" updated.`);
 		} catch (error) {
-			notifyError('Failed to update provider', error);
+			notifyError("Couldn't update provider", error);
 			throw error;
 		}
 	}
@@ -68,9 +68,9 @@ export class SettingsEventHandlers {
 		try {
 			await this.settings.deleteProvider(provider);
 			this.onChanged();
-			new Notice(`Provider ${provider.name} deleted successfully`);
+			new Notice(`Provider "${provider.name}" deleted.`);
 		} catch (error) {
-			notifyError('Failed to delete provider', error);
+			notifyError("Couldn't delete provider", error);
 			throw error;
 		}
 	}
@@ -117,7 +117,7 @@ export class SettingsEventHandlers {
 
 			this.onChanged();
 		} catch (error) {
-			notifyError('Failed to fetch models', error);
+			notifyError("Couldn't fetch models", error);
 		}
 	}
 
@@ -126,7 +126,7 @@ export class SettingsEventHandlers {
 			await this.settings.addModel(model);
 			this.onChanged();
 		} catch (error) {
-			notifyError('Failed to add model', error);
+			notifyError("Couldn't add model", error);
 			throw error;
 		}
 	}
@@ -140,7 +140,7 @@ export class SettingsEventHandlers {
 			);
 			this.onChanged();
 		} catch (error) {
-			notifyError('Failed to update model', error);
+			notifyError("Couldn't update model", error);
 			throw error;
 		}
 	}
@@ -150,7 +150,7 @@ export class SettingsEventHandlers {
 			await this.settings.deleteModel(model.provider.name, model.name);
 			this.onChanged();
 		} catch (error) {
-			notifyError('Failed to delete model', error);
+			notifyError("Couldn't delete model", error);
 			throw error;
 		}
 	}

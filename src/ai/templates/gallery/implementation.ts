@@ -4,7 +4,7 @@ export const implementationTemplate: Template = {
 	id: 'implementation',
 	label: 'Implementation note',
 	subtitle: 'Concrete steps, code, tools, and action items to act on the source.',
-	body: `Produce an implementation-focused note for a reader who wants to act on what the source shows — write the steps, code, tools, and action items needed.
+	body: `Produce an implementation-focused note for a reader who wants to act on what the source shows. Write the steps, code, tools, and action items needed.
 
 ## Approach
 A short paragraph or 3-5 bullets describing the strategy.

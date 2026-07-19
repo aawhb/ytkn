@@ -39,12 +39,12 @@ const MINDMAP_FRAGMENT = `Add a Mindmap section that captures the key concepts a
 
 Mindmap rules:
 - Section heading must be exactly \`## Mindmap\`.
-- The content must be a nested bullet list (lines starting with \`-\`), indented to show hierarchy — not prose, not a code block, not a Mermaid diagram.
+- The content must be a nested bullet list (lines starting with \`-\`), indented to show hierarchy. Do not use prose, a code block, or a Mermaid diagram.
 - The first bullet is the single central idea; every other bullet nests beneath it.
 - Keep labels short: noun phrases or very short clauses, one concept per bullet.
 - Do not use LaTeX: no \`$...$\` delimiters and no backslash commands like \`\\le\`, \`\\cdot\`, \`\\sqrt\`, or \`\\Theta\`. Do not use raw double quotes or square brackets.
 - For any math, use compact readable notation with plain symbols: \`O(n log n)\`, \`O(√n)\`, \`n²\`, \`2ⁿ\`, \`f(n) ≤ C·g(n)\`. Parentheses are fine.
-- Keep full formulas and derivations in the body sections — mindmap nodes are short labels, not a formula sheet.
+- Keep full formulas and derivations in the body sections. Mind map nodes are short labels, not a formula sheet.
 - Capture only the main ideas, supporting branches, and notable tradeoffs from the transcript.
 - Roughly 2–4 levels deep and 8–18 nodes total.
 - Do not invent nodes that are not grounded in the transcript.`;

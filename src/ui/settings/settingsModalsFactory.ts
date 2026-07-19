@@ -31,7 +31,7 @@ export class SettingsModalsFactory {
 			: '';
 		return new ConfirmModal(
 			this.app,
-			'Delete Provider',
+			'Delete provider?',
 			`Are you sure you want to delete the provider "${provider.name}"?${warning}`,
 			'Delete',
 			async () => {
@@ -56,7 +56,7 @@ export class SettingsModalsFactory {
 		const displayName = model.displayName || model.name;
 		return new ConfirmModal(
 			this.app,
-			'Delete Model',
+			'Delete model?',
 			`Are you sure you want to delete the model "${displayName}"?`,
 			'Delete',
 			async () => {

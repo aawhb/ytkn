@@ -7,7 +7,7 @@ vi.mock('obsidian', async () => {
 
 import { App } from 'obsidian';
 import { WhatsNewModal } from '../../../src/ui/releaseNotes/whatsNewModal';
-import { SUPPORT_LINKS } from '../../../src/releaseNotes';
+import { DOCUMENTATION_LINK, SUPPORT_LINKS } from '../../../src/releaseNotes';
 
 describe('WhatsNewModal', () => {
 	it('renders release notes and support links', () => {
@@ -26,19 +26,21 @@ describe('WhatsNewModal', () => {
 		expect(modal.contentEl.textContent).toContain('Metadata-only notes');
 		expect(modal.contentEl.textContent).toContain('Better reports');
 		expect(modal.contentEl.textContent).toContain('Playlist pagination');
-		expect(modal.contentEl.textContent).toContain('Support YTKN Development');
-		expect(modal.contentEl.textContent).not.toContain('Help keep YT Knowledge Notes maintained.');
+		expect(modal.contentEl.textContent).not.toContain('Help and support');
 
 		const links = Array.from(modal.contentEl.querySelectorAll('a'));
 		expect(links.map((link) => link.getAttribute('href'))).toEqual([
+			DOCUMENTATION_LINK,
 			SUPPORT_LINKS.githubSponsors,
 			SUPPORT_LINKS.buyMeACoffee,
 		]);
 		expect(links.map((link) => link.textContent)).toEqual([
+			'Help',
 			'Sponsor',
 			'Buy Me a Coffee',
 		]);
 		expect(links.every((link) => link.getAttribute('target') === '_blank')).toBe(true);
+		expect(modal.contentEl.querySelectorAll('.ytkn-whats-new-modal__support-icon')).toHaveLength(3);
 	});
 
 	it('renders an empty state when no release notes are available', () => {

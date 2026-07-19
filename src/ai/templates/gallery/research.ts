@@ -11,12 +11,12 @@ Restate the research question this video helps answer. If the user supplied an i
 
 ## Claims made
 Every distinct claim the speaker makes. For each, prefix with strength:
-- **(strong)** — directly demonstrated, cited, or measured.
-- **(supported)** — argued with evidence the speaker provides.
-- **(asserted)** — stated without supporting evidence.
-- **(weak)** — speculative or based on weak reasoning.
+- **(strong)**: directly demonstrated, cited, or measured.
+- **(supported)**: argued with evidence the speaker provides.
+- **(asserted)**: stated without supporting evidence.
+- **(weak)**: speculative or based on weak reasoning.
 
-Write as: \`- **(strength)** Claim text — brief support or note.\`
+Write as: \`- **(strength)** Claim text: brief support or note.\`
 
 ## Evidence offered
 Concrete evidence the speaker brings: data, citations, demonstrations, named experiments, anecdotes that carry real signal. One bullet per piece.
@@ -58,7 +58,7 @@ Style:
 		},
 		{
 			id: 'strictness',
-			label: 'Epistemic strictness',
+			label: 'Evidence standard',
 			type: 'enum',
 			enumValues: ['lenient', 'standard', 'strict'],
 			required: false,

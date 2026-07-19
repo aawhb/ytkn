@@ -47,7 +47,7 @@ export async function generateSingleVideoToTarget(
 		}
 	}
 	if (isAppendMode) {
-		context.onStatusBar('Rendering note...');
+		context.onStatusBar('Rendering note…');
 		await context.targets.appendContentToTarget(target, content);
 		target.finalized = true;
 	} else {
@@ -68,7 +68,7 @@ export async function generateSingleVideoNote(
 	let target: NoteInsertionTarget | null = initialTarget;
 	let titleToRenameTo: string | null = null;
 	const metadataOnly = isMetadataOnlyRun(effectiveOptions);
-	const fetchStatus = metadataOnly ? 'Fetching video metadata...' : 'Fetching transcript...';
+	const fetchStatus = metadataOnly ? 'Fetching video metadata…' : 'Fetching transcript…';
 
 	if (effectiveOptions.noteDestinationMode === 'current-note') {
 		if (!target) {

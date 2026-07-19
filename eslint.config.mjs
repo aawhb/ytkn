@@ -49,8 +49,8 @@ export default defineConfig([
 			'@typescript-eslint/no-unused-private-class-members': 'error',
 			'@typescript-eslint/no-unused-vars': ['error', { args: 'none', varsIgnorePattern: '^_' }],
 			'obsidianmd/ui/sentence-case': ['error', {
-				acronyms: ['AI', 'API', 'BRAT', 'HTTP', 'HTTPS', 'ID', 'IDs', 'TL;DR', 'URL', 'URLs', 'YAML'],
-				brands: ['Anthropic', 'Dataview', 'Gemini', 'LM Studio', 'Ollama', 'OpenAI', 'YouTube', 'YT Knowledge Notes'],
+				acronyms: ['AI', 'API', 'BRAT', 'HTTP', 'HTTPS', 'ID', 'IDs', 'TL;DR', 'URL', 'URLs', 'YAML', 'YTKN'],
+				brands: ['Anthropic', 'Dataview', 'Folder', 'Gemini', 'Google', 'LM Studio', 'Ollama', 'One combined note', 'OpenAI', 'YouTube', 'YT Knowledge Notes'],
 			}],
 			'no-undef': 'off',
 			'no-prototype-builtins': 'off',

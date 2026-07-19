@@ -96,7 +96,7 @@ export class ProviderAccordion {
 
 		if (provider.type === 'openai-compatible') {
 			const urlSetting = new Setting(fields)
-				.setName('URL')
+				.setName('Base URL')
 				.setDesc('Base URL of the OpenAI-compatible endpoint.')
 				.addText((text) =>
 					text

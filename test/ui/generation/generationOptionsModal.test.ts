@@ -79,7 +79,7 @@ describe('GenerationOptionsModal', () => {
 			'Manage queue',
 			'Sponsor',
 			'Buy Me a Coffee',
-			'Recent updates',
+			'About YT Knowledge Notes',
 		]);
 		expect(actions.map((action) => action.textContent)).toEqual(['', '', '', '']);
 		expect(actions[1].getAttribute('href')).toBe(SUPPORT_LINKS.githubSponsors);
@@ -157,9 +157,9 @@ describe('GenerationOptionsModal', () => {
 		modal.open();
 
 		const settings = Array.from(modal.contentEl.querySelectorAll('.setting-item'));
-		const mindmapSetting = settings.find((setting) => setting.textContent?.includes('Add mindmap')) as HTMLElement | undefined;
+		const mindmapSetting = settings.find((setting) => setting.textContent?.includes('Add mind map')) as HTMLElement | undefined;
 		const quotesSetting = settings.find((setting) => setting.textContent?.includes('Add memorable quotes')) as HTMLElement | undefined;
-		const instructionSetting = settings.find((setting) => setting.textContent?.includes('Instruction style')) as HTMLElement | undefined;
+		const instructionSetting = settings.find((setting) => setting.textContent?.includes('AI instructions')) as HTMLElement | undefined;
 
 		expect(mindmapSetting?.style.display).toBe('');
 		expect(quotesSetting?.style.display).toBe('');
@@ -241,14 +241,14 @@ describe('GenerationOptionsModal', () => {
 		expect(mediaSelect?.value).toBe('video');
 	});
 
-	it('renders tab buttons labelled General and GenAI', () => {
+	it('renders tab buttons labelled General and AI', () => {
 		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
 		modal.open();
 
 		const tabs = Array.from(modal.contentEl.querySelectorAll('[role="tab"]'));
 		const labels = tabs.map((t) => t.textContent?.trim());
 		expect(labels).toContain('General');
-		expect(labels).toContain('GenAI');
+		expect(labels).toContain('AI');
 	});
 
 	it('URL field is a textarea element', () => {
@@ -269,7 +269,7 @@ describe('GenerationOptionsModal', () => {
 	});
 });
 
-describe('GenerationOptionsModal submit — multi-URL', () => {
+describe('GenerationOptionsModal submit: multi-URL', () => {
 	let app: App;
 	let onSubmit: ReturnType<typeof vi.fn<SubmitHandler>>;
 
@@ -436,7 +436,7 @@ describe('GenerationOptionsModal submit — multi-URL', () => {
 		expect(options.map((option) => (option.querySelector('input') as HTMLInputElement).checked)).toEqual([true, false, true]);
 		const limitRow = modal.contentEl.querySelector('.ytkn-channel-limit-setting');
 		expect(limitRow?.className).toContain('ytkn-setting-row--fit-control');
-		expect(limitRow?.querySelector('.setting-item-name')?.textContent).toBe('Items per content type');
+		expect(limitRow?.querySelector('.setting-item-name')?.textContent).toBe('Items per selected type');
 		expect(limitRow?.querySelector('.setting-item-description')?.textContent).toBe('');
 		const limitSelect = limitRow?.querySelector('select') as HTMLSelectElement;
 		const limitInput = limitRow?.querySelector('input[type="number"]') as HTMLInputElement;

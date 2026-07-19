@@ -1,7 +1,7 @@
 import type { App } from 'obsidian';
-import { Modal, Setting } from 'obsidian';
+import { Modal, Setting, setIcon } from 'obsidian';
 import type { ReleaseNote } from '../../releaseNotes';
-import { SUPPORT_LINKS } from '../../releaseNotes';
+import { DOCUMENTATION_LINK, SUPPORT_LINKS } from '../../releaseNotes';
 
 const SECTION_LABELS: Array<{ key: keyof Pick<ReleaseNote, 'new' | 'improved' | 'fixed' | 'changed'>; label: string }> = [
 	{ key: 'new', label: 'New' },
@@ -99,26 +99,23 @@ export class WhatsNewModal extends Modal {
 
 	private renderSupport(container: HTMLElement): void {
 		const support = container.createDiv({ cls: 'ytkn-whats-new-modal__support' });
-		const copy = support.createDiv({ cls: 'ytkn-whats-new-modal__support-copy' });
-		copy.createEl('h3', {
-			cls: 'ytkn-whats-new-modal__support-title',
-			text: 'Support YTKN development',
-		});
-
 		const actions = support.createDiv({ cls: 'ytkn-whats-new-modal__support-actions' });
-		this.createSupportLink(actions, SUPPORT_LINKS.githubSponsors, 'Sponsor');
-		this.createSupportLink(actions, SUPPORT_LINKS.buyMeACoffee, 'Buy Me a Coffee');
+		this.createSupportLink(actions, DOCUMENTATION_LINK, 'Help', 'circle-help');
+		this.createSupportLink(actions, SUPPORT_LINKS.githubSponsors, 'Sponsor', 'heart-handshake');
+		this.createSupportLink(actions, SUPPORT_LINKS.buyMeACoffee, 'Buy Me a Coffee', 'coffee');
 	}
 
-	private createSupportLink(container: HTMLElement, href: string, text: string): void {
-		container.createEl('a', {
+	private createSupportLink(container: HTMLElement, href: string, text: string, icon: string): void {
+		const link = container.createEl('a', {
 			cls: 'ytkn-whats-new-modal__support-button',
-			text,
 			attr: {
 				href,
 				target: '_blank',
 				rel: 'noopener noreferrer',
 			},
 		});
+		const iconEl = link.createSpan({ cls: 'ytkn-whats-new-modal__support-icon' });
+		setIcon(iconEl, icon);
+		link.createSpan({ text });
 	}
 }

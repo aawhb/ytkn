@@ -49,7 +49,7 @@ export async function generateAiContent(input: GenerateAiContentInput): Promise<
 	);
 }
 
-/** Runs a single fixed prompt through the chain — used for playlist synthesis calls. */
+/** Runs a single fixed prompt through the chain for playlist and channel synthesis calls. */
 export async function generateAiCompletion(
 	aiContext: AiContentContext,
 	prompt: string,
@@ -86,7 +86,7 @@ async function runWithModelChain(
 				throw error;
 			}
 			chain.index += 1;
-			const message = `${modelLabel(model)} (${model.provider.name}) ${describeAiErrorCause(classifyAiError(error))} — falling back to ${modelLabel(next)} (${next.provider.name}).`;
+			const message = `${modelLabel(model)} (${model.provider.name}) ${describeAiErrorCause(classifyAiError(error))}. Falling back to ${modelLabel(next)} (${next.provider.name}).`;
 			new Notice(message);
 			warnings.push(message);
 			onStatus?.(`Falling back to ${modelLabel(next)}…`);
@@ -119,9 +119,9 @@ async function generateWithModel(
 	if (chunks.length <= 1) {
 		if (signal.aborted) throw signal.reason;
 		if (progress.hasProgressContent) {
-			await progress.updateProgress(generateSummary ? 'Generating summary...' : 'Generating AI add-ons...');
+			await progress.updateProgress(generateSummary ? 'Generating note content…' : 'Generating AI add-ons…');
 		}
-		progress.updateStatus(generateSummary ? 'Generating summary...' : 'Generating AI add-ons...');
+		progress.updateStatus(generateSummary ? 'Generating note content…' : 'Generating AI add-ons…');
 		return provider.summarizeVideo(
 			generateSummary
 				? aiContext.promptService.buildPrompt(transcript, url)
@@ -135,12 +135,12 @@ async function generateWithModel(
 		if (signal.aborted) throw signal.reason;
 		if (progress.hasProgressContent) {
 			await progress.updateProgress(generateSummary
-				? `Summarizing transcript chunk ${index + 1}/${chunks.length}...`
-				: `Extracting add-on material ${index + 1}/${chunks.length}...`);
+				? `Summarizing transcript chunk ${index + 1}/${chunks.length}…`
+				: `Extracting add-on material ${index + 1}/${chunks.length}…`);
 		}
 		progress.updateStatus(generateSummary
-			? `Summarizing chunk ${index + 1}/${chunks.length}...`
-			: `Extracting add-on material ${index + 1}/${chunks.length}...`);
+			? `Summarizing chunk ${index + 1}/${chunks.length}…`
+			: `Extracting add-on material ${index + 1}/${chunks.length}…`);
 		chunkSummaries.push(
 			await provider.summarizeVideo(
 				generateSummary
@@ -153,9 +153,9 @@ async function generateWithModel(
 
 	if (signal.aborted) throw signal.reason;
 	if (progress.hasProgressContent) {
-		await progress.updateProgress(generateSummary ? 'Combining chunk summaries...' : 'Creating AI add-ons...');
+		await progress.updateProgress(generateSummary ? 'Combining chunk summaries…' : 'Creating AI add-ons…');
 	}
-	progress.updateStatus(generateSummary ? 'Combining chunk summaries...' : 'Creating AI add-ons...');
+	progress.updateStatus(generateSummary ? 'Combining chunk summaries…' : 'Creating AI add-ons…');
 	return provider.summarizeVideo(
 		generateSummary
 			? aiContext.promptService.buildSynthesisPrompt(transcript, url, chunkSummaries)

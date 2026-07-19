@@ -35,8 +35,8 @@ export class ModelFormModal extends Modal {
 		contentEl.createEl('h2', { text: isAdd ? 'Add model' : 'Edit model' });
 
 		new Setting(contentEl)
-			.setName('Model name')
-			.setDesc(isAdd ? 'Enter model name (required)' : 'Model identifier (cannot be changed)')
+			.setName('Model ID')
+			.setDesc(isAdd ? 'Exact model identifier used by the provider. Required.' : 'Exact model identifier used by the provider. It cannot be changed.')
 			.addText((text) => {
 				text.setPlaceholder('Enter model name').setValue(this.modelName);
 				if (isAdd) {
@@ -48,7 +48,7 @@ export class ModelFormModal extends Modal {
 
 		new Setting(contentEl)
 			.setName('Display name')
-			.setDesc('Enter display name (optional)')
+			.setDesc('Optional label shown in the plugin.')
 			.addText((text) =>
 				text
 					.setPlaceholder('Enter display name')

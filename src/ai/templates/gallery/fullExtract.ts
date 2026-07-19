@@ -45,7 +45,7 @@ Style:
 			enumValues: ['concise', 'comprehensive', 'exhaustive'],
 			required: false,
 			default: 'comprehensive',
-			description: 'Shapes the level of detail preservation.',
+			description: 'Sets how much source detail to preserve.',
 		},
 	],
 };

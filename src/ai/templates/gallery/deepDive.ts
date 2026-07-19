@@ -14,7 +14,7 @@ A short, transferable mental model the reader can hold in their head. Diagrams i
 
 ## Components / sub-topics
 The pieces this topic decomposes into. For each:
-- **Component name** — one-sentence role inside the larger topic.
+- **Component name**: one-sentence role inside the larger topic.
 
 ## How it works
 Mechanics: how the components interact, what the dynamics are, what makes the topic behave the way it does. Numbered if sequential, bulleted if not.
@@ -54,7 +54,7 @@ Style:
 			enumValues: ['intro', 'intermediate', 'advanced'],
 			required: false,
 			default: 'intermediate',
-			description: 'Shapes analogies, and depth of explanation.',
+			description: 'Sets the complexity of analogies and explanations.',
 		},
 	],
 };

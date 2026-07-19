@@ -1,3 +1,4 @@
+
 .ytkn,
 .ytkn-settings,
 .ytkn-modal,
@@ -99,6 +100,7 @@
 	flex-direction: column;
 	gap: var(--size-4-4);
 }
+
 
 .ytkn-form__input {
 	width: 100%;
@@ -258,6 +260,7 @@
 	width: 100%;
 	max-width: none;
 }
+
 
 .ytkn-tabs {
 	display: flex;
@@ -476,6 +479,7 @@
 	width: var(--ytkn-brand-action-icon-size);
 	height: var(--ytkn-brand-action-icon-size);
 }
+
 
 .ytkn-settings__empty-panel {
 	margin-top: var(--size-4-4);
@@ -760,6 +764,7 @@
 	border: none;
 	background: transparent;
 }
+
 
 .ytkn-modal__stretch-input .setting-item-info {
 	flex: 0 0 auto;
@@ -1261,6 +1266,7 @@
 	width: 100%;
 }
 
+
 .ytkn-queue-modal {
 	display: flex;
 	flex-direction: column;
@@ -1427,6 +1433,7 @@
 	text-align: center;
 }
 
+
 .ytkn-whats-new-modal {
 	display: flex;
 	flex-direction: column;
@@ -1441,8 +1448,7 @@
 
 .ytkn-whats-new-modal__title,
 .ytkn-whats-new-modal__version,
-.ytkn-whats-new-modal__section-title,
-.ytkn-whats-new-modal__support-title {
+.ytkn-whats-new-modal__section-title {
 	margin: 0;
 	letter-spacing: 0;
 }
@@ -1510,40 +1516,49 @@
 	margin-top: var(--size-2-2);
 }
 
-.ytkn-whats-new-modal__support {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: var(--size-4-4);
-	padding: var(--size-4-3);
-	border: 1px solid var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	background: var(--background-secondary);
-}
-
 .ytkn-whats-new-modal__support-actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--size-4-2);
-	justify-content: flex-end;
+	justify-content: center;
 }
 
 .ytkn-whats-new-modal__support-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	gap: var(--size-2-3);
 	min-height: var(--ytkn-control-min-height);
-	padding: 0 var(--size-4-3);
+	padding: var(--size-2-3);
+	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-s);
-	background: var(--interactive-normal);
+	background: var(--background-primary-alt);
 	color: var(--text-normal);
 	text-decoration: none;
 	font-weight: var(--font-medium);
+	box-shadow: var(--input-shadow);
+	transition:
+		background-color 120ms ease,
+		border-color 120ms ease,
+		color 120ms ease;
 }
 
 .ytkn-whats-new-modal__support-button:hover {
 	background: var(--interactive-hover);
-	color: var(--text-normal);
+	border-color: var(--interactive-accent);
+	color: var(--text-accent-hover);
+}
+
+.ytkn-whats-new-modal__support-button:focus-visible {
+	outline: 2px solid var(--background-modifier-border-focus);
+	outline-offset: 2px;
+}
+
+.ytkn-whats-new-modal__support-icon,
+.ytkn-whats-new-modal__support-icon svg {
+	width: 16px;
+	height: 16px;
+	flex: 0 0 16px;
 }
 
 .ytkn-whats-new-modal__actions {
@@ -1559,6 +1574,7 @@
 	width: 100%;
 	justify-content: flex-end;
 }
+
 
 .modal.mod-settings .modal-content.ytkn-modal-scroll-container,
 .modal .modal-content.ytkn-modal-scroll-container {
@@ -1619,6 +1635,7 @@
 		max-width: 100%;
 	}
 }
+
 
 .is-phone .ytkn-settings__provider-header .clickable-icon,
 .is-phone .ytkn-settings__provider-accordion .clickable-icon {
@@ -1809,12 +1826,4 @@
 		max-height: var(--ytkn-brand-icon-size);
 	}
 
-	.ytkn-whats-new-modal__support {
-		align-items: stretch;
-		flex-direction: column;
-	}
-
-	.ytkn-whats-new-modal__support-actions {
-		justify-content: flex-start;
-	}
 }

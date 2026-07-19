@@ -62,52 +62,52 @@ type SharedSettingCopy = {
 export const SETTING_COPY: SharedSettingCopy = {
 	aiModels: {
 		name: 'AI models',
-		desc: 'Tried in order: the first model starts each run; later models take over if it fails.',
+		desc: 'Tried in order. If any AI request fails, the next model retries it and becomes the starting model for the rest of the run.',
 		unavailableDesc: 'Add a provider and at least one model to enable AI generation.',
 		addLabel: 'Add model',
 	},
 	useAi: {
 		name: 'Use AI',
-		desc: 'Master switch for all AI features.',
+		desc: 'Enable or disable all AI-generated note content.',
 	},
 	aiSummary: {
-		name: 'AI summary',
-		desc: 'Create an AI-generated note body from a template or manual instructions.',
+		name: 'Generate note body',
+		desc: 'Use the selected template or custom instructions to generate the main note body.',
 	},
 	instructionStyle: {
-		name: 'Instruction style',
+		name: 'AI instructions',
 		desc: 'Pick a built-in template or write your own instructions for the AI.',
 		options: {
 			template: 'Built-in template',
-			manual: 'Manual instructions',
+			manual: 'Custom instructions',
 		},
 	},
 	contentTemplate: {
 		name: 'Content template',
 	},
 	manualInstructions: {
-		name: 'Manual instructions',
-		desc: 'Custom prompt. The video metadata block is still added automatically.',
-		placeholder: 'Provide specific instructions for the note...',
+		name: 'Custom instructions',
+		desc: 'These instructions control the AI-generated note content. Source metadata is added automatically.',
+		placeholder: 'Describe the note you want…',
 	},
 	tldrCallout: {
-		name: 'Add summary callout',
-		desc: 'Add a TL;DR section in a summary callout.',
+		name: 'Add TL;DR callout',
+		desc: 'Add a brief TL;DR callout near the top of the note.',
 	},
 	mindmap: {
-		name: 'Add mindmap',
-		desc: 'Add a Mermaid mindmap, independent of the selected template.',
+		name: 'Add mind map',
+		desc: 'Add a Mermaid mind map in addition to the selected template.',
 	},
 	memorableQuotes: {
 		name: 'Add memorable quotes',
-		desc: 'Add 3-7 verbatim quotes, independent of the selected template.',
+		desc: 'Ask the AI to select 3–7 memorable quotes from the transcript. Verify wording against the source before quoting.',
 	},
 	noteStructurePreview: {
 		name: 'Preview note structure',
 	},
 	mediaEmbed: {
 		name: 'Media embed',
-		desc: 'Embed the YouTube video, playlist video, thumbnail, or no media near the top of the note.',
+		desc: 'Embed a video or thumbnail near the top of the note, or turn media off. Combined playlist and channel notes use the first available video.',
 		options: {
 			video: 'Video',
 			thumbnail: 'Thumbnail',
@@ -115,8 +115,8 @@ export const SETTING_COPY: SharedSettingCopy = {
 		},
 	},
 	useVideoTitleAsNoteName: {
-		name: 'Use video title as note title',
-		desc: 'Rename the destination note to the video or playlist title. Not applicable for multiple videos in one note.',
+		name: 'Use source title as note name',
+		desc: 'Use the video, playlist, or channel title when naming created notes. A single-URL run can also rename the current note; append and multi-URL runs do not.',
 	},
 	includeFrontmatter: {
 		name: 'Include frontmatter',
@@ -129,8 +129,8 @@ export const SETTING_COPY: SharedSettingCopy = {
 	},
 	frontmatterProperties: {
 		name: 'Frontmatter properties',
-		desc: 'Space- or comma-separated list. Allowed keys: title, aliases, source, channel, channelUrl, channelId, videoUrl, playlistUrl, videoId, playlistId, thumbnailUrl, videoDescription, uploadDate, videoCategory, durationSeconds, keywords, generated, videoCount.',
-		placeholder: 'Title channel channelUrl videoId …',
+		desc: 'Space- or comma-separated property names to include. Leave blank to omit these properties. Available: title, aliases, source, channel, channelUrl, channelId, videoUrl, playlistUrl, videoId, playlistId, thumbnailUrl, videoDescription, uploadDate, videoCategory, durationSeconds, keywords, generated, videoCount.',
+		placeholder: 'title channel channelUrl videoId …',
 	},
 	sourceMetadataPosition: {
 		name: 'Source metadata position',
@@ -142,7 +142,7 @@ export const SETTING_COPY: SharedSettingCopy = {
 	},
 	outputDestination: {
 		name: 'Output destination',
-		desc: 'Use the current note, append to the active note, or create notes in a folder.',
+		desc: 'Replace the selection (or insert at the cursor) in the active note, append to the end of the active note, or create notes in a folder.',
 		options: {
 			'current-note': 'Current note',
 			'append-to-active-note': 'Append to active note',
@@ -156,7 +156,7 @@ export const SETTING_COPY: SharedSettingCopy = {
 	},
 	openCreatedNote: {
 		name: 'Open created note',
-		desc: 'Open the first created note in a new tab. Playlists and multi-URL batches open only their first note.',
+		desc: 'Open the first note created by a Folder run in a new tab. For playlists, channels, and multi-URL batches, only the first note opens.',
 	},
 	transcriptInNote: {
 		name: 'Transcript in note',
@@ -169,14 +169,14 @@ export const SETTING_COPY: SharedSettingCopy = {
 	},
 	linkTimestamps: {
 		name: 'Link timestamps to YouTube',
-		desc: 'When using the timestamped transcript, deep-link to the video at that time.',
+		desc: 'When the transcript is timestamped, link each timestamp to that point in the YouTube video.',
 	},
 	transcriptLanguage: {
 		name: 'Transcript language',
-		desc: 'Auto picks any available transcript. Preferred tries your language first, then falls back.',
+		desc: "YouTube default uses the first available transcript. Preferred tries the requested language first, then falls back to YouTube's default.",
 		options: {
-			auto: 'Auto-detect best available',
-			preferred: 'Preferred language with fallback',
+			auto: 'YouTube default',
+			preferred: 'Preferred language, then default',
 		},
 	},
 	preferredLanguageCode: {
@@ -185,16 +185,16 @@ export const SETTING_COPY: SharedSettingCopy = {
 		placeholder: 'en',
 	},
 	playlistHandling: {
-		name: 'Playlist handling',
-		desc: 'Create a single combined note for the whole playlist, or one note per video.',
+		name: 'Playlist and channel output',
+		desc: 'Create one note per video, or one combined note for the entire playlist or selected channel content.',
 		options: {
-			'per-video': 'Per video: multiple individual notes',
-			combined: 'Combined: single aggregated note',
+			'per-video': 'One note per video',
+			combined: 'One combined note',
 		},
 	},
 	channelContent: {
 		name: 'Channel',
-		desc: 'Choose which channel tabs to process. Active and upcoming streams are skipped.',
+		desc: 'Choose which channel content to include. Live and upcoming streams are skipped; completed streams are included as replays.',
 		options: {
 			videos: 'Videos',
 			shorts: 'Shorts',
@@ -202,8 +202,8 @@ export const SETTING_COPY: SharedSettingCopy = {
 		},
 	},
 	channelItemsPerType: {
-		name: 'Items per content type',
-		desc: 'Applied separately to Videos, Shorts, and Stream replays.',
+		name: 'Items per selected type',
+		desc: 'Latest applies the number separately to each selected type. All available processes everything YouTube exposes.',
 		placeholder: '10',
 		options: {
 			limited: 'Latest',
@@ -211,33 +211,33 @@ export const SETTING_COPY: SharedSettingCopy = {
 		},
 	},
 	transcriptFailure: {
-		name: 'When a transcript fails',
-		desc: 'Skip the video with a missing transcript, or stop the entire run.',
+		name: "When a transcript can't be fetched",
+		desc: 'For playlists and channels, skip that video and continue or stop the current run.',
 		options: {
-			skip: 'Skip and keep going',
-			fail: 'Stop the whole run',
+			skip: 'Skip video and continue',
+			fail: 'Stop current run',
 		},
 	},
 	includeRunReport: {
 		name: 'Include run report',
-		desc: 'Add a collapsible batch report showing completed, skipped, failed, and canceled runs.',
+		desc: 'Add a collapsible report listing completed, skipped, failed, and canceled items after each batch.',
 	},
 	runReportLocation: {
 		name: 'Run report location',
-		desc: 'Where to put the run report after all generations in a batch complete.',
+		desc: 'Choose where to save the report after the batch finishes.',
 		options: {
-			'generated-note': 'Generated note',
+			'generated-note': 'First generated note',
 			'separate-note': 'Separate report note',
 		},
 	},
 	temperature: {
 		name: 'Temperature',
-		desc: 'If supported by the provider; 0 = deterministic. 0.3 (default) = focused. 1 = more varied.',
+		desc: 'Controls response variation when supported by the provider. Lower values are more consistent; higher values are more varied. Default: 0.3.',
 		placeholder: '0.3',
 	},
 	requestTimeout: {
 		name: 'Request timeout (seconds)',
-		desc: 'Increase for slow local models or long runs. 300 = 5 minutes.',
+		desc: 'Maximum time for each AI request. Increase it for slow local models or long inputs. Default: 300 seconds (5 minutes).',
 		placeholder: '300',
 	},
 };

@@ -160,7 +160,7 @@ export class GenerationOptionsModal extends Modal {
 
 	private renderSourceField(urlContainer: HTMLElement, hintContainer: HTMLElement): void {
 		const urlSetting = new Setting(urlContainer).addTextArea((textarea) => {
-			textarea.setPlaceholder('URL(s)')
+			textarea.setPlaceholder('YouTube URL(s)')
 				.setValue(this.state.url)
 				.onChange((value) => {
 					this.state.url = value;
@@ -216,7 +216,7 @@ export class GenerationOptionsModal extends Modal {
 			if (videos > 0) parts.push(`${videos} video${videos > 1 ? 's' : ''}`);
 			if (playlists > 0) parts.push(`${playlists} playlist${playlists > 1 ? 's' : ''}`);
 			if (channels > 0) parts.push(`${channels} channel${channels > 1 ? 's' : ''}`);
-			if (invalid > 0) parts.push(`${invalid} invalid`);
+			if (invalid > 0) parts.push(`${invalid} invalid URL${invalid > 1 ? 's' : ''}`);
 			hintEl.setText(`${urls.length} URLs detected: ${parts.join(', ')}.`);
 			hintEl.show();
 		} else {
@@ -553,7 +553,7 @@ export class GenerationOptionsModal extends Modal {
 	private renderGeneralTab(containerEl: HTMLElement): void {
 		createSettingsCard(containerEl, 'Note structure', (body) => this.renderNoteCustomizationGroup(body), 'h4');
 		createSettingsCard(containerEl, 'Transcript in note', (body) => this.renderTranscriptInNoteGroup(body), 'h4');
-		createSettingsCard(containerEl, 'Queue and run reports', (body) => this.renderQueueAndRunReportsGroup(body), 'h4');
+		createSettingsCard(containerEl, 'Playlists, channels, and run reports', (body) => this.renderQueueAndRunReportsGroup(body), 'h4');
 	}
 
 	private renderNoteCustomizationGroup(containerEl: HTMLElement): void {
@@ -927,9 +927,9 @@ export class GenerationOptionsModal extends Modal {
 				href: SUPPORT_LINKS.buyMeACoffee,
 			},
 			{
-				id: 'recent-updates',
-				label: 'Recent updates',
-				icon: 'history',
+				id: 'about',
+				label: 'About YT Knowledge Notes',
+				icon: 'info',
 				onClick: () => {
 					new WhatsNewModal(
 						this.app,

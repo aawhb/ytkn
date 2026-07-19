@@ -14,9 +14,9 @@ import { FALLBACK_CONTEXT_WINDOW_TOKENS } from '../defaults';
 const ESTIMATED_CHARS_PER_TOKEN = 4;
 const MIN_TRANSCRIPT_BUDGET_TOKENS = 1024;
 
-const SHARED_BASE_INSTRUCTIONS = `You transform a YouTube video's transcript into a structured Markdown body for an Obsidian note. The renderer adds frontmatter, the H1 title, the source-metadata block, and an optional transcript appendix — your output is everything between them.
+const SHARED_BASE_INSTRUCTIONS = `You transform a YouTube video's transcript into a structured Markdown body for an Obsidian note. The renderer adds frontmatter, the H1 title, the source-metadata block, and an optional transcript appendix. Your output is everything between them.
 
-Hard rules — never break these:
+Hard rules. Never break these:
 - Use only information clearly supported by the transcript. If a detail is uncertain, omit it.
 - Do not invent facts, tools, libraries, metrics, thresholds, or performance claims.
 - Correct only obvious transcription errors. Otherwise leave wording faithful.
@@ -29,9 +29,9 @@ Hard rules — never break these:
 - Separate core content from sponsor reads, promotional content, and filler when relevant.
 - Treat each transcript as an independent source unless explicitly told otherwise.`;
 
-const ADDON_BASE_INSTRUCTIONS = `You transform a YouTube video's transcript into requested add-on Markdown sections for an Obsidian note. The renderer adds frontmatter, the H1 title, source metadata, and any transcript appendix — your output is only the requested add-on sections.
+const ADDON_BASE_INSTRUCTIONS = `You transform a YouTube video's transcript into requested add-on Markdown sections for an Obsidian note. The renderer adds frontmatter, the H1 title, source metadata, and any transcript appendix. Your output is only the requested add-on sections.
 
-Hard rules — never break these:
+Hard rules. Never break these:
 - Use only information clearly supported by the transcript. If a detail is uncertain, omit it.
 - Do not invent facts, tools, libraries, metrics, thresholds, or performance claims.
 - Do not output a \`# H1\` heading.
@@ -41,30 +41,30 @@ Hard rules — never break these:
 
 const LEVEL_GUIDES: Record<string, Record<string, string>> = {
 	learner_level: {
-		intro: `intro — treat the reader as new to this topic:
+		intro: `intro: treat the reader as new to this topic:
 - Explain all domain terms on first use.
 - Prefer analogies to familiar concepts over technical precision.
 - Self-test questions test recall ("What is X?"), not synthesis.
 - Examples show the basic shape of an idea, not edge cases.`,
-		intermediate: `intermediate — assume the reader knows the field's vocabulary and core concepts:
+		intermediate: `intermediate: assume the reader knows the field's vocabulary and core concepts:
 - Skip first-principles intros; reference well-known prerequisites by name only.
 - Self-test questions probe synthesis ("How does X relate to Y?"), not recall.
 - Examples illustrate edge cases or trade-offs, not the basic shape.`,
-		advanced: `advanced — assume deep field expertise:
+		advanced: `advanced: assume deep field expertise:
 - Skip background entirely; assume fluency with prerequisites.
 - Self-test questions demand analysis ("Why would X fail if Y changes?").
 - Examples focus on subtle edge cases, pitfalls, and architectural trade-offs.`,
 	},
 	audience_level: {
-		intro: `intro — write for someone new to this topic:
+		intro: `intro: write for someone new to this topic:
 - Explain all domain terms on first use.
 - Use analogies to familiar concepts.
 - Keep references concrete and grounded.`,
-		intermediate: `intermediate — write for someone familiar with the field:
+		intermediate: `intermediate: write for someone familiar with the field:
 - Assume vocabulary; skip basic definitions.
 - Reference related concepts by name without explaining them.
 - Balance depth with accessibility.`,
-		advanced: `advanced — write for a domain expert:
+		advanced: `advanced: write for a domain expert:
 - Assume full fluency; no background explanations.
 - Go deep on nuances, trade-offs, and edge cases.
 - Reference niche terminology freely.`,
@@ -274,10 +274,10 @@ ${addonText}`;
 			if (f.type === 'enum' && f.enumValues?.length) {
 				typeNote = `enum: ${f.enumValues.join(' | ')}`;
 			}
-			return `- ${f.key} (${typeNote}) — ${f.description}`;
+			return `- ${f.key} (${typeNote}): ${f.description}`;
 		}).join('\n');
 
-		return `Frontmatter directive — emit a metadata block at the very top of your response, before any heading, using EXACTLY these HTML-comment markers:
+		return `Frontmatter directive: emit a metadata block at the very top of your response, before any heading, using EXACTLY these HTML-comment markers:
 
 <!-- ytkn:frontmatter
 key: value
@@ -297,7 +297,7 @@ Use proper YAML inside the block. For arrays use \`[item1, item2]\` inline form.
 		}
 		const lines = sections.map((s) => {
 			const tag = s.required ? '(required)' : '(optional)';
-			return `- \`## ${s.heading}\` ${tag} — ${s.description}`;
+			return `- \`## ${s.heading}\` ${tag}: ${s.description}`;
 		}).join('\n');
 
 		return `Use exactly these H2 headings, in this order. Required sections must be present; optional sections may be omitted if the source has no relevant content.
@@ -328,7 +328,7 @@ ${lines}`;
 				: `- ${c.label}: ${value}`;
 		}).join('\n');
 
-		return `User-supplied values — use these verbatim when generating the note:\n\n${lines}`;
+		return `User-supplied values: use these verbatim when generating the note:\n\n${lines}`;
 	}
 
 	private shouldIncludeTldr(): boolean {
@@ -380,7 +380,7 @@ ${lines}`;
 
 ${this.buildInstructionAddons()}
 
-${metadataLabel} (renderer adds this automatically — do not repeat it inside the body):
+${metadataLabel} (renderer adds this automatically; do not repeat it inside the body):
 - Title: ${playlist.title}
 - ${urlLabel}: ${playlist.url}
 - Video count: ${playlist.transcripts.length}`;
@@ -391,7 +391,7 @@ ${metadataLabel} (renderer adds this automatically — do not repeat it inside t
 
 ${this.buildInstructionAddons()}
 
-Video metadata (renderer adds this automatically — do not repeat it inside the body):
+Video metadata (renderer adds this automatically; do not repeat it inside the body):
 - Title: ${transcript.title}
 - Channel: ${transcript.author}
 - Channel URL: ${transcript.channelUrl}
@@ -496,7 +496,7 @@ Transcript:
 	private buildCommonInstructions(transcript: TranscriptResponse, videoUrl: string, includeAddons = true): string {
 		return `${this.buildInstructionBlock('video', includeAddons)}
 
-Video metadata (renderer adds this automatically — do not repeat it inside the body):
+Video metadata (renderer adds this automatically; do not repeat it inside the body):
 - Title: ${transcript.title}
 - Channel: ${transcript.author}
 - Channel URL: ${transcript.channelUrl}

@@ -28,7 +28,6 @@ const fakeModel: ModelConfig = {
 function makeFakeSettings(providerList: ProviderConfig[] = []) {
 	return {
 		validateModelId: vi.fn().mockReturnValue(true),
-		updateActiveModel: vi.fn().mockResolvedValue(undefined),
 		addProvider: vi.fn().mockResolvedValue(undefined),
 		updateProvider: vi.fn().mockResolvedValue(undefined),
 		deleteProvider: vi.fn().mockResolvedValue(undefined),
@@ -52,7 +51,7 @@ const fakeModalsFactory = {
 	createDeleteModelModal: vi.fn().mockReturnValue({ open: vi.fn() }),
 } as any;
 
-describe('SettingsEventHandlers – explicit-action error handlers call notifyError', () => {
+describe('SettingsEventHandlers: explicit-action error handlers call notifyError', () => {
 	let consoleSpy: ReturnType<typeof vi.spyOn>;
 
 	beforeEach(() => {
@@ -64,7 +63,7 @@ describe('SettingsEventHandlers – explicit-action error handlers call notifyEr
 		consoleSpy.mockRestore();
 	});
 
-	it('handleProviderAdd — service throws → console.error and Notice called', async () => {
+	it('handleProviderAdd: service throws, then console.error and Notice are called', async () => {
 		const fakeSettings = makeFakeSettings();
 		fakeSettings.addProvider.mockRejectedValueOnce(new Error('add failed'));
 
@@ -76,7 +75,7 @@ describe('SettingsEventHandlers – explicit-action error handlers call notifyEr
 		expect(mockNotice).toHaveBeenCalled();
 	});
 
-	it('handleProviderEdit — service throws → console.error and Notice called', async () => {
+	it('handleProviderEdit: service throws, then console.error and Notice are called', async () => {
 		const fakeSettings = makeFakeSettings();
 		fakeSettings.updateProvider.mockRejectedValueOnce(new Error('edit failed'));
 
@@ -88,7 +87,7 @@ describe('SettingsEventHandlers – explicit-action error handlers call notifyEr
 		expect(mockNotice).toHaveBeenCalled();
 	});
 
-	it('handleProviderDelete — service throws → console.error and Notice called', async () => {
+	it('handleProviderDelete: service throws, then console.error and Notice are called', async () => {
 		const fakeSettings = makeFakeSettings();
 		fakeSettings.deleteProvider.mockRejectedValueOnce(new Error('delete failed'));
 
@@ -100,7 +99,7 @@ describe('SettingsEventHandlers – explicit-action error handlers call notifyEr
 		expect(mockNotice).toHaveBeenCalled();
 	});
 
-	it('handleModelAdd — service throws → console.error and Notice called', async () => {
+	it('handleModelAdd: service throws, then console.error and Notice are called', async () => {
 		const fakeSettings = makeFakeSettings();
 		fakeSettings.addModel.mockRejectedValueOnce(new Error('model add failed'));
 
@@ -112,7 +111,7 @@ describe('SettingsEventHandlers – explicit-action error handlers call notifyEr
 		expect(mockNotice).toHaveBeenCalled();
 	});
 
-	it('handleModelDelete — service throws → console.error and Notice called', async () => {
+	it('handleModelDelete: service throws, then console.error and Notice are called', async () => {
 		const fakeSettings = makeFakeSettings();
 		fakeSettings.deleteModel.mockRejectedValueOnce(new Error('model delete failed'));
 
@@ -125,7 +124,7 @@ describe('SettingsEventHandlers – explicit-action error handlers call notifyEr
 	});
 });
 
-describe('SettingsEventHandlers – change notifications', () => {
+describe('SettingsEventHandlers: change notifications', () => {
 	it('notifies the settings tab only after a successful mutation', async () => {
 		const fakeSettings = makeFakeSettings();
 		const onChanged = vi.fn();
@@ -143,7 +142,7 @@ describe('SettingsEventHandlers – change notifications', () => {
 	});
 });
 
-describe('SettingsEventHandlers – autosave error handlers do NOT call Notice', () => {
+describe('SettingsEventHandlers: autosave error handlers do not call Notice', () => {
 	let consoleSpy: ReturnType<typeof vi.spyOn>;
 
 	beforeEach(() => {
@@ -155,7 +154,7 @@ describe('SettingsEventHandlers – autosave error handlers do NOT call Notice',
 		consoleSpy.mockRestore();
 	});
 
-	it('handleProviderUrlChange — service throws → console.error called, Notice NOT called', async () => {
+	it('handleProviderUrlChange: service throws, then console.error is called without Notice', async () => {
 		const fakeSettings = makeFakeSettings([fakeProvider]);
 		fakeSettings.updateProvider.mockRejectedValueOnce(new Error('url save failed'));
 
@@ -167,7 +166,7 @@ describe('SettingsEventHandlers – autosave error handlers do NOT call Notice',
 		expect(mockNotice).not.toHaveBeenCalled();
 	});
 
-	it('handleApiKeySecretChange — service throws → console.error called, Notice NOT called', async () => {
+	it('handleApiKeySecretChange: service throws, then console.error is called without Notice', async () => {
 		const fakeSettings = makeFakeSettings();
 		fakeSettings.saveProviderSecretId.mockRejectedValueOnce(new Error('key save failed'));
 
@@ -180,12 +179,12 @@ describe('SettingsEventHandlers – autosave error handlers do NOT call Notice',
 	});
 });
 
-describe('SettingsEventHandlers – modal delegation', () => {
+describe('SettingsEventHandlers: modal delegation', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	it('handleProviderDeleteClick — calls createDeleteProviderModal and opens it', () => {
+	it('handleProviderDeleteClick creates and opens the delete modal', () => {
 		const fakeSettings = makeFakeSettings();
 
 		const handlers = new SettingsEventHandlers(fakeSettings as any, fakeModalsFactory);
@@ -196,7 +195,7 @@ describe('SettingsEventHandlers – modal delegation', () => {
 	});
 });
 
-describe('SettingsEventHandlers – accordion state contracts', () => {
+describe('SettingsEventHandlers: accordion state contracts', () => {
 	function makeAccordion(parent: HTMLElement): HTMLElement {
 		const accordion = parent.createDiv({ cls: 'ytkn-settings__provider-accordion' });
 		accordion.createDiv({ cls: 'ytkn-settings__provider-content' });

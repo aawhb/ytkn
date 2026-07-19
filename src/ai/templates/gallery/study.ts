@@ -11,7 +11,7 @@ export const studyTemplate: Template = {
 
 ## Concepts
 For each major concept covered:
-- **Concept name** — one-sentence definition. Add a short example only if the source provides one.
+- **Concept name**: one-sentence definition. Add a short example only if the source provides one.
 
 Aim for 4-8 concepts; do not pad.
 
@@ -51,7 +51,7 @@ Style:
 			enumValues: ['intro', 'intermediate', 'advanced'],
 			required: false,
 			default: 'intermediate',
-			description: 'Shapes assumed prior knowledge, and self-test difficulty.',
+			description: 'Sets the assumed prior knowledge and self-test difficulty.',
 		},
 	],
 };

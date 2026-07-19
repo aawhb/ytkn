@@ -16,7 +16,7 @@ const template = {
 const allOff = { includeTldr: false, includeMindmap: false, includeMemorableQuotes: false };
 const allOn = { includeTldr: true, includeMindmap: true, includeMemorableQuotes: true };
 
-describe('assembleNote — template mode', () => {
+describe('assembleNote: template mode', () => {
 	it('preserves free-form preamble content alongside template sections', () => {
 		const raw = 'Undeclared preamble.\n\n## Key takeaways\n- A';
 		const { body, warnings } = assembleNote(raw, template, allOff);
@@ -65,7 +65,7 @@ describe('assembleNote — template mode', () => {
 	});
 });
 
-describe('assembleNote — addon extraction and placement', () => {
+describe('assembleNote: add-on extraction and placement', () => {
 	it('extracts TL;DR to a callout and places addon sections in registry order', () => {
 		const raw = [
 			'## TL;DR',
@@ -133,7 +133,7 @@ describe('assembleNote — addon extraction and placement', () => {
 	});
 });
 
-describe('assembleNote — manual mode (no template)', () => {
+describe('assembleNote: manual mode (no template)', () => {
 	it('preserves a free-form body without H2 headings', () => {
 		const raw = '- First insight\n- Second insight\n- Third insight';
 		const { body, addonBlocks } = assembleNote(raw, null, allOff);

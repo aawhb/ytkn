@@ -16,9 +16,9 @@ vi.mock('obsidian', async () => {
 	};
 });
 
-import { App } from 'obsidian';
+import { App, Setting } from 'obsidian';
 import { SettingsTab } from '../../../src/ui/settings/settingsTab';
-import { DOCUMENTATION_LINK, SUPPORT_LINKS } from '../../../src/releaseNotes';
+import { SUPPORT_LINKS } from '../../../src/releaseNotes';
 import { WhatsNewModal } from '../../../src/ui/releaseNotes/whatsNewModal';
 import { SETTING_COPY } from '../../../src/ui/shared/settingCopy';
 
@@ -36,7 +36,6 @@ function makeFakeSettings() {
 		getModelIds: vi.fn().mockReturnValue([]),
 		getSelectedModels: vi.fn().mockReturnValue([]),
 		updateModelIds: vi.fn().mockResolvedValue(undefined),
-		getSelectedModel: vi.fn().mockReturnValue(null),
 		getProviders: vi.fn().mockReturnValue([]),
 		getOutputDefaults: vi.fn().mockReturnValue({
 			useAi: true,
@@ -98,6 +97,28 @@ function renderSettingsTab(tab: SettingsTab): void {
 }
 
 describe('SettingsTab', () => {
+	it('exposes searchable declarative settings definitions', () => {
+		const plugin = makeFakePlugin();
+		const tab = createSettingsTab(plugin);
+		const [definition] = tab.getSettingDefinitions();
+
+		expect(definition).toMatchObject({
+			name: 'YT Knowledge Notes',
+			aliases: expect.arrayContaining([
+				'AI models',
+				'Destination folder',
+				'Restore defaults',
+			]),
+		});
+		if (!definition || !('render' in definition) || !definition.render) {
+			throw new Error('Expected an imperative render definition');
+		}
+		const host = document.createElement('div');
+		definition.render(new Setting(host), {} as never);
+		expect(host.textContent).toContain('YT Knowledge Notes');
+		expect(host.textContent).toContain('Destination folder');
+	});
+
 	it('renders and saves default channel content selections', async () => {
 		const plugin = makeFakePlugin();
 		const tab = createSettingsTab(plugin);
@@ -126,8 +147,8 @@ describe('SettingsTab', () => {
 		await vi.waitFor(() => expect(plugin.settings.updateOutputDefaults).toHaveBeenCalledWith(
 			expect.objectContaining({ channelContentTypes: ['videos'] }),
 		));
-		expect(SETTING_COPY.channelItemsPerType.name).toBe('Items per content type');
-		expect(tab.containerEl.textContent).toContain('Items per content type');
+		expect(SETTING_COPY.channelItemsPerType.name).toBe('Items per selected type');
+		expect(tab.containerEl.textContent).toContain('Items per selected type');
 	});
 
 	it('hides the channel item count when the default is All available', async () => {
@@ -173,7 +194,7 @@ describe('SettingsTab', () => {
 		const semanticTabs = Array.from(tab.containerEl.querySelectorAll('[role="tab"]'));
 
 		expect(heading?.textContent).toBe('YT Knowledge Notes');
-		expect(semanticTabs.map((tabEl) => tabEl.textContent)).toEqual(['General', 'GenAI']);
+		expect(semanticTabs.map((tabEl) => tabEl.textContent)).toEqual(['General', 'AI']);
 	});
 
 	it('shows the open-created-note toggle below the destination folder only for folder output', async () => {
@@ -284,18 +305,16 @@ describe('SettingsTab', () => {
 		const actions = Array.from(actionGroup?.querySelectorAll('.ytkn-brand-action') ?? []);
 		expect(actions.map((action) => action.getAttribute('aria-label'))).toEqual([
 			'Manage queue',
-			'Help and documentation',
 			'Sponsor',
 			'Buy Me a Coffee',
-			'Recent updates',
+			'About YT Knowledge Notes',
 		]);
-		expect(actions.map((action) => action.textContent)).toEqual(['', '', '', '', '']);
-		expect(actions[1].getAttribute('href')).toBe(DOCUMENTATION_LINK);
-		expect(actions[2].getAttribute('href')).toBe(SUPPORT_LINKS.githubSponsors);
-		expect(actions[3].getAttribute('href')).toBe(SUPPORT_LINKS.buyMeACoffee);
+		expect(actions.map((action) => action.textContent)).toEqual(['', '', '', '']);
+		expect(actions[1].getAttribute('href')).toBe(SUPPORT_LINKS.githubSponsors);
+		expect(actions[2].getAttribute('href')).toBe(SUPPORT_LINKS.buyMeACoffee);
 		expect(actions[0].tagName).toBe('BUTTON');
 		expect(actions[1].tagName).toBe('A');
-		expect(actions[4].tagName).toBe('BUTTON');
+		expect(actions[3].tagName).toBe('BUTTON');
 	});
 
 	it('opens queue management from the Manage queue utility action', () => {
@@ -313,7 +332,7 @@ describe('SettingsTab', () => {
 		expect(openQueueModal).toHaveBeenCalledTimes(1);
 	});
 
-	it('opens release notes from the Recent updates utility action', () => {
+	it('opens release notes from the About utility action', () => {
 		const openSpy = vi.spyOn(WhatsNewModal.prototype, 'open').mockImplementation(() => undefined);
 		const plugin = makeFakePlugin();
 		const tab = createSettingsTab(plugin);
@@ -321,7 +340,7 @@ describe('SettingsTab', () => {
 		renderSettingsTab(tab);
 
 		const releaseNotesButton = Array.from(tab.containerEl.querySelectorAll('.ytkn-brand-action'))
-			.find((button) => button.getAttribute('aria-label') === 'Recent updates') as HTMLButtonElement | undefined;
+			.find((button) => button.getAttribute('aria-label') === 'About YT Knowledge Notes') as HTMLButtonElement | undefined;
 		releaseNotesButton?.click();
 
 		expect(releaseNotesButton).toBeTruthy();

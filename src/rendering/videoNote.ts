@@ -34,7 +34,7 @@ export function renderVideoNote(
 	});
 	warnings.push(...assembled.warnings);
 
-	// Fixed skeleton: TL;DR, body, then addons in registry order—not model order.
+	// Fixed skeleton: TL;DR, body, then add-ons in registry order, not model order.
 	const selectedBody = selectAssembledBody(assembled, generateSummary);
 	warnings.push(...selectedBody.warnings);
 	let finalContent = selectedBody.content;

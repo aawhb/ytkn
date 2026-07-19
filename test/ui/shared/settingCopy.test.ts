@@ -68,7 +68,6 @@ function makeFakeSettings() {
 		getModelIds: vi.fn().mockReturnValue(['OpenAI:gpt-4']),
 		getSelectedModels: vi.fn().mockReturnValue([sampleModel]),
 		updateModelIds: vi.fn().mockResolvedValue(undefined),
-		getSelectedModel: vi.fn().mockReturnValue(sampleModel),
 		getProviders: vi.fn().mockReturnValue([]),
 		getOutputDefaults: vi.fn().mockReturnValue({
 			useAi: true,
@@ -158,7 +157,7 @@ describe('shared setting copy', () => {
 		});
 		expect(SETTING_COPY.instructionStyle.options).toEqual({
 			template: 'Built-in template',
-			manual: 'Manual instructions',
+			manual: 'Custom instructions',
 		});
 		expect(SETTING_COPY.preferredLanguageCode.placeholder).toBe('en');
 	});

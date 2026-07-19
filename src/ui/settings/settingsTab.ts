@@ -1,4 +1,4 @@
-import type { App, Plugin } from 'obsidian';
+import type { App, Plugin, SettingDefinitionItem } from 'obsidian';
 import { Notice, PluginSettingTab, Setting, setIcon } from 'obsidian';
 import type {
 	ChannelContentType,
@@ -30,7 +30,6 @@ import { ConfirmModal } from './confirmModal';
 import { WhatsNewModal } from '../releaseNotes/whatsNewModal';
 import { renderModelChainRows } from '../shared/modelChainRows';
 import {
-	DOCUMENTATION_LINK,
 	SUPPORT_LINKS,
 	getRecentReleaseNotes,
 } from '../../releaseNotes';
@@ -43,6 +42,7 @@ import {
 import { renderTemplateControls } from '../shared/templateControls';
 import { stampSettingRowClasses } from '../shared/settingRows';
 import { SETTING_COPY } from '../shared/settingCopy';
+import { setDestructiveButton } from '../shared/buttonStyles';
 
 const RESTORE_DEFAULTS_LABEL = 'Restore defaults';
 
@@ -75,8 +75,30 @@ export class SettingsTab extends PluginSettingTab {
 		return this.pluginSettings;
 	}
 
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [{
+			name: this.plugin.manifest?.name ?? 'YT Knowledge Notes',
+			desc: 'Configure note generation, AI models, providers, and output defaults.',
+			aliases: [
+				'General',
+				'AI',
+				'Providers',
+				'Models',
+				RESTORE_DEFAULTS_LABEL,
+				...Object.values(SETTING_COPY).map((copy) => copy.name),
+			],
+			render: (setting) => {
+				setting.settingEl.empty();
+				this.renderSettings(setting.settingEl);
+			},
+		}];
+	}
+
 	display(): void {
-		const { containerEl } = this;
+		this.renderSettings(this.containerEl);
+	}
+
+	private renderSettings(containerEl: HTMLElement): void {
 		containerEl.empty();
 		containerEl.addClass('ytkn-settings');
 
@@ -128,12 +150,6 @@ export class SettingsTab extends PluginSettingTab {
 				onClick: this.openQueueModal,
 			},
 			{
-				id: 'documentation',
-				label: 'Help and documentation',
-				icon: 'circle-help',
-				href: DOCUMENTATION_LINK,
-			},
-			{
 				id: 'sponsor',
 				label: 'Sponsor',
 				icon: 'heart-handshake',
@@ -146,9 +162,9 @@ export class SettingsTab extends PluginSettingTab {
 				href: SUPPORT_LINKS.buyMeACoffee,
 			},
 			{
-				id: 'recent-updates',
-				label: 'Recent updates',
-				icon: 'history',
+				id: 'about',
+				label: 'About YT Knowledge Notes',
+				icon: 'info',
 				onClick: () => {
 					new WhatsNewModal(
 						this.app,
@@ -170,7 +186,7 @@ export class SettingsTab extends PluginSettingTab {
 		createSettingsCard(containerEl, 'Transcript in note', (body) =>
 			this.displayTranscriptInNoteSection(body),
 		);
-		createSettingsCard(containerEl, 'Queue and run reports', (body) =>
+		createSettingsCard(containerEl, 'Playlists, channels, and run reports', (body) =>
 			this.displayQueueAndRunReportsSection(body),
 		);
 	}
@@ -190,9 +206,9 @@ export class SettingsTab extends PluginSettingTab {
 		const providers = this.settings.getProviders();
 
 		const providersSetting = new Setting(containerEl)
-			.setName('Configured providers')
+			.setName('AI providers')
 			.setDesc(
-				'Add an OpenAI, Anthropic, Gemini, or an OpenAI-compatible endpoint.',
+				'Connect OpenAI, Anthropic, Google Gemini, or an OpenAI-compatible service such as Ollama or LM Studio.',
 			)
 			.addButton((button) =>
 				button
@@ -662,10 +678,7 @@ export class SettingsTab extends PluginSettingTab {
 				'Removes all providers, models, secret selections, and per-feature defaults. Saved obsidian secrets are not deleted.',
 			)
 			.addButton((button) =>
-				button
-					.setButtonText(RESTORE_DEFAULTS_LABEL)
-					// Keep setWarning() for minAppVersion 1.11.4 compatibility.
-					.setWarning()
+				setDestructiveButton(button.setButtonText(RESTORE_DEFAULTS_LABEL))
 					.onClick(() => {
 						this.resetSettings();
 					}),
@@ -828,7 +841,7 @@ export class SettingsTab extends PluginSettingTab {
 		new ConfirmModal(
 			this.app,
 			'Restore default settings?',
-			'This removes all providers, models, secret selections, and per-feature defaults. Saved obsidian secrets and generated notes already in your vault are not touched.',
+			'Remove all providers, models, secret selections, and feature defaults. Secrets stored by Obsidian and generated notes are not deleted.',
 			RESTORE_DEFAULTS_LABEL,
 			async () => {
 				try {
@@ -836,7 +849,7 @@ export class SettingsTab extends PluginSettingTab {
 					new Notice('Settings restored to defaults.');
 				} catch (error) {
 					new Notice(
-						`Could not restore defaults: ${getErrorMessage(error)}`,
+						`Couldn't restore defaults: ${getErrorMessage(error)}.`,
 					);
 				}
 			},
@@ -850,8 +863,15 @@ export class SettingsTab extends PluginSettingTab {
 		const openedProviderName =
 			openedAccordion?.getAttribute('data-provider-name') ?? null;
 
-		// Keep display() for minAppVersion 1.11.4 compatibility.
-		this.display();
+		const update = Reflect.get(this, 'update') as
+			| ((this: SettingsTab) => void)
+			| undefined;
+		if (typeof update === 'function') {
+			update.call(this);
+		} else {
+			// Obsidian before 1.13 uses the imperative fallback directly.
+			this.renderSettings(this.containerEl);
+		}
 
 		if (openedProviderName) {
 			this.containerEl

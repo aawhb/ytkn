@@ -12,7 +12,7 @@ const transcript: TranscriptResponse = {
 	lines: [{ text: 'Hello world.', offset: 0 }],
 };
 
-describe('prompt directives — declared templates', () => {
+describe('prompt directives: declared templates', () => {
 	const declaredIds = ['general', 'study', 'full-extract', 'deep-dive', 'research', 'implementation'] as const;
 
 	for (const id of declaredIds) {
@@ -34,7 +34,7 @@ describe('prompt directives — declared templates', () => {
 	}
 });
 
-describe('prompt directives — manual mode emits none', () => {
+describe('prompt directives: manual mode emits none', () => {
 	it('skips directive injection in manual mode regardless of selected template', () => {
 		const service = new PromptService({
 			mode: 'manual',
@@ -50,7 +50,7 @@ describe('prompt directives — manual mode emits none', () => {
 	});
 });
 
-describe('prompt directives — controls block', () => {
+describe('prompt directives: controls block', () => {
 	it('emits a user-supplied-values block when controlValues are populated', () => {
 		const service = new PromptService({
 			mode: 'template',

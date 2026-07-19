@@ -34,7 +34,7 @@ const service = new PromptService({
 	includeMemorableQuotes: false,
 });
 
-describe('getContextWindowTokens — provider-type fallback paths', () => {
+describe('getContextWindowTokens: provider-type fallback paths', () => {
 	it('openai-compatible + Ollama URL + no contextWindow → uses 64000 fallback, single chunk', () => {
 		const chunks = service.splitTranscript(
 			makeTranscript(MANY_LINES),

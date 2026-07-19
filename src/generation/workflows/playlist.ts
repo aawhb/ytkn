@@ -97,9 +97,9 @@ async function fetchCombinedPlaylistTranscripts(
 
 		try {
 			if (!targetInfo.isAppendMode) {
-				await context.targets.showProgress(targetInfo.target, entry.url, `Fetching transcript ${index + 1}/${playlist.entries.length}...`, progressState);
+				await context.targets.showProgress(targetInfo.target, entry.url, `Fetching transcript ${index + 1}/${playlist.entries.length}…`, progressState);
 			}
-			context.onStatusBar(`Fetching ${collectionLabel(playlist)} transcript ${index + 1}/${playlist.entries.length}...`);
+			context.onStatusBar(`Fetching ${collectionLabel(playlist)} transcript ${index + 1}/${playlist.entries.length}…`);
 			const transcriptResult = await fetchTranscriptForUrl(context.youtubeService, entry.url, effectiveOptions, signal);
 			const transcript = transcriptResult.transcript;
 
@@ -186,9 +186,9 @@ async function generateCombinedMetadataPlaylistNote(
 	const targetInfo = await resolveCombinedTarget(context, playlist, initialTarget, effectiveOptions);
 
 	if (!targetInfo.isAppendMode) {
-		await context.targets.showProgress(targetInfo.target, playlist.url, `Rendering ${collectionLabel(playlist)} metadata...`, progressState);
+		await context.targets.showProgress(targetInfo.target, playlist.url, `Rendering ${collectionLabel(playlist)} metadata…`, progressState);
 	}
-	context.onStatusBar(`Rendering ${collectionLabel(playlist)} metadata...`);
+	context.onStatusBar(`Rendering ${collectionLabel(playlist)} metadata…`);
 
 	const playlistForRender: VideoCollectionTranscriptResponse = { ...playlist, transcripts: [] };
 	const { content, warnings } = renderPlaylistNote(playlistForRender, null, null, effectiveOptions, null, targetInfo.isAppendMode ? 'fragment' : 'standalone');
@@ -228,9 +228,9 @@ async function generateCombinedTranscriptPlaylistNote(
 	}
 
 	if (!targetInfo.isAppendMode) {
-		await context.targets.showProgress(targetInfo.target, playlist.url, `Rendering ${collectionLabel(playlist)} transcripts...`, progressState);
+		await context.targets.showProgress(targetInfo.target, playlist.url, `Rendering ${collectionLabel(playlist)} transcripts…`, progressState);
 	}
-	context.onStatusBar(`Rendering ${collectionLabel(playlist)} transcripts...`);
+	context.onStatusBar(`Rendering ${collectionLabel(playlist)} transcripts…`);
 
 	const playlistWithTranscripts: VideoCollectionTranscriptResponse = { ...playlist, transcripts };
 	const thumbnailUrl = transcripts[0] ? thumbnailUrlForQuality(transcripts[0].videoId, 'medium') : null;
@@ -238,7 +238,7 @@ async function generateCombinedTranscriptPlaylistNote(
 	notifyRenderWarnings(warnings);
 
 	if (targetInfo.isAppendMode) {
-		context.onStatusBar('Rendering note...');
+		context.onStatusBar('Rendering note…');
 	}
 	const notePath = await writeCombinedNote(context, targetInfo, content, progressState);
 	const finalEntries = reportEntries.map((e) => (e.outcome === 'completed' ? { ...e, notePath } : e));
@@ -282,14 +282,14 @@ async function generateCombinedPlaylistNote(
 					targetInfo.target,
 					entry.url,
 					generateSummary
-						? `Summarizing ${collectionLabel(playlist)} video ${index + 1}/${playlist.entries.length}...`
-						: `Extracting ${collectionLabel(playlist)} add-ons ${index + 1}/${playlist.entries.length}...`,
+						? `Summarizing ${collectionLabel(playlist)} video ${index + 1}/${playlist.entries.length}…`
+						: `Extracting ${collectionLabel(playlist)} add-ons ${index + 1}/${playlist.entries.length}…`,
 					progressState,
 				);
 			}
 			context.onStatusBar(generateSummary
-				? `Summarizing ${collectionLabel(playlist)} video ${index + 1}/${playlist.entries.length}...`
-				: `Extracting ${collectionLabel(playlist)} add-ons ${index + 1}/${playlist.entries.length}...`);
+				? `Summarizing ${collectionLabel(playlist)} video ${index + 1}/${playlist.entries.length}…`
+				: `Extracting ${collectionLabel(playlist)} add-ons ${index + 1}/${playlist.entries.length}…`);
 			const aiResult = await generateAiText(
 				context, aiContext, transcript, entry.url, targetInfo.target, progressState, signal, generateSummary,
 			);
@@ -311,8 +311,8 @@ async function generateCombinedPlaylistNote(
 	}
 
 	const finalProgress = generateSummary
-		? `Generating combined ${collectionLabel(playlist)} summary...`
-		: `Generating combined ${collectionLabel(playlist)} add-ons...`;
+		? `Generating combined ${collectionLabel(playlist)} note content…`
+		: `Generating combined ${collectionLabel(playlist)} add-ons…`;
 	if (!targetInfo.isAppendMode) {
 		await context.targets.showProgress(targetInfo.target, playlist.url, finalProgress, progressState);
 	}
@@ -345,7 +345,7 @@ async function generateCombinedPlaylistNote(
 	const { content, warnings: renderWarnings } = renderPlaylistNote(playlistWithTranscripts, thumbnailUrl, summary, effectiveOptions, template, targetInfo.isAppendMode ? 'fragment' : 'standalone');
 	notifyRenderWarnings(renderWarnings);
 	if (targetInfo.isAppendMode) {
-		context.onStatusBar('Rendering note...');
+		context.onStatusBar('Rendering note…');
 	}
 	const notePath = await writeCombinedNote(context, targetInfo, content, progressState);
 	const finalEntries = reportEntries.map((e) => (e.outcome === 'completed' ? { ...e, notePath } : e));
@@ -364,7 +364,7 @@ async function generatePerVideoPlaylistNotes(
 	signal: AbortSignal,
 ): Promise<PlaylistRunReportEntry[]> {
 	if (effectiveOptions.noteDestinationMode === 'append-to-active-note') {
-		throw new Error('Append to active note is not supported with per-video collection mode. Switch playlist handling to "Combined" or choose a different destination.');
+		throw new Error('Append to active note cannot be used with One note per video. Choose One combined note or a different destination.');
 	}
 
 	const reportEntries: PlaylistRunReportEntry[] = [];
@@ -385,12 +385,12 @@ async function generatePerVideoPlaylistNotes(
 					throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
 				}
 				target = initialTarget;
-				await context.targets.showProgress(target, entry.url, metadataOnly ? 'Fetching video metadata...' : 'Fetching transcript...', progressState);
+				await context.targets.showProgress(target, entry.url, metadataOnly ? 'Fetching video metadata…' : 'Fetching transcript…', progressState);
 			}
 
 			context.onStatusBar(metadataOnly
-				? `Fetching ${collectionLabel(playlist)} video metadata ${index + 1}/${playlist.entries.length}...`
-				: `Fetching ${collectionLabel(playlist)} transcript ${index + 1}/${playlist.entries.length}...`);
+				? `Fetching ${collectionLabel(playlist)} video metadata ${index + 1}/${playlist.entries.length}…`
+				: `Fetching ${collectionLabel(playlist)} transcript ${index + 1}/${playlist.entries.length}…`);
 			const videoData = await fetchVideoDataForUrl(context.youtubeService, entry.url, effectiveOptions, signal);
 			const transcript = videoData.transcript;
 
@@ -463,7 +463,7 @@ async function generateVideoCollectionNotes(
 		if (!initialTarget) {
 			throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
 		}
-		await context.targets.showProgress(initialTarget, url, `Fetching ${kind}...`, progressState);
+		await context.targets.showProgress(initialTarget, url, `Fetching ${kind}…`, progressState);
 	} else if (effectiveOptions.noteDestinationMode === 'append-to-active-note') {
 		if (!initialTarget) {
 			throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);

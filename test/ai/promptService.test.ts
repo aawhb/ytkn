@@ -22,7 +22,7 @@ describe('PromptService', () => {
 
 		expect(prompt).toContain("You transform a YouTube video's transcript into a structured Markdown body for an Obsidian note.");
 		expect(prompt).toContain('Hard rules');
-		expect(prompt).toContain('Produce an implementation-focused note for a reader who wants to act on what the source shows — write the steps, code, tools, and action items needed.');
+		expect(prompt).toContain('Produce an implementation-focused note for a reader who wants to act on what the source shows. Write the steps, code, tools, and action items needed.');
 		expect(prompt).toContain('## TL;DR');
 		expect(prompt).toContain('Do not output a `## Source` section');
 		expect(prompt).toContain('- Title: Video');
@@ -52,7 +52,7 @@ describe('PromptService', () => {
 		const prompt = service.buildPrompt(transcript, transcript.url);
 
 		expect(prompt).toContain('Write a compact note with exactly three bullets.');
-		expect(prompt).not.toContain('Produce an implementation-focused note for a reader who wants to act on what the source shows — write the steps, code, tools, and action items needed.');
+		expect(prompt).not.toContain('Produce an implementation-focused note for a reader who wants to act on what the source shows. Write the steps, code, tools, and action items needed.');
 		expect(prompt).not.toContain("You transform a YouTube video's transcript into a structured Markdown body for an Obsidian note.");
 	});
 

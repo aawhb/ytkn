@@ -96,7 +96,7 @@ describe('settings modals', () => {
 		const addModal = new ModelFormModal(new App(), { kind: 'add', provider }, handlers);
 		addModal.open();
 
-		changeInput(inputByLabel(addModal, 'Model name'), ' mistral ');
+		changeInput(inputByLabel(addModal, 'Model ID'), ' mistral ');
 		changeInput(inputByLabel(addModal, 'Display name'), ' Mistral Large ');
 		button(addModal, 'Save').click();
 		await Promise.resolve();
@@ -115,7 +115,7 @@ describe('settings modals', () => {
 
 		const editModal = new ModelFormModal(new App(), { kind: 'edit', model }, handlers);
 		editModal.open();
-		expect(inputByLabel(editModal, 'Model name').disabled).toBe(true);
+		expect(inputByLabel(editModal, 'Model ID').disabled).toBe(true);
 		changeInput(inputByLabel(editModal, 'Display name'), 'Llama 3.1');
 		button(editModal, 'Save').click();
 		await Promise.resolve();
@@ -134,8 +134,8 @@ describe('settings modals', () => {
 		changeInput(inputByLabel(addModal, 'Provider name'), ' Local LLM ');
 		changeSelect(addModal.contentEl.querySelector('select')!, 'openai-compatible');
 		expect(inputByLabel(addModal, 'Provider name').classList.contains('ytkn-form__input')).toBe(true);
-		expect(inputByLabel(addModal, 'URL').classList.contains('ytkn-form__input')).toBe(true);
-		changeInput(inputByLabel(addModal, 'URL'), ' http://localhost:11434/v1 ');
+		expect(inputByLabel(addModal, 'Base URL').classList.contains('ytkn-form__input')).toBe(true);
+		changeInput(inputByLabel(addModal, 'Base URL'), ' http://localhost:11434/v1 ');
 		button(addModal, 'Save').click();
 		await Promise.resolve();
 
