@@ -14,6 +14,9 @@
 		"test:coverage": "vitest --run --coverage",
 		"verify": "npm run lint:full && npm run typecheck && npm run test:run && npm audit --audit-level=moderate && npm run build",
 		"sync": "node sync.mjs",
+		"sync:phone": "node scripts/sync-android.mjs phone",
+		"sync:tablet": "node scripts/sync-android.mjs tablet",
+		"sync:all": "npm run sync && npm run sync:phone && npm run sync:tablet",
 		"release:prep": "npm version --no-git-tag-version",
 		"release:check": "node scripts/verify-release.mjs",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
