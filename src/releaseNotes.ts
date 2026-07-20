@@ -30,6 +30,27 @@ export const DOCUMENTATION_LINK = 'https://github.com/aawhb/ytkn/blob/main/docs/
 
 const RELEASE_NOTES: ReleaseNote[] = [
 	{
+		version: '1.8.0',
+		date: '2026-07-19',
+		showOnUpdate: true,
+		summary: 'Entire YT Channel link support, AI model automatic fallbacks, and automatic opening of generated note',
+		new: [
+			'Support for Youtube channels. Create notes from videos, Shorts, and stream replays by providing a channel link and selecting one or more channel content type.',
+			'AI requests can now switch automatically between models using an ordered list that keeps the successful fallback for the rest of the run.',
+			'A toggle for Folder runs that opens the generated note in a new tab and the first generated note for a playlist run.',
+		],
+		improved: [
+			'The generation queue now has clearer status cards, accessible controls, and bounded recent history.',
+			'Clearer Settings and generation copy.',
+		],
+		fixed: [
+			'AI requests now use mobile-safe native transport.',
+			'Queued writes to the current note now stop safely if the note changed while the run was waiting.',
+			'A run-report write failure no longer prevents later queued runs from starting.',
+			'Provider errors shown in note progress blocks are bounded and escaped before Markdown rendering.',
+		],
+	},
+	{
 		version: '1.7.2',
 		date: '2026-06-02',
 		showOnUpdate: true,

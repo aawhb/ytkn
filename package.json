@@ -1,6 +1,6 @@
 {
 	"name": "ytkn",
-	"version": "1.7.2",
+	"version": "1.8.0",
 	"description": "Turn YouTube videos, playlists, and channels into structured knowledge notes in your vault.",
 	"main": "main.js",
 	"scripts": {

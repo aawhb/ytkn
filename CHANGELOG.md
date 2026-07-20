@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.8.0 - 2026-07-19
+
+### New
+
+- Support for Youtube channels. Create notes from videos, Shorts, and stream replays by providing a channel link and selecting one or more channel content type.
+- AI requests can now switch automatically between models using an ordered list that keeps the successful fallback for the rest of the run.
+- A toggle for Folder runs that opens the generated note in a new tab and the first generated note for a playlist run.
+
+### Improved
+
+- The generation queue now has clearer status cards, accessible controls, and bounded recent history.
+- Clearer Settings and generation copy.
+- Plugin Documentation
+
+### Fixed
+
+- AI requests now use mobile-safe native transport.
+- Queued writes to the current note now stop safely if the note changed while the run was waiting.
+- A run-report write failure no longer prevents later queued runs from starting.
+- Provider errors shown in note progress blocks are bounded and escaped before Markdown rendering.
+
 ## 1.7.2 - 2026-06-02
 
 ### New
