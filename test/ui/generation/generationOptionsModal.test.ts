@@ -9,7 +9,7 @@ import { GenerationOptionsModal } from '../../../src/ui/generation/generationOpt
 import { WhatsNewModal } from '../../../src/ui/releaseNotes/whatsNewModal';
 import { SUPPORT_LINKS } from '../../../src/releaseNotes';
 import type { ModelConfig, GenerationOptions } from '../../../src/types';
-import { App } from 'obsidian';
+import { App, Platform } from 'obsidian';
 
 const VIDEO_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
 const VIDEO_URL_2 = 'https://www.youtube.com/watch?v=oHg5SJYRHA0';
@@ -33,6 +33,7 @@ describe('GenerationOptionsModal', () => {
 	beforeEach(() => {
 		app = new App();
 		onSubmit = vi.fn<SubmitHandler>();
+		Platform.isPhone = false;
 	});
 
 	it('renders the "Advanced settings" h3 heading', () => {
@@ -42,6 +43,17 @@ describe('GenerationOptionsModal', () => {
 		const headings = Array.from(modal.contentEl.querySelectorAll('h3'));
 		const advancedHeading = headings.find((h) => h.textContent === 'Advanced settings');
 		expect(advancedHeading).not.toBeUndefined();
+	});
+
+	it('uses the full product name in the modal header on every device size', () => {
+		Platform.isPhone = true;
+		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
+
+		modal.open();
+
+		const title = modal.contentEl.querySelector('.ytkn-modal__title');
+		expect(title?.textContent).toBe('YT Knowledge Notes');
+		expect(title?.hasAttribute('data-mobile-title')).toBe(false);
 	});
 
 	it('marks the default tab and panel as active', () => {
@@ -251,13 +263,34 @@ describe('GenerationOptionsModal', () => {
 		expect(labels).toContain('AI');
 	});
 
-	it('URL field is a textarea element', () => {
+	it('renders the compact URL field and AI label', () => {
 		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
 		modal.open();
 
-		const urlField = modal.contentEl.querySelector('textarea.ytkn-modal__url-input');
+		const urlField = modal.contentEl.querySelector<HTMLTextAreaElement>('textarea.ytkn-modal__url-input');
+		const aiSetting = modal.contentEl.querySelector('.ytkn-modal__quick-toggle .setting-item-name');
 		expect(urlField).not.toBeNull();
 		expect(urlField?.tagName).toBe('TEXTAREA');
+		expect(urlField?.placeholder).toBe('URL(s)');
+		expect(urlField?.getAttribute('aria-label')).toBe('YouTube links');
+		expect(aiSetting?.textContent).toBe('AI');
+	});
+
+	it('does not autofocus the URL field on phones', () => {
+		vi.useFakeTimers();
+		Platform.isPhone = true;
+		const focusSpy = vi.spyOn(HTMLTextAreaElement.prototype, 'focus');
+		try {
+			const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
+
+			modal.open();
+			vi.runAllTimers();
+
+			expect(focusSpy).not.toHaveBeenCalled();
+		} finally {
+			focusSpy.mockRestore();
+			vi.useRealTimers();
+		}
 	});
 
 	it('clears contentEl on close', () => {
@@ -432,7 +465,7 @@ describe('GenerationOptionsModal submit: multi-URL', () => {
 		expect(contentRow?.querySelector('.setting-item-name')?.textContent).toBe('Channel');
 		expect(contentRow?.querySelector('.setting-item-description')?.textContent).toBe('');
 		const options = Array.from(modal.contentEl.querySelectorAll('.ytkn-channel-content-option'));
-		expect(options.map((option) => option.textContent?.trim())).toEqual(['Videos', 'Shorts', 'Stream replays']);
+		expect(options.map((option) => option.textContent?.trim())).toEqual(['Videos', 'Shorts', 'Streams']);
 		expect(options.map((option) => (option.querySelector('input') as HTMLInputElement).checked)).toEqual([true, false, true]);
 		const limitRow = modal.contentEl.querySelector('.ytkn-channel-limit-setting');
 		expect(limitRow?.className).toContain('ytkn-setting-row--fit-control');

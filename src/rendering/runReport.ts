@@ -130,7 +130,7 @@ function buildPlaylistRunReportEntry(entry: CollectionRunReportEntry, index: num
 	}
 	appendRunReportWarnings(lines, entry.warnings, '   ');
 	if (entry.kind === 'channel' && entry.contentTypes.length > 0) {
-		lines.push(`   - Content: ${entry.contentTypes.map((type) => type === 'streams' ? 'Stream replays' : `${type[0].toUpperCase()}${type.slice(1)}`).join(', ')}`);
+		lines.push(`   - Content: ${entry.contentTypes.map((type) => type === 'streams' ? 'Streams' : `${type[0].toUpperCase()}${type.slice(1)}`).join(', ')}`);
 	}
 	lines.push(`   - Counts: ${formatRunReportCounts(countPlaylistRunReportEntry(entry))}`);
 	if (entry.entries.length > 0) {

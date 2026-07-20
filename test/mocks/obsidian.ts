@@ -29,6 +29,10 @@ export class App {
 	secretStorage = new MockSecretStorage();
 }
 
+export const Platform = {
+	isPhone: false,
+};
+
 export class Modal {
 	contentEl: HTMLElement;
 	descEl: HTMLElement;

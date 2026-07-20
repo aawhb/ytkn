@@ -67,7 +67,7 @@ export const SETTING_COPY: SharedSettingCopy = {
 		addLabel: 'Add model',
 	},
 	useAi: {
-		name: 'Use AI',
+		name: 'AI',
 		desc: 'Enable or disable all AI-generated note content.',
 	},
 	aiSummary: {
@@ -198,7 +198,7 @@ export const SETTING_COPY: SharedSettingCopy = {
 		options: {
 			videos: 'Videos',
 			shorts: 'Shorts',
-			streams: 'Stream replays',
+			streams: 'Streams',
 		},
 	},
 	channelItemsPerType: {

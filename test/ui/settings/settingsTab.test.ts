@@ -139,7 +139,7 @@ describe('SettingsTab', () => {
 			expect.objectContaining({ channelContentTypes: ['videos', 'streams'] }),
 		));
 		const streamOption = Array.from(contentRow!.querySelectorAll('.ytkn-channel-content-option')).find(
-			(option) => option.textContent?.trim() === 'Stream replays',
+			(option) => option.textContent?.trim() === 'Streams',
 		);
 		const streamCheckbox = streamOption?.querySelector('input') as HTMLInputElement;
 		streamCheckbox.checked = false;

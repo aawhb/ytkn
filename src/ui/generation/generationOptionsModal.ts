@@ -1,5 +1,5 @@
 import type { App } from 'obsidian';
-import { Modal, Notice, Setting, setIcon } from 'obsidian';
+import { Modal, Notice, Platform, Setting, setIcon } from 'obsidian';
 import { SETTINGS_TABS, TabGroup } from '../shared/tabs';
 import { createSettingsCard } from '../shared/cards';
 import { renderBrandActions } from '../shared/brandActions';
@@ -116,11 +116,10 @@ export class GenerationOptionsModal extends Modal {
 		const brandIcon = brand.createDiv({ cls: 'ytkn-brand-mark' });
 		setIcon(brandIcon, 'play');
 		const brandCopy = brand.createDiv({ cls: 'ytkn-modal__brand-copy ytkn-brand-copy ytkn-brand-copy--modal' });
-		const brandTitle = brandCopy.createEl('h2', {
+		brandCopy.createEl('h2', {
 			text: 'YT Knowledge Notes',
 			cls: 'ytkn-modal__title ytkn-brand-title',
 		});
-		brandTitle.setAttribute('data-mobile-title', 'YTKN');
 		renderBrandActions(brandCopy, this.getBrandActions());
 		this.renderActionRow(headerWrap);
 
@@ -160,7 +159,7 @@ export class GenerationOptionsModal extends Modal {
 
 	private renderSourceField(urlContainer: HTMLElement, hintContainer: HTMLElement): void {
 		const urlSetting = new Setting(urlContainer).addTextArea((textarea) => {
-			textarea.setPlaceholder('YouTube URL(s)')
+			textarea.setPlaceholder('URL(s)')
 				.setValue(this.state.url)
 				.onChange((value) => {
 					this.state.url = value;
@@ -170,6 +169,7 @@ export class GenerationOptionsModal extends Modal {
 				});
 			textarea.inputEl.addClass('ytkn-form__input');
 			textarea.inputEl.addClass('ytkn-modal__url-input');
+			textarea.inputEl.setAttribute('aria-label', 'YouTube links');
 			textarea.inputEl.rows = 1;
 			textarea.inputEl.addEventListener('keydown', (e) => {
 				if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
@@ -177,7 +177,9 @@ export class GenerationOptionsModal extends Modal {
 					this.submit();
 				}
 			});
-			window.setTimeout(() => textarea.inputEl.focus(), 0);
+			if (!Platform.isPhone) {
+				window.setTimeout(() => textarea.inputEl.focus(), 0);
+			}
 			this.autoGrowUrlField(textarea.inputEl);
 		});
 		urlSetting.settingEl.addClass('ytkn-modal__input-only');
