@@ -30,6 +30,19 @@ export const DOCUMENTATION_LINK = 'https://github.com/aawhb/ytkn/blob/main/docs/
 
 const RELEASE_NOTES: ReleaseNote[] = [
 	{
+		version: '1.8.1',
+		date: '2026-07-20',
+		showOnUpdate: true,
+		summary: 'Improved phone layouts and generation modal behavior.',
+		improved: [
+			'Phone layouts give generation controls more room and keep settings controls usable at narrow widths.',
+			'Channel filters and run reports use the shorter Streams label.',
+		],
+		fixed: [
+			'The generation modal opens at the top on phones and keeps its header clear of the close button.',
+		],
+	},
+	{
 		version: '1.8.0',
 		date: '2026-07-19',
 		showOnUpdate: true,
@@ -89,7 +102,7 @@ const RELEASE_NOTES: ReleaseNote[] = [
 			'The generation modal and settings tab now include quick access to the queue for long-running batches.',
 			'Metadata-only notes can now be generated with AI off and transcript inclusion off.',
 			'Video frontmatter can include thumbnailUrl, videoDescription, channelId, durationSeconds, and keywords.',
-			'A new "Use AI" master switch to turn off AI summary, mindmap, and memorable quote generation.',
+			'A new AI master switch to turn off AI summary, mindmap, and memorable quote generation.',
 		],
 		improved: [
 			'Run reports now count videos inside playlists instead of only the submitted playlist URL.',

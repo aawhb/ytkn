@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.8.1 - 2026-07-20
+
+### Improved
+
+- Phone layouts give generation controls more room and keep settings controls usable at narrow widths.
+- Channel filters and run reports use the shorter `Streams` label.
+
+### Fixed
+
+- The generation modal opens at the top on phones and keeps its header clear of the close button.
+
+### Maintenance
+
+- Added an Android sync command for testing local builds on connected devices.
+
 ## 1.8.0 - 2026-07-19
 
 ### New
