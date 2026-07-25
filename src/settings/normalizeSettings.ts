@@ -7,7 +7,7 @@ import type {
 	NoteDestinationMode,
 	OutputDefaults,
 	PlaylistMode,
-	RunReportLocation,
+	ReportLocation,
 	SourceSectionPosition,
 	TranscriptFailureMode,
 	TranscriptLanguageMode,
@@ -24,14 +24,14 @@ import {
 	DEFAULT_INSTRUCTION_MODE,
 	DEFAULT_INSTRUCTION_TEMPLATE,
 	DEFAULT_MEDIA_EMBED_MODE,
-	DEFAULT_INCLUDE_RUN_REPORT,
+	DEFAULT_INCLUDE_REPORT,
 	DEFAULT_LINK_TIMESTAMPS,
 	DEFAULT_MANUAL_INSTRUCTIONS,
 	DEFAULT_NOTE_DESTINATION_FOLDER,
 	DEFAULT_OPEN_CREATED_NOTE,
 	DEFAULT_NOTE_DESTINATION_MODE,
 	DEFAULT_OUTPUT_TRANSCRIPT_MODE,
-	DEFAULT_RUN_REPORT_LOCATION,
+	DEFAULT_REPORT_LOCATION,
 	DEFAULT_PLAYLIST_MODE,
 	DEFAULT_PREFERRED_TRANSCRIPT_LANGUAGE,
 	DEFAULT_SOURCE_SECTION_POSITION,
@@ -50,6 +50,8 @@ export type RawOutputDefaults = Partial<Omit<OutputDefaults, 'mediaEmbedMode' | 
 	mediaEmbedMode?: unknown;
 	channelContentTypes?: unknown;
 	channelVideoLimit?: unknown;
+	includeRunReport?: boolean;
+	runReportLocation?: ReportLocation;
 };
 
 function normalizeOneOf<T extends string>(value: unknown, allowedValues: readonly T[], fallback: T): T {
@@ -70,7 +72,7 @@ const VALID_NOTE_DESTINATION_MODES: readonly NoteDestinationMode[] = [
 ];
 const VALID_TRANSCRIPT_LANGUAGE_MODES: readonly TranscriptLanguageMode[] = ['auto', 'preferred'];
 const VALID_TRANSCRIPT_FAILURE_MODES: readonly TranscriptFailureMode[] = ['skip', 'fail'];
-const VALID_RUN_REPORT_LOCATIONS: readonly RunReportLocation[] = ['generated-note', 'separate-note'];
+const VALID_REPORT_LOCATIONS: readonly ReportLocation[] = ['generated-note', 'separate-note'];
 const VALID_SOURCE_SECTION_POSITIONS: readonly SourceSectionPosition[] = ['top', 'bottom'];
 const VALID_MEDIA_EMBED_MODES: readonly MediaEmbedMode[] = ['video', 'thumbnail', 'none'];
 const VALID_CHANNEL_CONTENT_TYPES: readonly ChannelContentType[] = ['videos', 'shorts', 'streams'];
@@ -205,8 +207,8 @@ function normalizeTranscriptFailureMode(transcriptFailureMode?: TranscriptFailur
 	return normalizeOneOf(transcriptFailureMode, VALID_TRANSCRIPT_FAILURE_MODES, DEFAULT_TRANSCRIPT_FAILURE_MODE);
 }
 
-function normalizeRunReportLocation(runReportLocation?: RunReportLocation): RunReportLocation {
-	return normalizeOneOf(runReportLocation, VALID_RUN_REPORT_LOCATIONS, DEFAULT_RUN_REPORT_LOCATION);
+function normalizeReportLocation(reportLocation?: ReportLocation): ReportLocation {
+	return normalizeOneOf(reportLocation, VALID_REPORT_LOCATIONS, DEFAULT_REPORT_LOCATION);
 }
 
 function normalizeSourceSectionPosition(value?: SourceSectionPosition): SourceSectionPosition {
@@ -245,8 +247,8 @@ export function normalizeOutputDefaults(outputDefaults?: RawOutputDefaults): Out
 		preferredTranscriptLanguage: normalizePreferredTranscriptLanguage(outputDefaults?.preferredTranscriptLanguage),
 		transcriptFailureMode: normalizeTranscriptFailureMode(outputDefaults?.transcriptFailureMode),
 		mediaEmbedMode: normalizeMediaEmbedMode(outputDefaults?.mediaEmbedMode),
-		includeRunReport: outputDefaults?.includeRunReport ?? DEFAULT_INCLUDE_RUN_REPORT,
-		runReportLocation: normalizeRunReportLocation(outputDefaults?.runReportLocation),
+		includeReport: outputDefaults?.includeReport ?? outputDefaults?.includeRunReport ?? DEFAULT_INCLUDE_REPORT,
+		reportLocation: normalizeReportLocation(outputDefaults?.reportLocation ?? outputDefaults?.runReportLocation),
 		useVideoTitleAsNoteName: outputDefaults?.useVideoTitleAsNoteName ?? DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,
 		noteDestinationMode: normalizeNoteDestinationMode(outputDefaults?.noteDestinationMode),
 		noteDestinationFolder: normalizeNoteDestinationFolder(outputDefaults?.noteDestinationFolder),

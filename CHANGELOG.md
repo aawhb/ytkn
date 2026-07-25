@@ -5,7 +5,7 @@
 ### Improved
 
 - Phone layouts give generation controls more room and keep settings controls usable at narrow widths.
-- Channel filters and run reports use the shorter `Streams` label.
+- Channel filters and reports use the shorter `Streams` label.
 
 ### Fixed
 
@@ -33,7 +33,7 @@
 
 - AI requests now use mobile-safe native transport.
 - Queued writes to the current note now stop safely if the note changed while the run was waiting.
-- A run-report write failure no longer prevents later queued runs from starting.
+- A report write failure no longer prevents later queued runs from starting.
 - Provider errors shown in note progress blocks are bounded and escaped before Markdown rendering.
 
 ## 1.7.2 - 2026-06-02
@@ -73,7 +73,7 @@
 
 ### Improved
 
-- Run reports now count videos inside playlists instead of only the submitted playlist URL.
+- Reports now count videos inside playlists instead of only the submitted playlist URL.
 - Captionless videos can still produce useful source and metadata notes in metadata-only mode.
 - AI provider settings now use simpler provider cards with plain provider/model summaries and standard model action buttons.
 - Settings and generation-modal copy now share one source of truth for more consistent labels, descriptions, and dropdown options.

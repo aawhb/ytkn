@@ -270,7 +270,7 @@ describe('GenerationService metadata-only runs', () => {
 		expect(content).not.toContain('playlistId:');
 	});
 
-	it('marks a directly submitted Shorts URL in the run report entry', async () => {
+	it('marks a directly submitted Shorts URL in the report entry', async () => {
 		const { app } = makeApp();
 		const youtubeService = {
 			fetchVideoMetadata: vi.fn(async () => makeTranscript(SHORT_URL)),

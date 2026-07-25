@@ -113,8 +113,8 @@ vi.mock('../src/settings/settingsService', () => ({
 			preferredTranscriptLanguage: '',
 			transcriptFailureMode: 'skip',
 			mediaEmbedMode: 'video',
-			includeRunReport: false,
-			runReportLocation: 'generated-note',
+			includeReport: false,
+			reportLocation: 'generated-note',
 			useVideoTitleAsNoteName: true,
 			noteDestinationMode: 'current-note',
 			noteDestinationFolder: '',
@@ -296,7 +296,7 @@ describe('YTKN plugin lifecycle', () => {
 		mocks.runQueueInstances[0].emit({ type: 'title-resolved' });
 
 		expect(plugin.statusBarItems[0].textContent).toBe(
-			'YouTube · #7 · Resolved title · Working… (1 queued)',
+			'YTKN · #7 · Resolved title · Working… (1 queued)',
 		);
 	});
 

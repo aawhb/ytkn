@@ -36,7 +36,7 @@ const RELEASE_NOTES: ReleaseNote[] = [
 		summary: 'Improved phone layouts and generation modal behavior.',
 		improved: [
 			'Phone layouts give generation controls more room and keep settings controls usable at narrow widths.',
-			'Channel filters and run reports use the shorter Streams label.',
+			'Channel filters and reports use the shorter Streams label.',
 		],
 		fixed: [
 			'The generation modal opens at the top on phones and keeps its header clear of the close button.',
@@ -59,7 +59,7 @@ const RELEASE_NOTES: ReleaseNote[] = [
 		fixed: [
 			'AI requests now use mobile-safe native transport.',
 			'Queued writes to the current note now stop safely if the note changed while the run was waiting.',
-			'A run-report write failure no longer prevents later queued runs from starting.',
+			'A report write failure no longer prevents later queued runs from starting.',
 			'Provider errors shown in note progress blocks are bounded and escaped before Markdown rendering.',
 		],
 	},

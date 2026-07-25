@@ -80,7 +80,7 @@ export class YTKN extends Plugin {
 			resolveTitle: (run, signal) => this.generationService.resolveTitle(run, signal),
 			persistBatchReport: (batch, report) => this.generationService.persistBatchReport(batch, report),
 			onBatchFinalized: (batch) => this.generationService.onBatchFinalized(batch),
-			onBatchReportError: (_batch, error) => notifyError("Couldn't save the run report", error),
+			onBatchReportError: (_batch, error) => notifyError("Couldn't save the report", error),
 		});
 		this.runQueue.on(() => this.renderStatusBar());
 	}
@@ -168,8 +168,8 @@ export class YTKN extends Plugin {
 			preferredTranscriptLanguage: outputDefaults.preferredTranscriptLanguage,
 			transcriptFailureMode: outputDefaults.transcriptFailureMode,
 			mediaEmbedMode: outputDefaults.mediaEmbedMode,
-			includeRunReport: outputDefaults.includeRunReport,
-			runReportLocation: outputDefaults.runReportLocation,
+			includeReport: outputDefaults.includeReport,
+			reportLocation: outputDefaults.reportLocation,
 			useVideoTitleAsNoteName: outputDefaults.useVideoTitleAsNoteName,
 			noteDestinationMode: outputDefaults.noteDestinationMode,
 			noteDestinationFolder: outputDefaults.noteDestinationFolder,
@@ -224,7 +224,7 @@ export class YTKN extends Plugin {
 					urls: urls.map((url, i) => ({ url, kind: validClassifications[i] })),
 					options,
 					targetPolicy,
-					reportPolicy: { include: options.includeRunReport ?? false, location: options.runReportLocation ?? 'generated-note' },
+					reportPolicy: { include: options.includeReport ?? false, location: options.reportLocation ?? 'generated-note' },
 				});
 			},
 			hasActiveNote,
@@ -289,7 +289,7 @@ export class YTKN extends Plugin {
 		const queuedCount = snap?.queued.length ?? 0;
 
 		if (message) {
-			this.statusBarEl.createSpan({ text: `YouTube · ${message}` });
+			this.statusBarEl.createSpan({ text: `YTKN · ${message}` });
 			this.statusBarEl.show();
 			return;
 		}
@@ -301,10 +301,10 @@ export class YTKN extends Plugin {
 
 		let text: string;
 		if (current) {
-			text = `YouTube · ${current.displayTitle} · Working…`;
+			text = `YTKN · ${current.displayTitle} · Working…`;
 			if (queuedCount > 0) text += ` (${queuedCount} queued)`;
 		} else {
-			text = `YouTube · ${queuedCount} queued`;
+			text = `YTKN · ${queuedCount} queued`;
 		}
 
 		this.statusBarEl.createSpan({ text });

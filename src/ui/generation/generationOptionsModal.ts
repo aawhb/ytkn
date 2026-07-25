@@ -16,7 +16,7 @@ import type {
 	MediaEmbedMode,
 	ModelConfig,
 	NoteDestinationMode,
-	RunReportLocation,
+	ReportLocation,
 	PlaylistMode,
 	SourceSectionPosition,
 	TranscriptFailureMode,
@@ -555,7 +555,7 @@ export class GenerationOptionsModal extends Modal {
 	private renderGeneralTab(containerEl: HTMLElement): void {
 		createSettingsCard(containerEl, 'Note structure', (body) => this.renderNoteCustomizationGroup(body), 'h4');
 		createSettingsCard(containerEl, 'Transcript in note', (body) => this.renderTranscriptInNoteGroup(body), 'h4');
-		createSettingsCard(containerEl, 'Playlists, channels, and run reports', (body) => this.renderQueueAndRunReportsGroup(body), 'h4');
+		createSettingsCard(containerEl, 'Playlists, channels, and reports', (body) => this.renderCollectionsAndReportsGroup(body), 'h4');
 	}
 
 	private renderNoteCustomizationGroup(containerEl: HTMLElement): void {
@@ -682,7 +682,7 @@ export class GenerationOptionsModal extends Modal {
 		this.preferredLangSettingEl = langSetting.settingEl;
 	}
 
-	private renderQueueAndRunReportsGroup(containerEl: HTMLElement): void {
+	private renderCollectionsAndReportsGroup(containerEl: HTMLElement): void {
 		new Setting(containerEl)
 			.setName(SETTING_COPY.transcriptFailure.name)
 			.setDesc(SETTING_COPY.transcriptFailure.desc!)
@@ -696,27 +696,27 @@ export class GenerationOptionsModal extends Modal {
 			);
 
 		new Setting(containerEl)
-			.setName(SETTING_COPY.includeRunReport.name)
-			.setDesc(SETTING_COPY.includeRunReport.desc!)
+			.setName(SETTING_COPY.includeReport.name)
+			.setDesc(SETTING_COPY.includeReport.desc!)
 			.addToggle((toggle) =>
-				toggle.setValue(this.state.includeRunReport).onChange((v) => {
-					this.state.includeRunReport = v;
+				toggle.setValue(this.state.includeReport).onChange((v) => {
+					this.state.includeReport = v;
 					this.refreshPlaylistVisibility();
 				}),
 			);
 
-		const runReport = new Setting(containerEl)
-			.setName(SETTING_COPY.runReportLocation.name)
-			.setDesc(SETTING_COPY.runReportLocation.desc!)
+		const reportLocation = new Setting(containerEl)
+			.setName(SETTING_COPY.reportLocation.name)
+			.setDesc(SETTING_COPY.reportLocation.desc!)
 			.addDropdown((dropdown) =>
 				dropdown
-					.addOptions(SETTING_COPY.runReportLocation.options!)
-					.setValue(this.state.runReportLocation)
+					.addOptions(SETTING_COPY.reportLocation.options!)
+					.setValue(this.state.reportLocation)
 					.onChange((v) => {
-						this.state.runReportLocation = v as RunReportLocation;
+						this.state.reportLocation = v as ReportLocation;
 					}),
 			);
-		this.perVideoReportSettingEl = runReport.settingEl;
+		this.perVideoReportSettingEl = reportLocation.settingEl;
 	}
 
 	private renderGenAiTab(containerEl: HTMLElement): void {
@@ -886,7 +886,7 @@ export class GenerationOptionsModal extends Modal {
 			);
 		}
 		if (this.perVideoReportSettingEl) {
-			this.perVideoReportSettingEl.toggle(this.state.includeRunReport);
+			this.perVideoReportSettingEl.toggle(this.state.includeReport);
 		}
 	}
 

@@ -7,7 +7,7 @@ import type {
 	ModelConfig,
 	NoteDestinationMode,
 	PlaylistMode,
-	RunReportLocation,
+	ReportLocation,
 	SourceSectionPosition,
 	TranscriptFailureMode,
 	TranscriptLanguageMode,
@@ -20,7 +20,7 @@ import {
 	DEFAULT_INCLUDE_FRONTMATTER,
 	DEFAULT_INCLUDE_MEMORABLE_QUOTES,
 	DEFAULT_INCLUDE_MINDMAP,
-	DEFAULT_INCLUDE_RUN_REPORT,
+	DEFAULT_INCLUDE_REPORT,
 	DEFAULT_INSTRUCTION_MODE,
 	DEFAULT_INSTRUCTION_TEMPLATE,
 	DEFAULT_LINK_TIMESTAMPS,
@@ -28,7 +28,7 @@ import {
 	DEFAULT_NOTE_DESTINATION_MODE,
 	DEFAULT_OPEN_CREATED_NOTE,
 	DEFAULT_OUTPUT_TRANSCRIPT_MODE,
-	DEFAULT_RUN_REPORT_LOCATION,
+	DEFAULT_REPORT_LOCATION,
 	DEFAULT_PLAYLIST_MODE,
 	DEFAULT_SOURCE_SECTION_POSITION,
 	DEFAULT_TEMPERATURE,
@@ -56,8 +56,8 @@ export interface GenerationFormState {
 	preferredTranscriptLanguage: string;
 	transcriptFailureMode: TranscriptFailureMode;
 	mediaEmbedMode: MediaEmbedMode;
-	includeRunReport: boolean;
-	runReportLocation: RunReportLocation;
+	includeReport: boolean;
+	reportLocation: ReportLocation;
 	useVideoTitleAsNoteName: boolean;
 	noteDestinationMode: NoteDestinationMode;
 	noteDestinationFolder: string;
@@ -131,8 +131,8 @@ export function buildGenerationFormState({
 		preferredTranscriptLanguage: init.preferredTranscriptLanguage ?? '',
 		transcriptFailureMode: init.transcriptFailureMode ?? DEFAULT_TRANSCRIPT_FAILURE_MODE,
 		mediaEmbedMode: init.mediaEmbedMode ?? DEFAULT_MEDIA_EMBED_MODE,
-		includeRunReport: init.includeRunReport ?? DEFAULT_INCLUDE_RUN_REPORT,
-		runReportLocation: init.runReportLocation ?? DEFAULT_RUN_REPORT_LOCATION,
+		includeReport: init.includeReport ?? DEFAULT_INCLUDE_REPORT,
+		reportLocation: init.reportLocation ?? DEFAULT_REPORT_LOCATION,
 		useVideoTitleAsNoteName: init.useVideoTitleAsNoteName ?? DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,
 		noteDestinationMode: hasActiveNote
 			? (init.noteDestinationMode ?? DEFAULT_NOTE_DESTINATION_MODE)

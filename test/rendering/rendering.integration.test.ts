@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderPlaylistNote } from '../../src/rendering/playlistNote';
-import { renderQueueBatchReport } from '../../src/rendering/runReport';
+import { renderBatchReport } from '../../src/rendering/batchReport';
 import { renderVideoNote } from '../../src/rendering/videoNote';
 
 const transcript = {
@@ -582,7 +582,7 @@ describe('frontmatter and linkback options', () => {
 	});
 });
 
-describe('renderQueueBatchReport', () => {
+describe('renderBatchReport', () => {
 	const batchId = 'batch-1';
 
 	it('reports total/outcome counts, language, note path, and reason for video entries', () => {
@@ -596,10 +596,10 @@ describe('renderQueueBatchReport', () => {
 			],
 		};
 
-		const result = renderQueueBatchReport(report);
+		const result = renderBatchReport(report);
 
-		expect(result.startsWith('> [!summary]- Run Report')).toBe(true);
-		expect(result).toContain('> [!summary]- Run Report');
+		expect(result.startsWith('> [!summary]- Report')).toBe(true);
+		expect(result).toContain('> [!summary]- Report');
 		expect(result).toContain('> **Summary**');
 		expect(result).toContain('> - Total: 4');
 		expect(result).toContain('> - Completed: 1');
@@ -625,7 +625,7 @@ describe('renderQueueBatchReport', () => {
 	});
 
 	it('labels a directly submitted Short', () => {
-		const result = renderQueueBatchReport({
+		const result = renderBatchReport({
 			batchId,
 			entries: [{
 				kind: 'video', runId: 'r1', batchId, ordinal: 1,
@@ -657,7 +657,7 @@ describe('renderQueueBatchReport', () => {
 				},
 			],
 		};
-		const result = renderQueueBatchReport(report);
+		const result = renderBatchReport(report);
 		expect(result).toContain('> - Total: 2');
 		expect(result).toContain('> - Completed: 1');
 		expect(result).toContain('> - Skipped: 1');
@@ -689,7 +689,7 @@ describe('renderQueueBatchReport', () => {
 			}],
 		};
 
-		const result = renderQueueBatchReport(report);
+		const result = renderBatchReport(report);
 
 		expect(result).toContain('1. **Completed** · Channel Name');
 		expect(result).toContain('- Content: Videos, Shorts, Streams');
@@ -717,7 +717,7 @@ describe('renderQueueBatchReport', () => {
 			],
 		};
 
-		const result = renderQueueBatchReport(report);
+		const result = renderBatchReport(report);
 
 		expect(result).toContain('> - Total: 1');
 		expect(result).toContain('> - Failed: 1');
@@ -750,7 +750,7 @@ describe('renderQueueBatchReport', () => {
 			],
 		};
 
-		const result = renderQueueBatchReport(report);
+		const result = renderBatchReport(report);
 
 		expect(result).toContain('> - Total: 4');
 		expect(result).toContain('> - Completed: 1');
@@ -772,7 +772,7 @@ describe('renderQueueBatchReport', () => {
 				},
 			],
 		};
-		const result = renderQueueBatchReport(report);
+		const result = renderBatchReport(report);
 		expect(result).toContain('Required section "TL;DR" was not emitted by the model.');
 		expect(result).toContain('- Warnings:');
 	});

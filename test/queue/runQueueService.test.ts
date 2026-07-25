@@ -10,9 +10,9 @@ import {
 	RunQueueService,
 	buildFolderTargetPolicy,
 } from '../../src/queue/runQueueService';
-import type { GenerationOptions, QueueBatchReport, QueueRunReportEntry } from '../../src/types';
+import type { GenerationOptions, BatchReport, QueueRunResult } from '../../src/types';
 
-function makeEntry(run: QueuedRun, outcome: QueueRunReportEntry['outcome'] = 'completed'): QueueRunReportEntry {
+function makeEntry(run: QueuedRun, outcome: QueueRunResult['outcome'] = 'completed'): QueueRunResult {
 	return {
 		kind: 'video',
 		runId: run.id,
@@ -26,15 +26,15 @@ function makeEntry(run: QueuedRun, outcome: QueueRunReportEntry['outcome'] = 'co
 
 function makeWorker(opts: {
 	executeDelay?: number;
-	executeOutcome?: QueueRunReportEntry['outcome'];
+	executeOutcome?: QueueRunResult['outcome'];
 	executeError?: Error;
 	resolveTitle?: string;
 	resolveDelay?: number;
-} = {}): RunWorker & { persistCalls: Array<{ batch: RunBatch; report: QueueBatchReport }> } {
-	const persistCalls: Array<{ batch: RunBatch; report: QueueBatchReport }> = [];
+} = {}): RunWorker & { persistCalls: Array<{ batch: RunBatch; report: BatchReport }> } {
+	const persistCalls: Array<{ batch: RunBatch; report: BatchReport }> = [];
 	return {
 		persistCalls,
-		executeRun: vi.fn(async (run: QueuedRun, signal: AbortSignal): Promise<QueueRunReportEntry> => {
+		executeRun: vi.fn(async (run: QueuedRun, signal: AbortSignal): Promise<QueueRunResult> => {
 			if (opts.executeDelay) {
 				await new Promise<void>((resolve, reject) => {
 					const timer = setTimeout(resolve, opts.executeDelay);
@@ -53,7 +53,7 @@ function makeWorker(opts: {
 			if (opts.resolveTitle === undefined) throw new Error('no title');
 			return opts.resolveTitle;
 		}),
-		persistBatchReport: vi.fn(async (batch: RunBatch, report: QueueBatchReport) => {
+		persistBatchReport: vi.fn(async (batch: RunBatch, report: BatchReport) => {
 			persistCalls.push({ batch, report });
 		}),
 	};

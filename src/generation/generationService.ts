@@ -3,13 +3,13 @@ import { Notice, TFile } from 'obsidian';
 import { notifyError } from '../ui/shared/notifications';
 import type {
 	PluginSettings,
-	QueueBatchReport,
-	QueueRunReportEntry,
+	BatchReport,
+	QueueRunResult,
 } from '../types';
 import type { YouTubeService } from '../youtube/youtubeService';
 import { classifyVideoContentType, extractPlaylistId, extractVideoId } from '../youtube/urls';
 import { isAbortError } from '../queue/progress';
-import { renderQueueBatchReport } from '../rendering/runReport';
+import { renderBatchReport } from '../rendering/batchReport';
 import { getErrorMessage } from '../utils';
 import type { QueuedRun, RunBatch } from '../queue/runQueueService';
 import { resolveEffectiveGenerationOptions, type EffectiveGenerationOptions } from './effectiveOptions';
@@ -34,7 +34,7 @@ export class GenerationService {
 		this.targets = new NoteTargetWriter(app, onStatusBar);
 	}
 
-	async executeRun(run: QueuedRun, signal: AbortSignal): Promise<QueueRunReportEntry> {
+	async executeRun(run: QueuedRun, signal: AbortSignal): Promise<QueueRunResult> {
 		const progressState: ProgressState = {
 			target: null,
 			url: run.url,
@@ -163,10 +163,10 @@ export class GenerationService {
 		this.openedNoteBatchIds.delete(batch.batchId);
 	}
 
-	async persistBatchReport(batch: RunBatch, report: QueueBatchReport): Promise<void> {
+	async persistBatchReport(batch: RunBatch, report: BatchReport): Promise<void> {
 		if (!batch.reportPolicy.include) return;
 
-		const rendered = renderQueueBatchReport(report);
+		const rendered = renderBatchReport(report);
 
 		if (batch.reportPolicy.location === 'generated-note') {
 			const firstNotePath = this.pickFirstNotePath(report.entries);
@@ -183,7 +183,7 @@ export class GenerationService {
 		const folderPath = this.pickReportFolder(report.entries);
 		const baseName = this.buildReportBaseName(report);
 		const target = await this.targets.createNewTarget(folderPath, baseName);
-		await this.targets.writeContentToTarget(target, `# Queue Run Report\n\n${rendered}`);
+		await this.targets.writeContentToTarget(target, `# Report\n\n${rendered}`);
 		target.finalized = true;
 	}
 
@@ -209,7 +209,7 @@ export class GenerationService {
 		return isAbortError(error, signal);
 	}
 
-	private pickFirstNotePath(entries: QueueRunReportEntry[]): string | null {
+	private pickFirstNotePath(entries: QueueRunResult[]): string | null {
 		for (const entry of entries) {
 			if (entry.notePath) return entry.notePath;
 			if (entry.kind !== 'video') {
@@ -220,21 +220,25 @@ export class GenerationService {
 		return null;
 	}
 
-	private pickReportFolder(entries: QueueRunReportEntry[]): string {
+	private pickReportFolder(entries: QueueRunResult[]): string {
 		const firstPath = this.pickFirstNotePath(entries);
 		if (!firstPath) return '';
 		const parts = firstPath.split('/');
 		return parts.length > 1 ? parts.slice(0, -1).join('/') : '';
 	}
 
-	private buildReportBaseName(report: QueueBatchReport): string {
+	private buildReportBaseName(report: BatchReport): string {
 		const firstEntry = report.entries[0];
 		if (firstEntry) {
-			return buildSafeBaseName(`${firstEntry.displayTitle} Queue Run Report`, 'Queue Run Report');
+			const ordinalPrefix = `#${firstEntry.ordinal} · `;
+			const title = firstEntry.displayTitle.startsWith(ordinalPrefix)
+				? firstEntry.displayTitle.slice(ordinalPrefix.length)
+				: firstEntry.displayTitle;
+			return buildSafeBaseName(`${title} Report`, 'YTKN Report');
 		}
 		const now = new Date();
 		const pad = (n: number) => String(n).padStart(2, '0');
-		const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}${pad(now.getMinutes())}`;
-		return `Queue Run Report ${dateStr}`;
+		const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+		return `YTKN Report ${dateStr}`;
 	}
 }

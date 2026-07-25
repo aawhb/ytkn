@@ -4,7 +4,7 @@ import type {
 	MediaEmbedMode,
 	NoteDestinationMode,
 	PlaylistMode,
-	RunReportLocation,
+	ReportLocation,
 	SourceSectionPosition,
 	TranscriptFailureMode,
 	TranscriptLanguageMode,
@@ -53,8 +53,8 @@ type SharedSettingCopy = {
 	channelContent: SettingFieldCopy<Record<ChannelContentType, string>>;
 	channelItemsPerType: SettingFieldCopy<Record<'limited' | 'all', string>>;
 	transcriptFailure: SettingFieldCopy<Record<TranscriptFailureMode, string>>;
-	includeRunReport: SettingFieldCopy;
-	runReportLocation: SettingFieldCopy<Record<RunReportLocation, string>>;
+	includeReport: SettingFieldCopy;
+	reportLocation: SettingFieldCopy<Record<ReportLocation, string>>;
 	temperature: SettingFieldCopy;
 	requestTimeout: SettingFieldCopy;
 };
@@ -218,11 +218,11 @@ export const SETTING_COPY: SharedSettingCopy = {
 			fail: 'Stop current run',
 		},
 	},
-	includeRunReport: {
-		name: 'Include run report',
+	includeReport: {
+		name: 'Include report',
 		desc: 'Add a collapsible report listing completed, skipped, failed, and canceled items after each batch.',
 	},
-	runReportLocation: {
+	reportLocation: {
 		name: 'Run report location',
 		desc: 'Choose where to save the report after the batch finishes.',
 		options: {

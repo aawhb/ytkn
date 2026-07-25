@@ -203,8 +203,8 @@ describe('SettingsService current contracts', () => {
 					preferredTranscriptLanguage: ' fr ',
 					transcriptFailureMode: 'fail',
 					mediaEmbedMode: 'thumbnail',
-					includeRunReport: false,
-					runReportLocation: 'separate-note',
+					includeReport: false,
+					reportLocation: 'separate-note',
 					useVideoTitleAsNoteName: false,
 					noteDestinationMode: 'folder',
 					noteDestinationFolder: ' Videos ',
@@ -231,8 +231,8 @@ describe('SettingsService current contracts', () => {
 			preferredTranscriptLanguage: 'fr',
 			transcriptFailureMode: 'fail',
 			mediaEmbedMode: 'thumbnail',
-			includeRunReport: false,
-			runReportLocation: 'separate-note',
+			includeReport: false,
+			reportLocation: 'separate-note',
 			useVideoTitleAsNoteName: false,
 			noteDestinationMode: 'folder',
 			noteDestinationFolder: 'Videos',
@@ -246,6 +246,50 @@ describe('SettingsService current contracts', () => {
 		expect(manager.getTemperature()).toBe(2);
 		expect(manager.getRequestTimeoutMs()).toBe(123456);
 		expect(plugin.saveData).toHaveBeenCalled();
+	});
+
+	it('migrates 1.8.1 report keys with current keys taking precedence', async () => {
+		const legacy = makeManager({
+			settings: {
+				providers: [geminiProvider],
+				modelIds: ['Gemini:gemini-1.5-flash'],
+				outputDefaults: {
+					includeRunReport: false,
+					runReportLocation: 'separate-note',
+					openCreatedNote: true,
+				},
+			},
+		});
+		await legacy.manager.loadSettings();
+
+		expect(legacy.manager.getOutputDefaults()).toMatchObject({
+			includeReport: false,
+			reportLocation: 'separate-note',
+			openCreatedNote: true,
+		});
+		expect(legacy.manager.getModelIds()).toEqual(['Gemini:gemini-1.5-flash']);
+		expect(legacy.plugin.data?.settings?.outputDefaults).toMatchObject({
+			includeReport: false,
+			reportLocation: 'separate-note',
+		});
+		expect(legacy.plugin.data?.settings?.outputDefaults?.includeRunReport).toBeUndefined();
+		expect(legacy.plugin.data?.settings?.outputDefaults?.runReportLocation).toBeUndefined();
+
+		const mixed = makeManager({
+			settings: {
+				outputDefaults: {
+					includeReport: true,
+					reportLocation: 'generated-note',
+					includeRunReport: false,
+					runReportLocation: 'separate-note',
+				},
+			},
+		});
+		await mixed.manager.loadSettings();
+		expect(mixed.manager.getOutputDefaults()).toMatchObject({
+			includeReport: true,
+			reportLocation: 'generated-note',
+		});
 	});
 
 	it('falls back from invalid persisted output values', async () => {

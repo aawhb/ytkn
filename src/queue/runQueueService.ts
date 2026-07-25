@@ -1,4 +1,4 @@
-import type { GenerationOptions, QueueBatchReport, QueueRunOutcome, QueueRunReportEntry, RunReportLocation } from '../types';
+import type { GenerationOptions, BatchReport, QueueRunOutcome, QueueRunResult, ReportLocation } from '../types';
 import { createJobId, getErrorMessage } from '../utils';
 import { classifyVideoContentType, extractChannelRef } from '../youtube/urls';
 import { isAbortError } from './progress';
@@ -32,14 +32,14 @@ export interface BatchTargetPolicy {
 
 interface RunBatchReportPolicy {
 	include: boolean;
-	location: RunReportLocation;
+	location: ReportLocation;
 }
 
 export interface RunBatch {
 	batchId: string;
 	reportPolicy: RunBatchReportPolicy;
 	runIds: string[];
-	outcomeEntries: QueueRunReportEntry[];
+	outcomeEntries: QueueRunResult[];
 	finalized: boolean;
 }
 
@@ -66,9 +66,9 @@ export type RunQueueEvent =
 export type RunQueueListener = (event: RunQueueEvent) => void;
 
 export interface RunWorker {
-	executeRun(run: QueuedRun, signal: AbortSignal): Promise<QueueRunReportEntry>;
+	executeRun(run: QueuedRun, signal: AbortSignal): Promise<QueueRunResult>;
 	resolveTitle(run: QueuedRun, signal: AbortSignal): Promise<string>;
-	persistBatchReport(batch: RunBatch, report: QueueBatchReport): Promise<void>;
+	persistBatchReport(batch: RunBatch, report: BatchReport): Promise<void>;
 	onBatchFinalized?(batch: RunBatch): void;
 	onBatchReportError?(batch: RunBatch, error: unknown): void;
 }
@@ -85,7 +85,7 @@ function buildUrlFallbackTitle(run: QueuedRun): string {
 	return `#${run.ordinal} · ${run.kind}:${urlLabel}`;
 }
 
-function buildCanceledEntry(run: QueuedRun): QueueRunReportEntry {
+function buildCanceledEntry(run: QueuedRun): QueueRunResult {
 	if (run.kind === 'channel') {
 		return {
 			kind: 'channel',
@@ -128,7 +128,7 @@ function buildCanceledEntry(run: QueuedRun): QueueRunReportEntry {
 	};
 }
 
-function buildErrorEntry(run: QueuedRun, error: unknown, signal: AbortSignal): QueueRunReportEntry {
+function buildErrorEntry(run: QueuedRun, error: unknown, signal: AbortSignal): QueueRunResult {
 	const outcome: QueueRunOutcome = isAbortError(error, signal) ? 'canceled' : 'failed';
 	const reason = getErrorMessage(error);
 	if (run.kind === 'channel') {
@@ -178,7 +178,7 @@ function buildErrorEntry(run: QueuedRun, error: unknown, signal: AbortSignal): Q
 export class RunQueueService {
 	private readonly queue: QueuedRun[] = [];
 	private readonly batches = new Map<string, RunBatch>();
-	private readonly history: QueueRunReportEntry[] = [];
+	private readonly history: QueueRunResult[] = [];
 	private readonly listeners = new Set<RunQueueListener>();
 	private current: { run: QueuedRun; controller: AbortController } | null = null;
 	private workerActive = false;
@@ -199,7 +199,7 @@ export class RunQueueService {
 	getSnapshot(): {
 		current: QueuedRun | null;
 		queued: QueuedRun[];
-		history: QueueRunReportEntry[];
+		history: QueueRunResult[];
 	} {
 		return {
 			current: this.current?.run ?? null,
@@ -323,7 +323,7 @@ export class RunQueueService {
 				this.current = { run, controller };
 				this.emit({ type: 'started', run });
 
-				let entry: QueueRunReportEntry;
+				let entry: QueueRunResult;
 				try {
 					entry = await this.worker.executeRun(run, controller.signal);
 				} catch (error) {
@@ -367,7 +367,7 @@ export class RunQueueService {
 				console.error('Batch finalization callback failed:', error);
 			}
 
-			const report: QueueBatchReport = { batchId: batch.batchId, entries: batch.outcomeEntries };
+			const report: BatchReport = { batchId: batch.batchId, entries: batch.outcomeEntries };
 			if (batch.reportPolicy.include) {
 				try {
 					await this.worker.persistBatchReport(batch, report);
@@ -384,7 +384,7 @@ export class RunQueueService {
 		}
 	}
 
-	private pushHistory(entry: QueueRunReportEntry): void {
+	private pushHistory(entry: QueueRunResult): void {
 		this.history.push(entry);
 		if (this.history.length > 50) {
 			this.history.shift();

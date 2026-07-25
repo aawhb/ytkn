@@ -16,11 +16,11 @@ import {
 	RunQueueService,
 	buildFolderTargetPolicy,
 } from '../../../src/queue/runQueueService';
-import type { QueueRunReportEntry } from '../../../src/types';
+import type { QueueRunResult } from '../../../src/types';
 
 function makeWorker(): RunWorker {
 	return {
-		executeRun: vi.fn().mockResolvedValue(undefined as unknown as QueueRunReportEntry),
+		executeRun: vi.fn().mockResolvedValue(undefined as unknown as QueueRunResult),
 		resolveTitle: vi.fn().mockRejectedValue(new Error('no title')),
 		persistBatchReport: vi.fn().mockResolvedValue(undefined),
 	};
@@ -68,7 +68,7 @@ describe('QueueModal', () => {
 		let resolveRun!: () => void;
 		const worker: RunWorker = {
 			executeRun: vi.fn((_run: QueuedRun, signal: AbortSignal) =>
-				new Promise<QueueRunReportEntry>((resolve, reject) => {
+				new Promise<QueueRunResult>((resolve, reject) => {
 					resolveRun = () => resolve({
 						kind: 'video', runId: _run.id, batchId: _run.batchId,
 						ordinal: _run.ordinal, url: _run.url, displayTitle: _run.displayTitle,
@@ -97,7 +97,7 @@ describe('QueueModal', () => {
 	it('renders queued runs section', async () => {
 		const worker: RunWorker = {
 			executeRun: vi.fn((_run: QueuedRun, signal: AbortSignal) =>
-				new Promise<QueueRunReportEntry>((_, reject) => {
+				new Promise<QueueRunResult>((_, reject) => {
 					signal.addEventListener('abort', () => reject(signal.reason), { once: true });
 				}),
 			),
@@ -141,7 +141,7 @@ describe('QueueModal', () => {
 	});
 
 	it('limits visible history while reporting the full recent count', () => {
-		const history = Array.from({ length: 12 }, (_, index): QueueRunReportEntry => ({
+		const history = Array.from({ length: 12 }, (_, index): QueueRunResult => ({
 			kind: 'video',
 			runId: `run-${index}`,
 			batchId: 'batch',
@@ -166,7 +166,7 @@ describe('QueueModal', () => {
 	it('cancel-one button calls cancelRun on the service', async () => {
 		const worker: RunWorker = {
 			executeRun: vi.fn((_run: QueuedRun, signal: AbortSignal) =>
-				new Promise<QueueRunReportEntry>((_, reject) => {
+				new Promise<QueueRunResult>((_, reject) => {
 					signal.addEventListener('abort', () => reject(signal.reason), { once: true });
 				}),
 			),
@@ -193,7 +193,7 @@ describe('QueueModal', () => {
 	it('cancel-all button calls cancelAll on the service', async () => {
 		const worker: RunWorker = {
 			executeRun: vi.fn((_run: QueuedRun, signal: AbortSignal) =>
-				new Promise<QueueRunReportEntry>((_, reject) => {
+				new Promise<QueueRunResult>((_, reject) => {
 					signal.addEventListener('abort', () => reject(signal.reason), { once: true });
 				}),
 			),

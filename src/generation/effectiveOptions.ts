@@ -7,7 +7,7 @@ import type {
 	NoteDestinationMode,
 	PlaylistMode,
 	PluginSettings,
-	RunReportLocation,
+	ReportLocation,
 	SourceSectionPosition,
 	TranscriptFailureMode,
 	TranscriptLanguageMode,
@@ -32,8 +32,8 @@ export interface EffectiveGenerationOptions extends GenerationOptions {
 	preferredTranscriptLanguage: string;
 	transcriptFailureMode: TranscriptFailureMode;
 	mediaEmbedMode: MediaEmbedMode;
-	includeRunReport: boolean;
-	runReportLocation: RunReportLocation;
+	includeReport: boolean;
+	reportLocation: ReportLocation;
 	useVideoTitleAsNoteName: boolean;
 	noteDestinationMode: NoteDestinationMode;
 	noteDestinationFolder: string;
@@ -76,8 +76,8 @@ export function resolveEffectiveGenerationOptions(
 		preferredTranscriptLanguage: options.preferredTranscriptLanguage ?? outputDefaults.preferredTranscriptLanguage,
 		transcriptFailureMode: options.transcriptFailureMode ?? outputDefaults.transcriptFailureMode,
 		mediaEmbedMode: options.mediaEmbedMode ?? outputDefaults.mediaEmbedMode,
-		includeRunReport: options.includeRunReport ?? outputDefaults.includeRunReport,
-		runReportLocation: options.runReportLocation ?? outputDefaults.runReportLocation,
+		includeReport: options.includeReport ?? outputDefaults.includeReport,
+		reportLocation: options.reportLocation ?? outputDefaults.reportLocation,
 		useVideoTitleAsNoteName: options.useVideoTitleAsNoteName ?? outputDefaults.useVideoTitleAsNoteName,
 		noteDestinationMode: options.noteDestinationMode ?? outputDefaults.noteDestinationMode,
 		noteDestinationFolder: options.noteDestinationFolder ?? outputDefaults.noteDestinationFolder,

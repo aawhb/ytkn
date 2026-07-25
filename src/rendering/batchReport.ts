@@ -1,8 +1,8 @@
-import type { QueueBatchReport, QueueRunOutcome } from '../types';
+import type { BatchReport, QueueRunOutcome } from '../types';
 import { normalizeWhitespace } from '../utils';
 import { renderCollapsedCallout } from './callouts';
 
-function formatRunReportOutcomeLabel(outcome: QueueRunOutcome): string {
+function formatReportOutcomeLabel(outcome: QueueRunOutcome): string {
 	return outcome.charAt(0).toUpperCase() + outcome.slice(1);
 }
 
@@ -15,11 +15,11 @@ function formatReportNotePath(notePath: string): string {
 	return `\`${normalizeWhitespace(notePath)}\``;
 }
 
-function renderCollapsedRunReportCallout(body: string): string {
-	return renderCollapsedCallout('summary', 'Run Report', body);
+function renderCollapsedReportCallout(body: string): string {
+	return renderCollapsedCallout('summary', 'Report', body);
 }
 
-function buildRunReportSummary(total: number, completed: number, skipped: number, failed: number, canceled: number): string {
+function buildReportSummary(total: number, completed: number, skipped: number, failed: number, canceled: number): string {
 	return [
 		'**Summary**',
 		'',
@@ -31,26 +31,26 @@ function buildRunReportSummary(total: number, completed: number, skipped: number
 	].join('\n');
 }
 
-type RunReportCounts = Record<QueueRunOutcome, number> & { total: number };
+type ReportCounts = Record<QueueRunOutcome, number> & { total: number };
 
-function emptyRunReportCounts(): RunReportCounts {
+function emptyReportCounts(): ReportCounts {
 	return { total: 0, completed: 0, skipped: 0, failed: 0, canceled: 0 };
 }
 
-function addOutcomeToCounts(counts: RunReportCounts, outcome: QueueRunOutcome): void {
+function addOutcomeToCounts(counts: ReportCounts, outcome: QueueRunOutcome): void {
 	counts.total += 1;
 	counts[outcome] += 1;
 }
 
-type CollectionRunReportEntry = Exclude<QueueBatchReport['entries'][number], { kind: 'video' }>;
+type CollectionReportEntry = Exclude<BatchReport['entries'][number], { kind: 'video' }>;
 
-function countPlaylistRunReportEntry(entry: CollectionRunReportEntry): RunReportCounts {
-	const counts = emptyRunReportCounts();
-	addRunReportEntryToCounts(counts, entry);
+function countPlaylistReportEntry(entry: CollectionReportEntry): ReportCounts {
+	const counts = emptyReportCounts();
+	addReportEntryToCounts(counts, entry);
 	return counts;
 }
 
-function addRunReportEntryToCounts(counts: RunReportCounts, entry: QueueBatchReport['entries'][number]): void {
+function addReportEntryToCounts(counts: ReportCounts, entry: BatchReport['entries'][number]): void {
 	if (entry.kind !== 'video' && entry.entries.length > 0) {
 		for (const playlistEntry of entry.entries) {
 			addOutcomeToCounts(counts, playlistEntry.outcome);
@@ -61,19 +61,19 @@ function addRunReportEntryToCounts(counts: RunReportCounts, entry: QueueBatchRep
 	addOutcomeToCounts(counts, entry.outcome);
 }
 
-function countQueueBatchReportEntries(entries: QueueBatchReport['entries']): RunReportCounts {
-	const counts = emptyRunReportCounts();
+function countBatchReportEntries(entries: BatchReport['entries']): ReportCounts {
+	const counts = emptyReportCounts();
 	for (const entry of entries) {
-		addRunReportEntryToCounts(counts, entry);
+		addReportEntryToCounts(counts, entry);
 	}
 	return counts;
 }
 
-function formatRunReportCounts(counts: RunReportCounts): string {
+function formatReportCounts(counts: ReportCounts): string {
 	return `${counts.total} total, ${counts.completed} completed, ${counts.skipped} skipped, ${counts.failed} failed, ${counts.canceled} canceled`;
 }
 
-function appendRunReportWarnings(lines: string[], warnings: string[] | undefined, indent: string): void {
+function appendReportWarnings(lines: string[], warnings: string[] | undefined, indent: string): void {
 	if (!warnings || warnings.length === 0) {
 		return;
 	}
@@ -90,8 +90,8 @@ function formatContentType(contentType: 'videos' | 'shorts' | 'streams'): string
 	return 'Video';
 }
 
-function buildVideoRunReportEntry(entry: Extract<QueueBatchReport['entries'][number], { kind: 'video' }>, index: number): string {
-	const label = formatRunReportOutcomeLabel(entry.outcome);
+function buildVideoReportEntry(entry: Extract<BatchReport['entries'][number], { kind: 'video' }>, index: number): string {
+	const label = formatReportOutcomeLabel(entry.outcome);
 	const title = stripRunOrdinalPrefix(entry.displayTitle, entry.ordinal);
 	const lines = [`${index + 1}. **${label}** · ${normalizeWhitespace(title)}`];
 
@@ -108,13 +108,13 @@ function buildVideoRunReportEntry(entry: Extract<QueueBatchReport['entries'][num
 	if (entry.reason) {
 		lines.push(`   - Reason: ${normalizeWhitespace(entry.reason)}`);
 	}
-	appendRunReportWarnings(lines, entry.warnings, '   ');
+	appendReportWarnings(lines, entry.warnings, '   ');
 
 	return lines.join('\n');
 }
 
-function buildPlaylistRunReportEntry(entry: CollectionRunReportEntry, index: number): string {
-	const label = formatRunReportOutcomeLabel(entry.outcome);
+function buildPlaylistReportEntry(entry: CollectionReportEntry, index: number): string {
+	const label = formatReportOutcomeLabel(entry.outcome);
 	const title = normalizeWhitespace(
 		(entry.kind === 'channel' ? entry.channelTitle : entry.playlistTitle)
 		|| stripRunOrdinalPrefix(entry.displayTitle, entry.ordinal),
@@ -128,15 +128,15 @@ function buildPlaylistRunReportEntry(entry: CollectionRunReportEntry, index: num
 	if (entry.reason) {
 		lines.push(`   - Reason: ${normalizeWhitespace(entry.reason)}`);
 	}
-	appendRunReportWarnings(lines, entry.warnings, '   ');
+	appendReportWarnings(lines, entry.warnings, '   ');
 	if (entry.kind === 'channel' && entry.contentTypes.length > 0) {
 		lines.push(`   - Content: ${entry.contentTypes.map((type) => type === 'streams' ? 'Streams' : `${type[0].toUpperCase()}${type.slice(1)}`).join(', ')}`);
 	}
-	lines.push(`   - Counts: ${formatRunReportCounts(countPlaylistRunReportEntry(entry))}`);
+	lines.push(`   - Counts: ${formatReportCounts(countPlaylistReportEntry(entry))}`);
 	if (entry.entries.length > 0) {
 		lines.push(entry.kind === 'channel' ? '   - Items:' : '   - Videos:');
 		entry.entries.forEach((playlistEntry, playlistIndex) => {
-			const playlistEntryLabel = formatRunReportOutcomeLabel(playlistEntry.outcome);
+			const playlistEntryLabel = formatReportOutcomeLabel(playlistEntry.outcome);
 			const contentLabel = playlistEntry.contentType ? ` · ${formatContentType(playlistEntry.contentType)}` : '';
 			lines.push(`      ${playlistIndex + 1}. **${playlistEntryLabel}**${contentLabel} · ${normalizeWhitespace(playlistEntry.title)}`);
 			if (playlistEntry.transcriptLanguageCode) {
@@ -148,24 +148,24 @@ function buildPlaylistRunReportEntry(entry: CollectionRunReportEntry, index: num
 			if (playlistEntry.reason) {
 				lines.push(`         - Reason: ${normalizeWhitespace(playlistEntry.reason)}`);
 			}
-			appendRunReportWarnings(lines, playlistEntry.warnings, '         ');
+			appendReportWarnings(lines, playlistEntry.warnings, '         ');
 		});
 	}
 
 	return lines.join('\n');
 }
 
-export function renderQueueBatchReport(report: QueueBatchReport): string {
+export function renderBatchReport(report: BatchReport): string {
 	const entries = report.entries;
-	const counts = countQueueBatchReportEntries(entries);
-	const summary = buildRunReportSummary(counts.total, counts.completed, counts.skipped, counts.failed, counts.canceled);
+	const counts = countBatchReportEntries(entries);
+	const summary = buildReportSummary(counts.total, counts.completed, counts.skipped, counts.failed, counts.canceled);
 	const runLines = entries.length
 		? entries.map((entry, index) => entry.kind === 'video'
-			? buildVideoRunReportEntry(entry, index)
-			: buildPlaylistRunReportEntry(entry, index)).join('\n\n')
+			? buildVideoReportEntry(entry, index)
+			: buildPlaylistReportEntry(entry, index)).join('\n\n')
 		: 'No runs recorded.';
 
-	return renderCollapsedRunReportCallout(`${summary}
+	return renderCollapsedReportCallout(`${summary}
 
 **Runs**
 

@@ -8,7 +8,7 @@ import type {
 	MediaEmbedMode,
 	NoteDestinationMode,
 	OutputDefaults,
-	RunReportLocation,
+	ReportLocation,
 	PlaylistMode,
 	PluginSettings,
 	SourceSectionPosition,
@@ -186,8 +186,8 @@ export class SettingsTab extends PluginSettingTab {
 		createSettingsCard(containerEl, 'Transcript in note', (body) =>
 			this.displayTranscriptInNoteSection(body),
 		);
-		createSettingsCard(containerEl, 'Playlists, channels, and run reports', (body) =>
-			this.displayQueueAndRunReportsSection(body),
+		createSettingsCard(containerEl, 'Playlists, channels, and reports', (body) =>
+			this.displayCollectionsAndReportsSection(body),
 		);
 	}
 
@@ -458,7 +458,7 @@ export class SettingsTab extends PluginSettingTab {
 		}
 	}
 
-	private displayQueueAndRunReportsSection(containerEl: HTMLElement): void {
+	private displayCollectionsAndReportsSection(containerEl: HTMLElement): void {
 		const outputDefaults = this.settings.getOutputDefaults();
 
 		new Setting(containerEl)
@@ -563,30 +563,30 @@ export class SettingsTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName(SETTING_COPY.includeRunReport.name)
-			.setDesc(SETTING_COPY.includeRunReport.desc!)
+			.setName(SETTING_COPY.includeReport.name)
+			.setDesc(SETTING_COPY.includeReport.desc!)
 			.addToggle((toggle) =>
 				toggle
-					.setValue(outputDefaults.includeRunReport)
+					.setValue(outputDefaults.includeReport)
 					.onChange(async (value) => {
 						await this.updateOutputDefaults({
-							includeRunReport: value,
+							includeReport: value,
 						});
 						this.reload();
 					}),
 			);
 
-		if (outputDefaults.includeRunReport) {
+		if (outputDefaults.includeReport) {
 			new Setting(containerEl)
-				.setName(SETTING_COPY.runReportLocation.name)
-				.setDesc(SETTING_COPY.runReportLocation.desc!)
+				.setName(SETTING_COPY.reportLocation.name)
+				.setDesc(SETTING_COPY.reportLocation.desc!)
 				.addDropdown((dropdown) =>
 					dropdown
-						.addOptions(SETTING_COPY.runReportLocation.options!)
-						.setValue(outputDefaults.runReportLocation)
+						.addOptions(SETTING_COPY.reportLocation.options!)
+						.setValue(outputDefaults.reportLocation)
 						.onChange(async (value) => {
 							await this.updateOutputDefaults({
-								runReportLocation: value as RunReportLocation,
+								reportLocation: value as ReportLocation,
 							});
 						}),
 				);

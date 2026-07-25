@@ -1,12 +1,12 @@
 import type { App } from 'obsidian';
 import { Modal, Setting, setIcon } from 'obsidian';
 import type { QueuedRun, RunQueueService } from '../../queue/runQueueService';
-import type { QueueRunReportEntry } from '../../types';
+import type { QueueRunResult } from '../../types';
 import { createSettingsCard } from '../shared/cards';
 import { setDestructiveButton } from '../shared/buttonStyles';
 
 const MAX_VISIBLE_HISTORY = 10;
-type QueueStatus = QueueRunReportEntry['outcome'] | 'queued' | 'running';
+type QueueStatus = QueueRunResult['outcome'] | 'queued' | 'running';
 
 export class QueueModal extends Modal {
 	private offListener?: () => void;
@@ -126,7 +126,7 @@ export class QueueModal extends Modal {
 		});
 	}
 
-	private renderHistoryEntry(container: HTMLElement, entry: QueueRunReportEntry): void {
+	private renderHistoryEntry(container: HTMLElement, entry: QueueRunResult): void {
 		this.renderRunRow(container, entry.displayTitle, entry.outcome, entry.reason);
 	}
 

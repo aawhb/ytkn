@@ -203,7 +203,7 @@ Use **Cancel all queued** to stop waiting work and cancel the active run. Notes 
 
 ## Run reports
 
-Turn **Include run report** on to record what happened in a batch.
+Turn **Include report** on to record what happened in a batch.
 
 A report can show:
 

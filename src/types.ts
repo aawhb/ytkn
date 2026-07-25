@@ -12,7 +12,7 @@ export type InstructionTemplate =
 	| 'implementation';
 export type TranscriptLanguageMode = 'auto' | 'preferred';
 export type TranscriptFailureMode = 'skip' | 'fail';
-export type RunReportLocation = 'generated-note' | 'separate-note';
+export type ReportLocation = 'generated-note' | 'separate-note';
 export type SourceSectionPosition = 'top' | 'bottom';
 export type MediaEmbedMode = 'video' | 'thumbnail' | 'none';
 export type ChannelContentType = 'videos' | 'shorts' | 'streams';
@@ -64,8 +64,8 @@ export interface OutputDefaults {
 	preferredTranscriptLanguage: string;
 	transcriptFailureMode: TranscriptFailureMode;
 	mediaEmbedMode: MediaEmbedMode;
-	includeRunReport: boolean;
-	runReportLocation: RunReportLocation;
+	includeReport: boolean;
+	reportLocation: ReportLocation;
 	useVideoTitleAsNoteName: boolean;
 	noteDestinationMode: NoteDestinationMode;
 	noteDestinationFolder: string;
@@ -145,8 +145,8 @@ export interface GenerationOptions {
 	preferredTranscriptLanguage?: string;
 	transcriptFailureMode?: TranscriptFailureMode;
 	mediaEmbedMode?: MediaEmbedMode;
-	includeRunReport?: boolean;
-	runReportLocation?: RunReportLocation;
+	includeReport?: boolean;
+	reportLocation?: ReportLocation;
 	useVideoTitleAsNoteName?: boolean;
 	noteDestinationMode?: NoteDestinationMode;
 	noteDestinationFolder?: string;
@@ -297,7 +297,7 @@ export interface Template {
 
 export type QueueRunOutcome = 'completed' | 'skipped' | 'failed' | 'canceled';
 
-export type QueueRunReportEntry =
+export type QueueRunResult =
 	| {
 		kind: 'video';
 		runId: string;
@@ -344,7 +344,7 @@ export type QueueRunReportEntry =
 		entries: PlaylistRunReportEntry[];
 	};
 
-export interface QueueBatchReport {
+export interface BatchReport {
 	batchId: string;
-	entries: QueueRunReportEntry[];
+	entries: QueueRunResult[];
 }
