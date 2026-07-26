@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPlaylistTranscriptDetails, buildTranscriptDetails } from '../../src/rendering/transcripts';
+import { buildCollectionTranscriptDetails, buildTranscriptDetails } from '../../src/rendering/transcripts';
 
 const transcript = {
 	url: 'https://youtube.com/watch?v=abc',
@@ -29,7 +29,7 @@ describe('transcript detail rendering', () => {
 	});
 
 	it('renders playlist transcripts in one numbered collapsed callout', () => {
-		const details = buildPlaylistTranscriptDetails({
+		const details = buildCollectionTranscriptDetails({
 			url: 'playlist',
 			playlistId: 'PL',
 			title: 'Playlist',

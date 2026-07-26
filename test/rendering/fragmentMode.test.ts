@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderPlaylistNote } from '../../src/rendering/playlistNote';
+import { renderVideoCollectionNote } from '../../src/rendering/videoCollectionNote';
 import { renderVideoNote } from '../../src/rendering/videoNote';
 
 const transcript = {
@@ -100,7 +100,7 @@ describe('fragment mode', () => {
 	});
 
 	it('playlist fragment: H2 title, source shifted, no frontmatter', () => {
-		const { content } = renderPlaylistNote(
+		const { content } = renderVideoCollectionNote(
 			playlist as any,
 			null,
 			'Summary',

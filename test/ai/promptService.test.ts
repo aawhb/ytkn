@@ -73,7 +73,7 @@ describe('PromptService', () => {
 
 	it('adapts template instructions for playlist synthesis', () => {
 		const service = new PromptService({ mode: 'template', template: 'study', manualInstructions: '', includeMindmap: false, includeMemorableQuotes: false });
-		const playlistPrompt = service.buildPlaylistSynthesisPrompt(
+		const playlistPrompt = service.buildCollectionSynthesisPrompt(
 			{
 				playlistId: 'abc',
 				title: 'Playlist',
@@ -91,7 +91,7 @@ describe('PromptService', () => {
 
 	it('uses channel-specific language for channel synthesis', () => {
 		const service = new PromptService({ mode: 'template', template: 'study', manualInstructions: '', includeMindmap: false, includeMemorableQuotes: false });
-		const channelPrompt = service.buildPlaylistSynthesisPrompt(
+		const channelPrompt = service.buildCollectionSynthesisPrompt(
 			{
 				channelId: 'UCabc',
 				title: 'Channel',
@@ -255,7 +255,7 @@ describe('PromptService', () => {
 			includeMemorableQuotes: false,
 		}, { includeTldr: true });
 
-		const prompt = service.buildPlaylistAddonsSynthesisPrompt(
+		const prompt = service.buildCollectionAddonsSynthesisPrompt(
 			{
 				playlistId: 'abc',
 				title: 'Playlist',

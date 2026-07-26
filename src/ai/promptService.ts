@@ -207,7 +207,7 @@ Chunk notes:
 ${chunkSummaryText}`;
 	}
 
-	buildPlaylistSynthesisPrompt(
+	buildCollectionSynthesisPrompt(
 		playlist: VideoCollectionTranscriptResponse,
 		videoSummaries: Array<{ transcript: TranscriptResponse; summary: string }>,
 	): string {
@@ -243,7 +243,7 @@ Video summaries:
 ${summaryText}`;
 	}
 
-	buildPlaylistAddonsSynthesisPrompt(
+	buildCollectionAddonsSynthesisPrompt(
 		playlist: VideoCollectionTranscriptResponse,
 		videoAddonNotes: Array<{ transcript: TranscriptResponse; summary: string }>,
 	): string {

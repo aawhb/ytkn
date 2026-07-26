@@ -4,15 +4,15 @@ export function buildVideoSourceSection(transcript: TranscriptResponse, url: str
 	return `> [!info] Source Info\n> - **Title:** ${transcript.title}\n> - **Channel:** [${transcript.author}](${transcript.channelUrl})\n> - **URL:** ${url}`;
 }
 
-export function buildPlaylistSourceSection(playlist: VideoCollectionTranscriptResponse): string {
-	const videoItems = playlist.transcripts.length > 0
-		? playlist.transcripts.map((transcript) => ({
+export function buildCollectionSourceSection(collection: VideoCollectionTranscriptResponse): string {
+	const videoItems = collection.transcripts.length > 0
+		? collection.transcripts.map((transcript) => ({
 			title: transcript.title,
 			url: transcript.url,
 			author: transcript.author,
 			channelUrl: transcript.channelUrl,
 		}))
-		: playlist.entries.map((entry) => ({
+		: collection.entries.map((entry) => ({
 			title: entry.title,
 			url: entry.url,
 			author: entry.author ?? null,
@@ -26,9 +26,9 @@ export function buildPlaylistSourceSection(playlist: VideoCollectionTranscriptRe
 		.join('\n');
 	const videoCount = videoItems.length;
 
-	const sourceLabel = 'channelId' in playlist ? 'Channel' : 'Playlist';
+	const sourceLabel = 'channelId' in collection ? 'Channel' : 'Playlist';
 	return `## Source
-- ${sourceLabel}: [${playlist.title}](${playlist.url})
+- ${sourceLabel}: [${collection.title}](${collection.url})
 - Video count: ${videoCount}
 
 ### Videos

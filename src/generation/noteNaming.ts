@@ -10,23 +10,23 @@ export function buildSingleVideoBaseName(transcript: TranscriptResponse, options
 	return 'Video Note';
 }
 
-export function buildCombinedPlaylistBaseName(playlist: VideoCollectionResponse, options: EffectiveGenerationOptions): string {
+export function buildCombinedCollectionBaseName(collection: VideoCollectionResponse, options: EffectiveGenerationOptions): string {
 	if (options.useVideoTitleAsNoteName) {
-		return buildSafeBaseName(playlist.title, 'channelId' in playlist ? 'Channel Note' : 'Playlist Note');
+		return buildSafeBaseName(collection.title, 'channelId' in collection ? 'Channel Note' : 'Playlist Note');
 	}
-	return 'channelId' in playlist ? 'Channel Note' : 'Playlist Note';
+	return 'channelId' in collection ? 'Channel Note' : 'Playlist Note';
 }
 
 export function buildPerVideoBaseName(
-	playlist: VideoCollectionResponse,
+	collection: VideoCollectionResponse,
 	transcript: TranscriptResponse,
 	index: number,
 	options: EffectiveGenerationOptions,
 ): string {
-	const fallbackPrefix = 'channelId' in playlist ? 'Channel Video' : 'Playlist Video';
+	const fallbackPrefix = 'channelId' in collection ? 'Channel Video' : 'Playlist Video';
 	if (options.useVideoTitleAsNoteName) {
-		return buildSafeBaseName(transcript.title, formatSequenceName(fallbackPrefix, index, playlist.entries.length));
+		return buildSafeBaseName(transcript.title, formatSequenceName(fallbackPrefix, index, collection.entries.length));
 	}
-	const prefix = buildSafeBaseName(playlist.title, fallbackPrefix);
-	return formatSequenceName(prefix, index, playlist.entries.length);
+	const prefix = buildSafeBaseName(collection.title, fallbackPrefix);
+	return formatSequenceName(prefix, index, collection.entries.length);
 }

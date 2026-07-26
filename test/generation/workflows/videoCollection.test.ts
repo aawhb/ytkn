@@ -5,7 +5,7 @@ vi.mock('obsidian', async () => {
 	return { ...mod };
 });
 
-import { generatePlaylistNotes } from '../../../src/generation/workflows/playlist';
+import { generatePlaylistNotes } from '../../../src/generation/workflows/videoCollection';
 import type { GenerationWorkflowContext } from '../../../src/generation/workflows/context';
 import type { EffectiveGenerationOptions } from '../../../src/generation/effectiveOptions';
 import type { NoteInsertionTarget, ProgressState } from '../../../src/generation/targets/noteTargets';

@@ -48,8 +48,8 @@ function createPromptService(overrides: Partial<PromptService> = {}): PromptServ
 		buildAddonsChunkPrompt: vi.fn((_transcript, _url, chunk) => `addons chunk ${chunk}`),
 		buildSynthesisPrompt: vi.fn((_transcript, _url, summaries) => `synthesis ${summaries.join(',')}`),
 		buildAddonsSynthesisPrompt: vi.fn((_transcript, _url, summaries) => `addons synthesis ${summaries.join(',')}`),
-		buildPlaylistSynthesisPrompt: vi.fn(),
-		buildPlaylistAddonsSynthesisPrompt: vi.fn(),
+		buildCollectionSynthesisPrompt: vi.fn(),
+		buildCollectionAddonsSynthesisPrompt: vi.fn(),
 		...overrides,
 	} as unknown as PromptService;
 }

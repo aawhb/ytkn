@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderPlaylistNote } from '../../src/rendering/playlistNote';
+import { renderVideoCollectionNote } from '../../src/rendering/videoCollectionNote';
 import { renderBatchReport } from '../../src/rendering/batchReport';
 import { renderVideoNote } from '../../src/rendering/videoNote';
 
@@ -184,7 +184,7 @@ describe('renderVideoNote', () => {
 	});
 
 	it('renders playlist notes with a playlist source section', () => {
-		const { content } = renderPlaylistNote(
+		const { content } = renderVideoCollectionNote(
 			playlist as any,
 			'thumb.png',
 			'## Summary\nPlaylist summary\n\n## Source\nIgnore me',
@@ -231,7 +231,7 @@ describe('renderVideoNote', () => {
 			],
 		};
 
-		const { content } = renderPlaylistNote(
+		const { content } = renderVideoCollectionNote(
 			multiTranscriptPlaylist as any,
 			'thumb.png',
 			null,
@@ -260,7 +260,7 @@ describe('renderVideoNote', () => {
 			transcripts: [],
 		};
 
-		const { content } = renderPlaylistNote(
+		const { content } = renderVideoCollectionNote(
 			metadataOnlyPlaylist as any,
 			null,
 			null,
@@ -280,7 +280,7 @@ describe('renderVideoNote', () => {
 	});
 
 	it('renders the first playlist video with the same Markdown embed pattern as video notes', () => {
-		const { content } = renderPlaylistNote(
+		const { content } = renderVideoCollectionNote(
 			playlist as any,
 			null,
 			'## Summary\nPlaylist summary',
@@ -295,7 +295,7 @@ describe('renderVideoNote', () => {
 	});
 
 	it('renders a playlist thumbnail from the first transcript when media embed is thumbnail', () => {
-		const { content } = renderPlaylistNote(
+		const { content } = renderVideoCollectionNote(
 			playlist as any,
 			null,
 			'## Summary\nPlaylist summary',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-	buildCombinedPlaylistBaseName,
+	buildCombinedCollectionBaseName,
 	buildPerVideoBaseName,
 	buildSingleVideoBaseName,
 } from '../../src/generation/noteNaming';
@@ -66,12 +66,12 @@ const playlist: PlaylistResponse = {
 describe('generation note naming', () => {
 	it('uses sanitized source titles when configured', () => {
 		expect(buildSingleVideoBaseName(transcript, makeOptions(true))).toBe('Bad Title One');
-		expect(buildCombinedPlaylistBaseName(playlist, makeOptions(true))).toBe('Playlist Name');
+		expect(buildCombinedCollectionBaseName(playlist, makeOptions(true))).toBe('Playlist Name');
 	});
 
 	it('falls back to generic note names when source-title naming is disabled', () => {
 		expect(buildSingleVideoBaseName(transcript, makeOptions(false))).toBe('Video Note');
-		expect(buildCombinedPlaylistBaseName(playlist, makeOptions(false))).toBe('Playlist Note');
+		expect(buildCombinedCollectionBaseName(playlist, makeOptions(false))).toBe('Playlist Note');
 	});
 
 	it('formats per-video playlist names from either video title or playlist title', () => {

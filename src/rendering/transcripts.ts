@@ -149,18 +149,18 @@ export function buildTranscriptDetails(
 	return renderCollapsedCallout('note', 'Transcript', buildTranscriptBody(transcript, transcriptMode, options));
 }
 
-export function buildPlaylistTranscriptDetails(
-	playlist: VideoCollectionTranscriptResponse,
+export function buildCollectionTranscriptDetails(
+	collection: VideoCollectionTranscriptResponse,
 	transcriptMode: GenerationOptions['transcriptMode'],
 	options: GenerationOptions | undefined,
 ): string {
-	const sections = playlist.transcripts.map((transcript, index) => `**${index + 1}. ${normalizeWhitespace(transcript.title)}**
+	const sections = collection.transcripts.map((transcript, index) => `**${index + 1}. ${normalizeWhitespace(transcript.title)}**
 
 ${buildTranscriptBody(transcript, transcriptMode, options)}`);
 
 	return renderCollapsedCallout(
 		'note',
-		'channelId' in playlist ? 'Channel transcripts' : 'Playlist transcripts',
+		'channelId' in collection ? 'Channel transcripts' : 'Playlist transcripts',
 		sections.join('\n\n'),
 	);
 }

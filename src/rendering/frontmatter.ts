@@ -149,7 +149,7 @@ export function buildVideoFrontmatter(
 	});
 }
 
-export function buildPlaylistFrontmatter(
+export function buildCollectionFrontmatter(
 	playlist: VideoCollectionTranscriptResponse,
 	options: GenerationOptions | undefined,
 	template: Template | null,

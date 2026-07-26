@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPlaylistSourceSection, buildVideoSourceSection } from '../../src/rendering/sourceSections';
+import { buildCollectionSourceSection, buildVideoSourceSection } from '../../src/rendering/sourceSections';
 
 const transcript = {
 	url: 'https://youtube.com/watch?v=abc',
@@ -28,7 +28,7 @@ describe('source section rendering', () => {
 			transcripts: [{ ...transcript, title: 'Transcript Title', url: 'transcript-url' }],
 		};
 
-		const section = buildPlaylistSourceSection(playlist as any);
+		const section = buildCollectionSourceSection(playlist as any);
 
 		expect(section).toContain('- Playlist: [Playlist](https://youtube.com/playlist?list=PL123)');
 		expect(section).toContain('- Video count: 1');
@@ -44,6 +44,6 @@ describe('source section rendering', () => {
 			transcripts: [],
 		};
 
-		expect(buildPlaylistSourceSection(playlist as any)).toContain('1. [Entry Title](entry-url) - [Entry Author](entry-channel)');
+		expect(buildCollectionSourceSection(playlist as any)).toContain('1. [Entry Title](entry-url) - [Entry Author](entry-channel)');
 	});
 });

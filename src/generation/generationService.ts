@@ -14,9 +14,9 @@ import { getErrorMessage } from '../utils';
 import type { QueuedRun, RunBatch } from '../queue/runQueueService';
 import { resolveEffectiveGenerationOptions, type EffectiveGenerationOptions } from './effectiveOptions';
 import { buildAiExecutionContext } from './aiPolicy';
-import { playlistRunOutcome } from './reportEntries';
+import { collectionRunOutcome } from './reportEntries';
 import type { GenerationWorkflowContext } from './workflows/context';
-import { generateChannelNotes, generatePlaylistNotes } from './workflows/playlist';
+import { generateChannelNotes, generatePlaylistNotes } from './workflows/videoCollection';
 import { generateSingleVideoNote } from './workflows/singleVideo';
 import { buildSafeBaseName, NoteTargetWriter } from './targets/noteTargets';
 import type { ProgressState } from './targets/noteTargets';
@@ -69,7 +69,7 @@ export class GenerationService {
 					channelTitle: channel.title,
 					channelUrl: run.url,
 					contentTypes: channel.contentTypes,
-					outcome: playlistRunOutcome(entries),
+					outcome: collectionRunOutcome(entries),
 					notePath: notePath ?? undefined,
 					warnings: warnings.length > 0 ? warnings : undefined,
 					entries,
@@ -89,7 +89,7 @@ export class GenerationService {
 					displayTitle: run.displayTitle,
 					playlistTitle: playlist.title,
 					playlistUrl: run.url,
-					outcome: playlistRunOutcome(entries),
+					outcome: collectionRunOutcome(entries),
 					notePath: notePath ?? undefined,
 					warnings: warnings.length > 0 ? warnings : undefined,
 					entries,

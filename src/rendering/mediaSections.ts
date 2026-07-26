@@ -14,7 +14,7 @@ function resolveMediaEmbedMode(options?: GenerationOptions): MediaEmbedMode {
 	return options?.mediaEmbedMode ?? DEFAULT_MEDIA_EMBED_MODE;
 }
 
-export function buildMediaEmbed(
+function buildMediaEmbed(
 	title: string,
 	url: string,
 	thumbnailUrl: string | null,
@@ -33,17 +33,17 @@ export function buildMediaEmbed(
 	return `![${escapeMarkdownAltText(title)}](${url})`;
 }
 
-function resolvePlaylistThumbnailUrl(playlist: VideoCollectionTranscriptResponse, thumbnailUrl: string | null): string | null {
+function resolveCollectionThumbnailUrl(collection: VideoCollectionTranscriptResponse, thumbnailUrl: string | null): string | null {
 	if (thumbnailUrl) {
 		return thumbnailUrl;
 	}
 
-	const firstTranscript = playlist.transcripts[0];
+	const firstTranscript = collection.transcripts[0];
 	if (firstTranscript?.thumbnailUrl) {
 		return firstTranscript.thumbnailUrl;
 	}
 
-	const firstEntry = playlist.entries[0];
+	const firstEntry = collection.entries[0];
 	if (firstEntry?.thumbnailUrl) {
 		return firstEntry.thumbnailUrl;
 	}
@@ -52,12 +52,12 @@ function resolvePlaylistThumbnailUrl(playlist: VideoCollectionTranscriptResponse
 	return firstVideoId ? thumbnailUrlForQuality(firstVideoId, 'high') : null;
 }
 
-function resolvePlaylistVideoEmbedUrl(playlist: VideoCollectionTranscriptResponse): string | null {
-	return playlist.transcripts[0]?.url ?? playlist.entries[0]?.url ?? null;
+function resolveCollectionVideoEmbedUrl(collection: VideoCollectionTranscriptResponse): string | null {
+	return collection.transcripts[0]?.url ?? collection.entries[0]?.url ?? null;
 }
 
-export function buildPlaylistMediaEmbed(
-	playlist: VideoCollectionTranscriptResponse,
+export function buildCollectionMediaEmbed(
+	collection: VideoCollectionTranscriptResponse,
 	thumbnailUrl: string | null,
 	options?: GenerationOptions,
 ): string | null {
@@ -68,12 +68,12 @@ export function buildPlaylistMediaEmbed(
 	}
 
 	if (mediaEmbedMode === 'thumbnail') {
-		const resolvedThumbnailUrl = resolvePlaylistThumbnailUrl(playlist, thumbnailUrl);
+		const resolvedThumbnailUrl = resolveCollectionThumbnailUrl(collection, thumbnailUrl);
 		return resolvedThumbnailUrl ? `![Thumbnail](${resolvedThumbnailUrl})` : null;
 	}
 
-	const videoUrl = resolvePlaylistVideoEmbedUrl(playlist);
-	return videoUrl ? `![${escapeMarkdownAltText(playlist.title)}](${videoUrl})` : null;
+	const videoUrl = resolveCollectionVideoEmbedUrl(collection);
+	return videoUrl ? `![${escapeMarkdownAltText(collection.title)}](${videoUrl})` : null;
 }
 
 export function buildVideoHeader(transcript: TranscriptResponse, thumbnailUrl: string, url: string, options?: GenerationOptions, headingLevel = 1): string[] {

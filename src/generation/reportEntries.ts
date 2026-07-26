@@ -1,22 +1,22 @@
 import type {
-	PlaylistEntry,
-	PlaylistRunReportEntry,
+	VideoCollectionEntry,
+	CollectionItemResult,
 	ChannelContentType,
 } from '../types';
 import { isAbortError } from '../queue/progress';
 import { getErrorMessage } from '../utils';
 import type { EffectiveGenerationOptions } from './effectiveOptions';
 
-export interface PlaylistOutcomeCounts {
+interface CollectionOutcomeCounts {
 	completed: number;
 	skipped: number;
 	failed: number;
 	canceled: number;
 }
 
-export function buildPlaylistReportEntry(
+export function buildCollectionReportEntry(
 	entry: { title: string; url: string; position: number; contentType?: ChannelContentType },
-	outcome: PlaylistRunReportEntry['outcome'],
+	outcome: CollectionItemResult['outcome'],
 	opts?: {
 		title?: string;
 		reason?: string;
@@ -24,7 +24,7 @@ export function buildPlaylistReportEntry(
 		notePath?: string;
 		warnings?: string[];
 	},
-): PlaylistRunReportEntry {
+): CollectionItemResult {
 	return {
 		title: opts?.title ?? entry.title,
 		url: entry.url,
@@ -38,7 +38,7 @@ export function buildPlaylistReportEntry(
 	};
 }
 
-export function classifyPlaylistEntryError(
+export function classifyCollectionEntryError(
 	error: unknown,
 	options: Pick<EffectiveGenerationOptions, 'transcriptFailureMode'>,
 	signal: AbortSignal,
@@ -58,8 +58,8 @@ export function classifyPlaylistEntryError(
 }
 
 export function appendCanceledEntries(
-	entries: Array<PlaylistEntry & { contentType?: ChannelContentType }>,
-	reportEntries: PlaylistRunReportEntry[],
+	entries: Array<VideoCollectionEntry & { contentType?: ChannelContentType }>,
+	reportEntries: CollectionItemResult[],
 	startIndex: number,
 ): void {
 	for (let index = startIndex; index < entries.length; index += 1) {
@@ -75,8 +75,8 @@ export function appendCanceledEntries(
 	}
 }
 
-export function countPlaylistOutcomes(entries: PlaylistRunReportEntry[]): PlaylistOutcomeCounts {
-	const counts: PlaylistOutcomeCounts = {
+export function countCollectionOutcomes(entries: CollectionItemResult[]): CollectionOutcomeCounts {
+	const counts: CollectionOutcomeCounts = {
 		completed: 0,
 		skipped: 0,
 		failed: 0,
@@ -88,7 +88,7 @@ export function countPlaylistOutcomes(entries: PlaylistRunReportEntry[]): Playli
 	return counts;
 }
 
-export function playlistRunOutcome(entries: PlaylistRunReportEntry[]): PlaylistRunReportEntry['outcome'] {
+export function collectionRunOutcome(entries: CollectionItemResult[]): CollectionItemResult['outcome'] {
 	if (entries.some((entry) => entry.outcome === 'completed')) return 'completed';
 	if (entries.some((entry) => entry.outcome === 'failed')) return 'failed';
 	if (entries.some((entry) => entry.outcome === 'skipped')) return 'skipped';

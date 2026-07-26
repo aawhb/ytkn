@@ -187,7 +187,7 @@ export interface TranscriptResponse {
 	lines: TranscriptLine[];
 }
 
-export interface PlaylistEntry {
+export interface VideoCollectionEntry {
 	videoId: string;
 	url: string;
 	position: number;
@@ -199,6 +199,8 @@ export interface PlaylistEntry {
 	liveStatus?: 'live' | 'upcoming';
 }
 
+export type PlaylistEntry = VideoCollectionEntry;
+
 export interface PlaylistResponse {
 	url: string;
 	playlistId: string;
@@ -206,7 +208,7 @@ export interface PlaylistResponse {
 	entries: PlaylistEntry[];
 }
 
-export interface ChannelEntry extends PlaylistEntry {
+export interface ChannelEntry extends VideoCollectionEntry {
 	contentType: ChannelContentType;
 }
 
@@ -240,14 +242,12 @@ export interface TranscriptFetchResult {
 	languageCode: string;
 }
 
-type PlaylistRunOutcome = QueueRunOutcome;
-
-export interface PlaylistRunReportEntry {
+export interface CollectionItemResult {
 	title: string;
 	url: string;
 	position: number;
 	contentType?: ChannelContentType;
-	outcome: PlaylistRunOutcome;
+	outcome: QueueRunOutcome;
 	transcriptLanguageCode?: string;
 	notePath?: string;
 	reason?: string;
@@ -325,7 +325,7 @@ export type QueueRunResult =
 		notePath?: string;
 		reason?: string;
 		warnings?: string[];
-		entries: PlaylistRunReportEntry[];
+		entries: CollectionItemResult[];
 	}
 	| {
 		kind: 'channel';
@@ -341,7 +341,7 @@ export type QueueRunResult =
 		notePath?: string;
 		reason?: string;
 		warnings?: string[];
-		entries: PlaylistRunReportEntry[];
+		entries: CollectionItemResult[];
 	};
 
 export interface BatchReport {

@@ -2,18 +2,18 @@ import type { GenerationOptions, VideoCollectionTranscriptResponse } from '../ty
 import type { Template } from '../types';
 import { buildTldrCallout, shiftMarkdownHeadings } from './outputNormalizer';
 import { assembleNote, selectAssembledBody } from './noteAssembler';
-import { buildPlaylistFrontmatter } from './frontmatter';
-import { buildPlaylistMediaEmbed } from './mediaSections';
-import { buildPlaylistSourceSection } from './sourceSections';
-import { buildPlaylistTranscriptDetails } from './transcripts';
+import { buildCollectionFrontmatter } from './frontmatter';
+import { buildCollectionMediaEmbed } from './mediaSections';
+import { buildCollectionSourceSection } from './sourceSections';
+import { buildCollectionTranscriptDetails } from './transcripts';
 
 interface RenderResult {
 	content: string;
 	warnings: string[];
 }
 
-export function renderPlaylistNote(
-	playlist: VideoCollectionTranscriptResponse,
+export function renderVideoCollectionNote(
+	collection: VideoCollectionTranscriptResponse,
 	thumbnailUrl: string | null,
 	summaryText?: string | null,
 	options?: GenerationOptions,
@@ -41,15 +41,15 @@ export function renderPlaylistNote(
 	}
 
 	if (mode !== 'fragment') {
-		const frontmatterResult = buildPlaylistFrontmatter(playlist, options, template ?? null, assembled.frontmatter);
+		const frontmatterResult = buildCollectionFrontmatter(collection, options, template ?? null, assembled.frontmatter);
 		if (frontmatterResult.content) {
 			parts.push(frontmatterResult.content);
 		}
 		warnings.push(...frontmatterResult.warnings);
 	}
 
-	parts.push(`${mode === 'fragment' ? '##' : '#'} ${playlist.title}`);
-	const mediaEmbed = buildPlaylistMediaEmbed(playlist, thumbnailUrl, options);
+	parts.push(`${mode === 'fragment' ? '##' : '#'} ${collection.title}`);
+	const mediaEmbed = buildCollectionMediaEmbed(collection, thumbnailUrl, options);
 	if (mediaEmbed) {
 		parts.push(mediaEmbed);
 	}
@@ -59,7 +59,7 @@ export function renderPlaylistNote(
 	}
 
 	const sourcePosition = options?.sourceSectionPosition ?? 'bottom';
-	const rawSourceSection = buildPlaylistSourceSection(playlist);
+	const rawSourceSection = buildCollectionSourceSection(collection);
 	const sourceSection = mode === 'fragment' ? shiftMarkdownHeadings(rawSourceSection, 1) : rawSourceSection;
 
 	if (sourcePosition === 'top') {
@@ -75,7 +75,7 @@ export function renderPlaylistNote(
 	}
 
 	if (options?.transcriptMode && options.transcriptMode !== 'none') {
-		parts.push(buildPlaylistTranscriptDetails(playlist, options.transcriptMode, options));
+		parts.push(buildCollectionTranscriptDetails(collection, options.transcriptMode, options));
 	}
 
 	return { content: parts.join('\n\n'), warnings };

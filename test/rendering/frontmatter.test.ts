@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getTemplate } from '../../src/ai/templates/registry';
-import { buildPlaylistFrontmatter } from '../../src/rendering/frontmatter';
+import { buildCollectionFrontmatter } from '../../src/rendering/frontmatter';
 import type { PlaylistTranscriptResponse } from '../../src/types';
 
 describe('playlist frontmatter', () => {
@@ -13,7 +13,7 @@ describe('playlist frontmatter', () => {
 			transcripts: [],
 		};
 
-		const result = buildPlaylistFrontmatter(
+		const result = buildCollectionFrontmatter(
 			playlist,
 			{
 				frontmatterPropertyAllowlist: 'title aliases source videoCount playlistUrl playlistId',
