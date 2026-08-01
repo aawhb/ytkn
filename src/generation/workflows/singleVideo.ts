@@ -79,7 +79,6 @@ export async function generateSingleVideoNote(
 		if (!target) {
 			throw new Error(INSERT_AT_CARET_REQUIRES_NOTE);
 		}
-		// Append mode must not write progress markers.
 	}
 
 	context.onStatusBar(metadataOnly ? 'Fetching video metadata…' : 'Fetching transcript…');

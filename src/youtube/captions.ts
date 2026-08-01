@@ -2,7 +2,7 @@ import { requestUrl } from 'obsidian';
 import type { TranscriptLanguageMode, TranscriptLine } from '../types';
 import { normalizeHtmlText } from './metadata';
 
-export type CaptionTrack = {
+type CaptionTrack = {
 	baseUrl: string;
 	languageCode: string;
 };
@@ -11,7 +11,7 @@ function browserHeaders(): Record<string, string> {
 	return { 'Accept-Language': 'en-US,en;q=0.9' };
 }
 
-export function parseCaptionXml(xml: string): TranscriptLine[] {
+function parseCaptionXml(xml: string): TranscriptLine[] {
 	const paragraphLines = parseCaptionElements(xml, /<p\s+([^>]+)>([\s\S]*?)<\/p>/g, (attributes) => {
 		const match = attributes.match(/\bt="(\d+)"/);
 		return match ? Number.parseInt(match[1], 10) : null;

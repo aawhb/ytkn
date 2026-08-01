@@ -307,7 +307,7 @@ describe('RunQueueService', () => {
 			const svc = new RunQueueService(worker);
 			const batch = svc.enqueueBatch(makeInput(1));
 			await flushMicrotasks();
-			expect(batch.outcomeEntries[0]?.outcome).toBe('failed');
+			expect(batch.results[0]?.outcome).toBe('failed');
 		});
 
 		it('classifies AbortError-shaped thrown values as canceled', async () => {
@@ -319,7 +319,7 @@ describe('RunQueueService', () => {
 			const svc = new RunQueueService(worker);
 			const batch = svc.enqueueBatch(makeInput(1));
 			await flushMicrotasks();
-			expect(batch.outcomeEntries[0]?.outcome).toBe('canceled');
+			expect(batch.results[0]?.outcome).toBe('canceled');
 		});
 	});
 
@@ -367,7 +367,7 @@ describe('RunQueueService', () => {
 			const batch = svc.enqueueBatch(makeInput(1));
 			await flushMicrotasks();
 			const snap = svc.getSnapshot();
-			const entry = batch.outcomeEntries[0] ?? snap.history.find((e) => e.batchId === batch.batchId);
+			const entry = batch.results[0] ?? snap.history.find((e) => e.batchId === batch.batchId);
 			expect(entry?.displayTitle).toMatch(/^#\d+ · video:/);
 		});
 
@@ -382,7 +382,7 @@ describe('RunQueueService', () => {
 			});
 			await flushMicrotasks();
 
-			const entry = batch.outcomeEntries[0];
+			const entry = batch.results[0];
 			expect(entry?.displayTitle).toBe(`#${entry?.ordinal} · channel:@GoogleDevelopers`);
 		});
 	});

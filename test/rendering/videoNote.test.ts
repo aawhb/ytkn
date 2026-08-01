@@ -67,7 +67,7 @@ You will learn X.
 			transcript,
 			'',
 			transcript.url,
-			'## Mind map\n- Near-miss output that would otherwise be lost.',
+			'## Concept map\n- Near-miss output that would otherwise be lost.',
 			{
 				...options,
 				includeFrontmatter: false,
@@ -77,7 +77,7 @@ You will learn X.
 			null,
 		);
 
-		expect(content).toContain('## Mind map');
+		expect(content).toContain('## Concept map');
 		expect(warnings.some((warning) => warning.includes('preserved'))).toBe(true);
 	});
 
@@ -86,7 +86,7 @@ You will learn X.
 			transcript,
 			'',
 			transcript.url,
-			'## TL;DR\nThe gist.\n\n## Mind map\n- Near-miss content.',
+			'## TL;DR\nThe gist.\n\n## Concept map\n- Near-miss content.',
 			{
 				...options,
 				includeFrontmatter: false,
@@ -97,7 +97,7 @@ You will learn X.
 		);
 
 		expect(content).toContain('> The gist.');
-		expect(content).toContain('## Mind map\n- Near-miss content.');
+		expect(content).toContain('## Concept map\n- Near-miss content.');
 		expect(warnings.some((warning) => warning.includes('preserved'))).toBe(true);
 	});
 

@@ -1,6 +1,3 @@
-// Prompt composition and note assembly share this registry so addon instructions,
-// headings, placement, and ordering cannot drift.
-
 type AddonPlacement = 'tldr-callout' | 'section';
 
 export interface AddonFlags {
@@ -9,7 +6,7 @@ export interface AddonFlags {
 	includeMemorableQuotes: boolean;
 }
 
-export interface AddonSection {
+interface AddonSection {
 	id: string;
 	heading: string;
 	placement: AddonPlacement;
@@ -27,9 +24,9 @@ TL;DR rules:
 - Keep it grounded in the transcript.
 - Do not repeat the title or source metadata.`;
 
-const MINDMAP_FRAGMENT = `Add a Mindmap section that captures the key concepts as a nested bullet list. Use exactly this format:
+const MINDMAP_FRAGMENT = `Add a Mind Map section that captures the key concepts as a nested bullet list. Use exactly this format:
 
-## Mindmap
+## Mind Map
 - Central idea
   - Branch A
     - Leaf 1
@@ -37,8 +34,8 @@ const MINDMAP_FRAGMENT = `Add a Mindmap section that captures the key concepts a
   - Branch B
     - Leaf 3
 
-Mindmap rules:
-- Section heading must be exactly \`## Mindmap\`.
+Mind Map rules:
+- Section heading must be exactly \`## Mind Map\`.
 - The content must be a nested bullet list (lines starting with \`-\`), indented to show hierarchy. Do not use prose, a code block, or a Mermaid diagram.
 - The first bullet is the single central idea; every other bullet nests beneath it.
 - Keep labels short: noun phrases or very short clauses, one concept per bullet.
@@ -49,19 +46,18 @@ Mindmap rules:
 - Roughly 2–4 levels deep and 8–18 nodes total.
 - Do not invent nodes that are not grounded in the transcript.`;
 
-const MEMORABLE_QUOTES_FRAGMENT = `Add a memorable quotes section:
+const MEMORABLE_QUOTES_FRAGMENT = `Add a Memorable Quotes section:
 
-## Memorable quotes
+## Memorable Quotes
 - 3–7 verbatim quotes worth preserving from this source.
 - Each quote must be its own callout block. Format every quote line as:
   \`> [!quote] "..." (mm:ss)\`
 - Separate consecutive quote callouts with a blank line.
 - Append a \`(mm:ss)\` timestamp suffix when the timing is verifiable from the transcript.
-- The section heading must be exactly \`## Memorable quotes\`.
+- The section heading must be exactly \`## Memorable Quotes\`.
 - Omit the section entirely if fewer than 3 quote-worthy lines exist in the source.`;
 
-// Order is authoritative: it sets both the order addon instructions appear in the prompt and
-// the order their sections are placed in the assembled note (after the summary body).
+/* The registry order controls both prompt instructions and assembled note sections. */
 export const ADDON_SECTIONS: readonly AddonSection[] = [
 	{
 		id: 'tldr',
@@ -72,14 +68,14 @@ export const ADDON_SECTIONS: readonly AddonSection[] = [
 	},
 	{
 		id: 'mindmap',
-		heading: 'Mindmap',
+		heading: 'Mind Map',
 		placement: 'section',
 		enabled: (flags) => flags.includeMindmap,
 		promptFragment: MINDMAP_FRAGMENT,
 	},
 	{
 		id: 'memorable-quotes',
-		heading: 'Memorable quotes',
+		heading: 'Memorable Quotes',
 		placement: 'section',
 		enabled: (flags) => flags.includeMemorableQuotes,
 		promptFragment: MEMORABLE_QUOTES_FRAGMENT,

@@ -157,16 +157,16 @@ describe('PromptService', () => {
 		}).buildPrompt(transcript, transcript.url);
 		const chunkPrompt = mindmapService.buildChunkPrompt(transcript, transcript.url, 'Chunk text', 1, 2);
 
-		expect(templatePrompt).toContain('## Mindmap');
+		expect(templatePrompt).toContain('## Mind Map');
 		expect(templatePrompt).toContain('nested bullet list');
 		expect(templatePrompt).not.toContain('```mermaid');
-		expect(templatePrompt).toContain('Section heading must be exactly `## Mindmap`.');
+		expect(templatePrompt).toContain('Section heading must be exactly `## Mind Map`.');
 		expect(templatePrompt).toContain('indented to show hierarchy');
 		expect(templatePrompt).toContain('Do not use LaTeX');
 		expect(templatePrompt).toContain('compact readable notation');
 		expect(manualPrompt).toContain('Write a concise note.');
-		expect(manualPrompt).toContain('## Mindmap');
-		expect(chunkPrompt).not.toContain('## Mindmap');
+		expect(manualPrompt).toContain('## Mind Map');
+		expect(chunkPrompt).not.toContain('## Mind Map');
 	});
 
 	it('can add memorable quotes independently of the selected template or manual mode', () => {
@@ -194,15 +194,15 @@ describe('PromptService', () => {
 			includeMemorableQuotes: false,
 		}).buildPrompt(transcript, transcript.url);
 
-		expect(templatePrompt).toContain('## Memorable quotes');
+		expect(templatePrompt).toContain('## Memorable Quotes');
 		expect(templatePrompt).toContain('> [!quote]');
-		expect(templatePrompt).toContain('The section heading must be exactly `## Memorable quotes`.');
+		expect(templatePrompt).toContain('The section heading must be exactly `## Memorable Quotes`.');
 		expect(templatePrompt).toContain('Separate consecutive quote callouts with a blank line.');
 		expect(templatePrompt).toContain('Each quote must be its own callout block.');
 		expect(manualPrompt).toContain('Write a concise note.');
-		expect(manualPrompt).toContain('## Memorable quotes');
-		expect(chunkPrompt).not.toContain('## Memorable quotes');
-		expect(noQuotesPrompt).not.toContain('## Memorable quotes');
+		expect(manualPrompt).toContain('## Memorable Quotes');
+		expect(chunkPrompt).not.toContain('## Memorable Quotes');
+		expect(noQuotesPrompt).not.toContain('## Memorable Quotes');
 	});
 
 	it('builds add-ons-only prompts without template section contracts', () => {
@@ -220,8 +220,8 @@ describe('PromptService', () => {
 
 		expect(prompt).toContain('only the requested add-on sections');
 		expect(prompt).toContain('## TL;DR');
-		expect(prompt).toContain('## Mindmap');
-		expect(prompt).toContain('## Memorable quotes');
+		expect(prompt).toContain('## Mind Map');
+		expect(prompt).toContain('## Memorable Quotes');
 		expect(prompt).not.toContain('Always start with');
 		expect(prompt).not.toContain('## Key takeaways');
 		expect(prompt).not.toContain('Use exactly these H2 headings');
@@ -242,8 +242,8 @@ describe('PromptService', () => {
 
 		expect(prompt).toContain('Add a TL;DR section');
 		expect(prompt).toContain('## TL;DR');
-		expect(prompt).not.toContain('## Mindmap');
-		expect(prompt).not.toContain('## Memorable quotes');
+		expect(prompt).not.toContain('## Mind Map');
+		expect(prompt).not.toContain('## Memorable Quotes');
 	});
 
 	it('builds combined playlist add-ons synthesis prompts', () => {
@@ -263,12 +263,12 @@ describe('PromptService', () => {
 				entries: [{ videoId: '123', url: transcript.url, title: transcript.title, position: 1 }],
 				transcripts: [transcript],
 			},
-			[{ transcript, summary: '## TL;DR\nVideo point.\n\n## Mindmap\n```mermaid\nmindmap\n  root((Video))\n```' }],
+			[{ transcript, summary: '## TL;DR\nVideo point.\n\n## Mind Map\n```mermaid\nmindmap\n  root((Video))\n```' }],
 		);
 
 		expect(prompt).toContain('produce the requested add-on sections for the playlist as a whole');
 		expect(prompt).toContain('## TL;DR');
-		expect(prompt).toContain('## Mindmap');
+		expect(prompt).toContain('## Mind Map');
 		expect(prompt).toContain('## Video 1: Video');
 		expect(prompt).toContain('Video point.');
 	});

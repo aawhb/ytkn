@@ -3,7 +3,7 @@ import { scanMarkdownLines, unwrapWholeMarkdownFence } from './markdownScanner';
 const FRONTMATTER_OPEN_MARKER = '<!-- ytkn:frontmatter';
 const FRONTMATTER_CLOSE_MARKER = '-->';
 
-export interface ExtractedFrontmatterBlock {
+interface ExtractedFrontmatterBlock {
 	frontmatter: Record<string, unknown> | null;
 	bodyWithoutBlock: string;
 	warnings: string[];

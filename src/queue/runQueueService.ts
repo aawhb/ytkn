@@ -1,4 +1,4 @@
-import type { GenerationOptions, BatchReport, QueueRunOutcome, QueueRunResult, ReportLocation } from '../types';
+import type { BatchReport, GenerationOptions, QueueRunOutcome, QueueRunResult, ReportLocation } from '../types';
 import { createJobId, getErrorMessage } from '../utils';
 import { classifyVideoContentType, extractChannelRef } from '../youtube/urls';
 import { isAbortError } from './progress';
@@ -30,16 +30,16 @@ export interface BatchTargetPolicy {
 	resolve(runIndex: number): QueuedRunInsertionTargetRef | null;
 }
 
-interface RunBatchReportPolicy {
+interface BatchReportPolicy {
 	include: boolean;
 	location: ReportLocation;
 }
 
 export interface RunBatch {
 	batchId: string;
-	reportPolicy: RunBatchReportPolicy;
+	reportPolicy: BatchReportPolicy;
 	runIds: string[];
-	outcomeEntries: QueueRunResult[];
+	results: QueueRunResult[];
 	finalized: boolean;
 }
 
@@ -52,7 +52,7 @@ export interface BatchEnqueueInput {
 	urls: BatchUrlInput[];
 	options: GenerationOptions;
 	targetPolicy: BatchTargetPolicy;
-	reportPolicy: RunBatchReportPolicy;
+	reportPolicy: BatchReportPolicy;
 }
 
 export type RunQueueEvent =
@@ -63,7 +63,7 @@ export type RunQueueEvent =
 	| { type: 'removed'; runId: string }
 	| { type: 'cleared' };
 
-export type RunQueueListener = (event: RunQueueEvent) => void;
+type RunQueueListener = (event: RunQueueEvent) => void;
 
 export interface RunWorker {
 	executeRun(run: QueuedRun, signal: AbortSignal): Promise<QueueRunResult>;
@@ -214,7 +214,7 @@ export class RunQueueService {
 			batchId,
 			reportPolicy: input.reportPolicy,
 			runIds: [],
-			outcomeEntries: [],
+			results: [],
 			finalized: false,
 		};
 		this.batches.set(batchId, batch);
@@ -255,7 +255,6 @@ export class RunQueueService {
 				this.emit({ type: 'title-resolved', run });
 			})
 			.catch(() => {
-				// Keep the URL fallback when title resolution fails.
 			});
 	}
 
@@ -271,7 +270,7 @@ export class RunQueueService {
 		this.pushHistory(entry);
 		const batch = this.batches.get(removed.batchId);
 		if (batch) {
-			batch.outcomeEntries.push(entry);
+			batch.results.push(entry);
 			if (this.allRunsTerminal(batch)) {
 				void this.finalizeBatch(batch);
 			}
@@ -289,7 +288,7 @@ export class RunQueueService {
 			this.pushHistory(entry);
 			const batch = this.batches.get(run.batchId);
 			if (batch) {
-				batch.outcomeEntries.push(entry);
+				batch.results.push(entry);
 			}
 		}
 
@@ -299,7 +298,6 @@ export class RunQueueService {
 			this.current.controller.abort(new Error('Generation canceled by user.'));
 		}
 
-		// Finalize terminal batches while the current run is pending.
 		for (const batch of this.batches.values()) {
 			if (!batch.finalized && this.allRunsTerminal(batch)) {
 				void this.finalizeBatch(batch);
@@ -336,7 +334,7 @@ export class RunQueueService {
 				this.pushHistory(entry);
 				const batch = this.batches.get(run.batchId);
 				if (batch) {
-					batch.outcomeEntries.push(entry);
+					batch.results.push(entry);
 					if (this.allRunsTerminal(batch)) {
 						await this.finalizeBatch(batch);
 					}
@@ -367,7 +365,7 @@ export class RunQueueService {
 				console.error('Batch finalization callback failed:', error);
 			}
 
-			const report: BatchReport = { batchId: batch.batchId, entries: batch.outcomeEntries };
+			const report: BatchReport = { batchId: batch.batchId, entries: batch.results };
 			if (batch.reportPolicy.include) {
 				try {
 					await this.worker.persistBatchReport(batch, report);

@@ -4,12 +4,35 @@ import type {
 	ModelConfig,
 	PluginSettings,
 } from '../types';
-import { shouldUseAi } from '../aiOutputPolicy';
 import { buildModelId } from '../modelId';
 import type { EffectiveGenerationOptions } from './effectiveOptions';
 import type { AiContentContext } from './workflows/aiContent';
 
-export { shouldGenerateAiSummary, shouldUseAi } from '../aiOutputPolicy';
+interface AiOutputFlags {
+	generateAiSummary: boolean;
+	tldrCalloutAtTop: boolean;
+	includeMindmap: boolean;
+	includeMemorableQuotes: boolean;
+}
+
+interface AiExecutionFlags extends AiOutputFlags {
+	useAi: boolean;
+}
+
+function hasAiOutputs(options: AiOutputFlags): boolean {
+	return options.generateAiSummary
+		|| options.tldrCalloutAtTop
+		|| options.includeMindmap
+		|| options.includeMemorableQuotes;
+}
+
+export function shouldUseAi(options: AiExecutionFlags): boolean {
+	return options.useAi && hasAiOutputs(options);
+}
+
+export function shouldGenerateAiSummary(options: AiExecutionFlags): boolean {
+	return shouldUseAi(options) && options.generateAiSummary;
+}
 
 export function isMetadataOnlyRun(effectiveOptions: EffectiveGenerationOptions): boolean {
 	return !shouldUseAi(effectiveOptions) && effectiveOptions.transcriptMode === 'none';
@@ -63,7 +86,7 @@ export function buildAiExecutionContext(
 	return {
 		chain: {
 			candidates,
-			index: 0,
+			currentIndex: 0,
 			temperature: effectiveOptions.temperature,
 			requestTimeoutMs: effectiveOptions.requestTimeoutMs,
 		},

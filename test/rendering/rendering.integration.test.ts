@@ -338,7 +338,7 @@ describe('renderVideoNote', () => {
 			transcript as any,
 			'thumb.png',
 			'https://youtube.com/watch?v=123',
-			'## Summary\nBody\n\n## Mindmap\n- Central idea\n  - Discovery -> Planning -> Execution\n  - Time O(sqrt(n))\n  - Design &amp;amp; Architecture',
+			'## Summary\nBody\n\n## Mind Map\n- Central idea\n  - Discovery -> Planning -> Execution\n  - Time O(sqrt(n))\n  - Design &amp;amp; Architecture',
 			{ transcriptMode: 'none', includeFrontmatter: false, includeMindmap: true },
 		);
 
@@ -356,11 +356,11 @@ describe('renderVideoNote', () => {
 			'## Solution Approach',
 			'Preserve this unmatched section even when the summary is off.',
 			'',
-			'## Mindmap',
+			'## Mind Map',
 			'- Central idea',
 			'  - Branch',
 			'',
-			'## Memorable quotes',
+			'## Memorable Quotes',
 			'> [!quote] Keep me.',
 		].join('\n');
 
@@ -372,8 +372,8 @@ describe('renderVideoNote', () => {
 			{ transcriptMode: 'none', includeFrontmatter: false, generateAiSummary: false, includeMindmap: true, includeMemorableQuotes: true },
 		);
 
-		expect(content).toContain('## Mindmap');
-		expect(content).toContain('## Memorable quotes');
+		expect(content).toContain('## Mind Map');
+		expect(content).toContain('## Memorable Quotes');
 		expect(content).toContain('## Solution Approach');
 		expect(content).toContain('Preserve this unmatched section even when the summary is off.');
 		expect(warnings.some((warning) => warning.includes('preserved'))).toBe(true);
@@ -397,7 +397,7 @@ describe('renderVideoNote', () => {
 			'## Summary',
 			'Body text.',
 			'',
-			'## Memorable quotes',
+			'## Memorable Quotes',
 			'> [!quote] "First quote." (0:36)',
 			'[!quote] "Second quote." (0:53)',
 			'[!quote] "Third quote." (2:22)',
@@ -422,7 +422,7 @@ describe('renderVideoNote', () => {
 			'## Summary',
 			'Body text.',
 			'',
-			'## Memorable quotes',
+			'## Memorable Quotes',
 			'> [!quote] "First." (0:10)',
 			'> [!quote] "Second." (0:20)',
 			'> [!quote] "Third." (0:30)',

@@ -74,10 +74,10 @@ describe('assembleNote: add-on extraction and placement', () => {
 			'## Key takeaways',
 			'- A',
 			'',
-			'## Memorable quotes',
+			'## Memorable Quotes',
 			'> [!quote] "Quote." (0:10)',
 			'',
-			'## Mindmap',
+			'## Mind Map',
 			'- Root',
 			'  - Branch',
 		].join('\n');
@@ -87,48 +87,48 @@ describe('assembleNote: add-on extraction and placement', () => {
 		expect(tldr).toBe('The gist.');
 		expect(body).toBe('## Key takeaways\n- A');
 		expect(addonBlocks).toHaveLength(2);
-		expect(addonBlocks[0]).toContain('## Mindmap');
+		expect(addonBlocks[0]).toContain('## Mind Map');
 		expect(addonBlocks[0]).toContain('```mermaid');
 		expect(addonBlocks[0]).toContain('root(("Root"))');
-		expect(addonBlocks[1]).toContain('## Memorable quotes');
+		expect(addonBlocks[1]).toContain('## Memorable Quotes');
 	});
 
 	it('preserves disabled add-ons as template extras', () => {
-		const raw = '## Key takeaways\n- A\n\n## Mindmap\n- Root';
+		const raw = '## Key takeaways\n- A\n\n## Mind Map\n- Root';
 		const { addonBlocks, body, warnings } = assembleNote(raw, template, allOff);
 		expect(addonBlocks).toEqual([]);
-		expect(body).toBe('## Key takeaways\n- A\n\n## Mindmap\n- Root');
-		expect(warnings.some((warning) => warning.includes('Mindmap'))).toBe(true);
+		expect(body).toBe('## Key takeaways\n- A\n\n## Mind Map\n- Root');
+		expect(warnings.some((warning) => warning.includes('Mind Map'))).toBe(true);
 	});
 
 	it('relocates the first enabled add-on and preserves duplicate sections in the body', () => {
-		const raw = '## Mindmap\n- First root\n\n## Mindmap\n- Second root';
+		const raw = '## Mind Map\n- First root\n\n## Mind Map\n- Second root';
 		const result = assembleNote(raw, null, { ...allOff, includeMindmap: true });
 
 		expect(result.addonBlocks[0]).toContain('First root');
-		expect(result.body).toBe('## Mindmap\n- Second root');
+		expect(result.body).toBe('## Mind Map\n- Second root');
 	});
 
 	it('uses the first nonempty duplicate add-on section', () => {
-		const raw = '## Mindmap\n\n## Mindmap\n- Valid root';
+		const raw = '## Mind Map\n\n## Mind Map\n- Valid root';
 		const result = assembleNote(raw, null, { ...allOff, includeMindmap: true });
 
 		expect(result.addonBlocks[0]).toContain('Valid root');
-		expect(result.warnings.some((warning) => warning.includes('Requested section "Mindmap"'))).toBe(false);
+		expect(result.warnings.some((warning) => warning.includes('Requested section "Mind Map"'))).toBe(false);
 	});
 
 	it('keeps a disabled add-on when a template explicitly declares its heading', () => {
 		const addonTemplate = {
 			...template,
 			sections: [
-				{ id: 'mindmap', heading: 'Mindmap', required: true, description: '' },
+				{ id: 'mindmap', heading: 'Mind Map', required: true, description: '' },
 				...(template.sections ?? []),
 			],
 		};
-		const raw = '## Key takeaways\n- A\n\n## Mindmap\n- Root';
+		const raw = '## Key takeaways\n- A\n\n## Mind Map\n- Root';
 
 		expect(assembleNote(raw, addonTemplate, allOff).body).toBe(
-			'## Mindmap\n- Root\n\n## Key takeaways\n- A',
+			'## Mind Map\n- Root\n\n## Key takeaways\n- A',
 		);
 	});
 });
@@ -152,7 +152,7 @@ describe('assembleNote: manual mode (no template)', () => {
 			'## TL;DR',
 			'The gist.',
 			'',
-			'## Mindmap',
+			'## Mind Map',
 			'- Root',
 			'  - Branch',
 		].join('\n');
@@ -165,15 +165,15 @@ describe('assembleNote: manual mode (no template)', () => {
 		expect(tldr).toBe('The gist.');
 		expect(body).toBe('A short introduction.\n\n- First insight\n- Second insight');
 		expect(addonBlocks).toHaveLength(1);
-		expect(addonBlocks[0]).toContain('## Mindmap');
+		expect(addonBlocks[0]).toContain('## Mind Map');
 	});
 
 	it('keeps all non-addon sections as the body and still extracts enabled addons', () => {
-		const raw = '## Notes\nfree-form body.\n\n## Mindmap\n- Root\n  - Branch';
+		const raw = '## Notes\nfree-form body.\n\n## Mind Map\n- Root\n  - Branch';
 		const { body, addonBlocks } = assembleNote(raw, null, { ...allOff, includeMindmap: true });
 		expect(body).toBe('## Notes\nfree-form body.');
 		expect(addonBlocks).toHaveLength(1);
-		expect(addonBlocks[0]).toContain('## Mindmap');
+		expect(addonBlocks[0]).toContain('## Mind Map');
 	});
 
 	it('preserves disabled section add-ons requested by manual instructions', () => {
@@ -184,10 +184,10 @@ describe('assembleNote: manual mode (no template)', () => {
 			'## TL;DR',
 			'Custom gist.',
 			'',
-			'## Memorable quotes',
+			'## Memorable Quotes',
 			'Custom quotes.',
 			'',
-			'## Mindmap',
+			'## Mind Map',
 			'Custom map.',
 		].join('\n');
 
@@ -195,13 +195,13 @@ describe('assembleNote: manual mode (no template)', () => {
 	});
 
 	it('does not transform a manual Mindmap section when the add-on is disabled', () => {
-		const raw = '## Mindmap\n- user_id\n  - max_heap';
+		const raw = '## Mind Map\n- user_id\n  - max_heap';
 
 		expect(assembleNote(raw, null, allOff).body).toBe(raw);
 	});
 
 	it('does not normalize a manual Memorable quotes section when the add-on is disabled', () => {
-		const raw = '## Memorable quotes\n[!quote] User-owned syntax.';
+		const raw = '## Memorable Quotes\n[!quote] User-owned syntax.';
 
 		expect(assembleNote(raw, null, allOff).body).toBe(raw);
 	});
@@ -219,10 +219,10 @@ describe('assembleNote: manual mode (no template)', () => {
 		const raw = [
 			'Opening takeaway.',
 			'',
-			'## Mindmap',
+			'## Mind Map',
 			'- Root',
 			'',
-			'## Memorable quotes',
+			'## Memorable Quotes',
 			'[!quote] A grounded quote.',
 		].join('\n');
 		const result = assembleNote(raw, null, {
@@ -242,7 +242,7 @@ describe('assembleNote: manual mode (no template)', () => {
 			'### TL;DR',
 			'Explicit fallback.',
 			'',
-			'## Mindmap',
+			'## Mind Map',
 			'- Root',
 			'  - Branch',
 		].join('\n');
@@ -255,7 +255,7 @@ describe('assembleNote: manual mode (no template)', () => {
 		expect(result.tldr).toBe('Explicit fallback.');
 		expect(result.body).toBe('');
 		expect(result.addonBlocks).toHaveLength(1);
-		expect(result.addonBlocks[0]).toContain('## Mindmap');
+		expect(result.addonBlocks[0]).toContain('## Mind Map');
 		expect(result.warnings).toEqual([]);
 	});
 
@@ -266,7 +266,7 @@ describe('assembleNote: manual mode (no template)', () => {
 			'First line.',
 			'Second line.',
 			'',
-			'## Mindmap',
+			'## Mind Map',
 			'- Root',
 		].join('\n');
 		const result = assembleNote(raw, null, {
@@ -322,7 +322,7 @@ describe('assembleNote: manual mode (no template)', () => {
 			'Example only.',
 			'```',
 			'',
-			'## Mindmap',
+			'## Mind Map',
 			'- Root',
 		].join('\n');
 		const result = assembleNote(raw, null, {
@@ -347,13 +347,13 @@ describe('assembleNote: manual mode (no template)', () => {
 		const result = assembleNote('## Key takeaways\n- A', template, allOn);
 
 		expect(result.warnings.some((warning) => warning.includes('TL;DR'))).toBe(true);
-		expect(result.warnings.some((warning) => warning.includes('Mindmap'))).toBe(true);
-		expect(result.warnings.some((warning) => warning.includes('Memorable quotes'))).toBe(true);
+		expect(result.warnings.some((warning) => warning.includes('Mind Map'))).toBe(true);
+		expect(result.warnings.some((warning) => warning.includes('Memorable Quotes'))).toBe(true);
 	});
 
 	it('warns when a provided model response is empty', () => {
 		const result = assembleNote('', null, { ...allOff, includeMindmap: true });
 
-		expect(result.warnings.some((warning) => warning.includes('Mindmap'))).toBe(true);
+		expect(result.warnings.some((warning) => warning.includes('Mind Map'))).toBe(true);
 	});
 });

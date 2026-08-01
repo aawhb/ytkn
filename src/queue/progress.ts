@@ -42,7 +42,7 @@ export function buildProgressContent({ startMarker, endMarker }: ProgressMarkers
 	return lines.join('\n');
 }
 
-export function findProgressRange(markers: ProgressMarkers, data: string): MarkerRange | null {
+function findProgressRange(markers: ProgressMarkers, data: string): MarkerRange | null {
 	const start = data.indexOf(markers.startMarker);
 	if (start === -1) {
 		return null;
@@ -59,7 +59,7 @@ export function findProgressRange(markers: ProgressMarkers, data: string): Marke
 	};
 }
 
-export function replaceRange(data: string, range: { start: number; end: number }, content: string): string {
+function replaceRange(data: string, range: { start: number; end: number }, content: string): string {
 	const start = Math.min(range.start, data.length);
 	const end = Math.min(range.end, data.length);
 	return `${data.slice(0, start)}${content}${data.slice(end)}`;

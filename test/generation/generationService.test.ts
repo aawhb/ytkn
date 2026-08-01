@@ -16,8 +16,8 @@ vi.mock('../../src/ai/providers/factory', () => ({
 }));
 
 import { GenerationService } from '../../src/generation/generationService';
-import type { ChannelResponse, GenerationOptions, ModelConfig, PlaylistResponse, PluginSettings, TranscriptResponse } from '../../src/types';
-import type { QueuedRun } from '../../src/queue/runQueueService';
+import type { BatchReport, ChannelResponse, GenerationOptions, ModelConfig, PlaylistResponse, PluginSettings, TranscriptResponse } from '../../src/types';
+import type { QueuedRun, RunBatch } from '../../src/queue/runQueueService';
 
 const VIDEO_URL = 'https://www.youtube.com/watch?v=abcdefghijk';
 const SHORT_URL = 'https://www.youtube.com/shorts/abcdefghijk';
@@ -481,9 +481,9 @@ describe('GenerationService metadata-only runs', () => {
 	it('creates combined add-ons-only playlist notes', async () => {
 		providerMocks.summarizeVideo.mockImplementation(async (prompt: string) => {
 			if (prompt.includes('Per-video add-on notes')) {
-				return '## TL;DR\nCombined playlist takeaway.\n\n## Mindmap\n```mermaid\nmindmap\n  root((Playlist))\n```';
+				return '## TL;DR\nCombined playlist takeaway.\n\n## Mind Map\n```mermaid\nmindmap\n  root((Playlist))\n```';
 			}
-			return '## TL;DR\nPer-video takeaway.\n\n## Mindmap\n```mermaid\nmindmap\n  root((Video))\n```';
+			return '## TL;DR\nPer-video takeaway.\n\n## Mind Map\n```mermaid\nmindmap\n  root((Video))\n```';
 		});
 		const playlist = makePlaylist();
 		const youtubeService = {
@@ -519,7 +519,7 @@ describe('GenerationService metadata-only runs', () => {
 		const content = Array.from(appAndContents.contents.values()).join('\n');
 		expect(content).toContain('> [!summary] TL;DR');
 		expect(content).toContain('> Combined playlist takeaway.');
-		expect(content).toContain('## Mindmap');
+		expect(content).toContain('## Mind Map');
 	});
 
 	it('propagates combined playlist rendering warnings to the playlist report', async () => {
@@ -556,7 +556,7 @@ describe('GenerationService metadata-only runs', () => {
 
 		expect(entry.kind).toBe('playlist');
 		if (entry.kind !== 'playlist') throw new Error('Expected playlist report entry');
-		expect(entry.warnings).toContain('Requested section "Mindmap" was not emitted by the model.');
+		expect(entry.warnings).toContain('Requested section "Mind Map" was not emitted by the model.');
 	});
 });
 
@@ -618,7 +618,7 @@ describe('GenerationService open created note', () => {
 
 		await service.executeRun(makeRun(VIDEO_URL, options), new AbortController().signal);
 		service.onBatchFinalized(
-			{ batchId: 'batch-1', reportPolicy: { include: false, location: 'generated-note' }, runIds: [], outcomeEntries: [], finalized: true },
+			{ batchId: 'batch-1', reportPolicy: { include: false, location: 'generated-note' }, runIds: [], results: [], finalized: true },
 		);
 		await service.executeRun(makeRun(VIDEO_URL, options), new AbortController().signal);
 
@@ -640,5 +640,39 @@ describe('GenerationService open created note', () => {
 		);
 
 		expect(app.workspace.openFile).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('GenerationService report notes', () => {
+	it('names future report notes after the first item and uses the YTKN date fallback', async () => {
+		const { app, contents } = makeApp();
+		const service = new GenerationService(app, {} as any, makeSettings(), vi.fn());
+		const batch: RunBatch = {
+			batchId: 'batch-1',
+			reportPolicy: { include: true, location: 'separate-note' },
+			runIds: ['run-1'],
+			results: [],
+			finalized: true,
+		};
+		const report: BatchReport = {
+			batchId: 'batch-1',
+			entries: [{
+				kind: 'video',
+				runId: 'run-1',
+				batchId: 'batch-1',
+				ordinal: 1,
+				url: VIDEO_URL,
+				displayTitle: '#1 · A useful video',
+				outcome: 'completed',
+				notePath: 'Notes/A useful video.md',
+			}],
+		};
+
+		await service.persistBatchReport(batch, report);
+		expect(contents.has('Notes/A useful video Report.md')).toBe(true);
+		expect(contents.get('Notes/A useful video Report.md')).toContain('# Report');
+
+		await service.persistBatchReport(batch, { batchId: 'batch-empty', entries: [] });
+		expect([...contents.keys()].some((path) => /^YTKN Report \d{4}-\d{2}-\d{2}\.md$/.test(path))).toBe(true);
 	});
 });

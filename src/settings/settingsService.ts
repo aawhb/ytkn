@@ -35,7 +35,6 @@ interface SettingsHost {
 type RawStoredSettings = Partial<StoredSettings> & {
 	providers?: RawStoredProvider[];
 	outputDefaults?: RawOutputDefaults;
-	selectedModelId?: string | null;
 };
 
 export class SettingsService implements PluginSettings {
@@ -53,9 +52,7 @@ export class SettingsService implements PluginSettings {
 
 		const savedModelIds = Array.isArray(savedSettings?.modelIds)
 			? savedSettings.modelIds.filter((id): id is string => typeof id === 'string')
-			: savedSettings?.selectedModelId
-				? [savedSettings.selectedModelId]
-				: [];
+			: [];
 
 		const normalized: StoredSettings = {
 			providers: this.normalizeProviders(savedSettings?.providers),

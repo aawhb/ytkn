@@ -5,8 +5,7 @@ export function formatModelId(providerName: string, modelName: string): string {
 }
 
 export function parseModelId(modelId: string): { providerName: string; modelName: string } | null {
-	// Provider names cannot contain a colon, so the first colon separates the
-	// provider from model names such as Ollama tags that contain later colons.
+	/* The first colon separates providers from model names containing later colons. */
 	const separatorIndex = modelId.indexOf(':');
 	if (separatorIndex <= 0) {
 		return null;

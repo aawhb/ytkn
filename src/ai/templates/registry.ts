@@ -6,7 +6,7 @@ import { deepDiveTemplate } from './gallery/deepDive';
 import { researchTemplate } from './gallery/research';
 import { implementationTemplate } from './gallery/implementation';
 
-export const TEMPLATES: Template[] = [
+const TEMPLATES: Template[] = [
 	generalTemplate,
 	studyTemplate,
 	implementationTemplate,
@@ -15,7 +15,7 @@ export const TEMPLATES: Template[] = [
 	researchTemplate,
 ];
 
-export interface TemplateChoice {
+interface TemplateChoice {
 	id: InstructionTemplate;
 	label: string;
 	subtitle: string;

@@ -2,18 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { PromptService } from '../../src/ai/promptService';
 import type { TranscriptResponse } from '../../src/types';
 
-// Budget for openai-compatible fallback (64000 token window):
-//   safetyMargin = round(64000 * 0.1) = 6400
-//   reservedOutput = round(64000 * 0.2) = 12800
-//   budget ≈ 64000 - 6400 - 12800 - ~500 ≈ 44300 tokens
-//
-// The regular fixture is ~30000 tokens, below the fallback budget. The larger
-// fixture is ~60000 tokens: above the fallback budget, but below the explicit
-// 262144-token model budget.
-
 const LINE_TEXT = 'word '.repeat(400).trim();
-const MANY_LINES = Array.from({ length: 60 }, (_, i) => ({ text: LINE_TEXT, offset: i }));
-const LARGER_CONTEXT_LINES = Array.from({ length: 120 }, (_, i) => ({ text: LINE_TEXT, offset: i }));
+const FALLBACK_WINDOW_LINES = Array.from({ length: 60 }, (_, i) => ({ text: LINE_TEXT, offset: i }));
+const EXPLICIT_WINDOW_LINES = Array.from({ length: 120 }, (_, i) => ({ text: LINE_TEXT, offset: i }));
 
 function makeTranscript(lines: TranscriptResponse['lines']): TranscriptResponse {
 	return {
@@ -37,7 +28,7 @@ const service = new PromptService({
 describe('getContextWindowTokens: provider-type fallback paths', () => {
 	it('openai-compatible + Ollama URL + no contextWindow → uses 64000 fallback, single chunk', () => {
 		const chunks = service.splitTranscript(
-			makeTranscript(MANY_LINES),
+			makeTranscript(FALLBACK_WINDOW_LINES),
 			'https://youtube.com/watch?v=abc',
 			{
 				model: {
@@ -54,7 +45,7 @@ describe('getContextWindowTokens: provider-type fallback paths', () => {
 
 	it('openai-compatible + non-Ollama URL + no contextWindow → uses 64000 fallback, single chunk', () => {
 		const chunks = service.splitTranscript(
-			makeTranscript(MANY_LINES),
+			makeTranscript(FALLBACK_WINDOW_LINES),
 			'https://youtube.com/watch?v=abc',
 			{
 				model: {
@@ -71,7 +62,7 @@ describe('getContextWindowTokens: provider-type fallback paths', () => {
 
 	it('openai provider + no contextWindow → uses openai fallback (64000), single chunk', () => {
 		const chunks = service.splitTranscript(
-			makeTranscript(MANY_LINES),
+			makeTranscript(FALLBACK_WINDOW_LINES),
 			'https://youtube.com/watch?v=abc',
 			{
 				model: {
@@ -87,7 +78,7 @@ describe('getContextWindowTokens: provider-type fallback paths', () => {
 	});
 
 	it('explicit contextWindow is honored for OpenAI-compatible endpoints', () => {
-		const transcript = makeTranscript(LARGER_CONTEXT_LINES);
+		const transcript = makeTranscript(EXPLICIT_WINDOW_LINES);
 		const fallbackChunks = service.splitTranscript(
 			transcript,
 			'https://youtube.com/watch?v=abc',

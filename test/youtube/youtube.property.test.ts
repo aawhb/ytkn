@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import fc from 'fast-check';
-import { parseCaptionXml } from '../../src/youtube/captions';
-import { extractPlaylistId, extractVideoId, isPlaylistUrl, isYouTubeUrl } from '../../src/youtube/urls';
+import * as obsidian from 'obsidian';
+import { requestCaptionLines } from '../../src/youtube/captions';
+import { classifyUrls, extractPlaylistId, extractVideoId, isYouTubeUrl } from '../../src/youtube/urls';
 import {
 	transcriptTextArbitrary,
 	youtubePlaylistIdArbitrary,
@@ -9,6 +10,8 @@ import {
 } from '../properties/generators';
 
 describe('YouTube helper property tests', () => {
+	afterEach(() => vi.restoreAllMocks());
+
 	it('extracts the video id from supported YouTube URL shapes', () => {
 		fc.assert(fc.property(
 			youtubeVideoIdArbitrary,
@@ -39,13 +42,14 @@ describe('YouTube helper property tests', () => {
 					: `https://www.youtube.com/watch?v=${videoId}&list=${playlistId}`;
 
 				expect(extractPlaylistId(url)).toBe(playlistId);
-				expect(isPlaylistUrl(url)).toBe(true);
+				expect(classifyUrls([url])).toEqual(['playlist']);
 			},
 		));
 	});
 
-	it('parses generated paragraph-style transcript XML into the same ordered lines', () => {
-		fc.assert(fc.property(
+	it('parses generated paragraph-style transcript XML into the same ordered lines', async () => {
+		const requestUrlSpy = vi.spyOn(obsidian, 'requestUrl');
+		await fc.assert(fc.asyncProperty(
 			fc.uniqueArray(
 				fc.record({
 					offset: fc.integer({ min: 0, max: 500_000 }),
@@ -53,13 +57,20 @@ describe('YouTube helper property tests', () => {
 				}),
 				{ selector: (line) => line.offset, minLength: 1, maxLength: 6 },
 			),
-			(rawLines) => {
+			async (rawLines) => {
 				const orderedLines = [...rawLines].sort((left, right) => left.offset - right.offset);
 				const xml = `<timedtext>${orderedLines
 					.map((line) => `<p t="${line.offset}" d="1000">${line.text}</p>`)
 					.join('')}</timedtext>`;
+				requestUrlSpy.mockResolvedValueOnce({
+					text: xml,
+					status: 200,
+					headers: {},
+					arrayBuffer: new ArrayBuffer(0),
+					json: undefined,
+				} as any);
 
-				expect(parseCaptionXml(xml)).toEqual(orderedLines);
+				expect(await requestCaptionLines('https://youtube.example/captions')).toEqual(orderedLines);
 			},
 		));
 	});

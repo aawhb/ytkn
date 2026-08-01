@@ -105,7 +105,7 @@ describe('AI generation policy', () => {
 		);
 
 		expect(context?.chain.candidates).toEqual([model, secondModel]);
-		expect(context?.chain.index).toBe(0);
+		expect(context?.chain.currentIndex).toBe(0);
 		expect(context?.chain.temperature).toBe(0.7);
 		expect(context?.chain.requestTimeoutMs).toBe(1000);
 		expect(providerFactoryMocks.createProvider).not.toHaveBeenCalled();

@@ -7,20 +7,19 @@ import { classifyAiError, describeAiErrorCause } from '../aiErrorClassifier';
 import type { NoteInsertionTarget, ProgressState } from '../targets/noteTargets';
 import type { GenerationWorkflowContext } from './context';
 
-export interface AiModelChain {
-	/** Models in fallback order; `index` is the sticky pointer for the whole run. */
+interface ModelChain {
 	candidates: ModelConfig[];
-	index: number;
+	currentIndex: number;
 	temperature: number;
 	requestTimeoutMs: number;
 }
 
 export interface AiContentContext {
-	chain: AiModelChain;
+	chain: ModelChain;
 	promptService: PromptService;
 }
 
-export interface AiContentResult {
+interface AiContentResult {
 	text: string;
 	warnings: string[];
 }
@@ -40,7 +39,7 @@ interface GenerateAiContentInput {
 	generateSummary: boolean;
 }
 
-export async function generateAiContent(input: GenerateAiContentInput): Promise<AiContentResult> {
+async function generateAiContent(input: GenerateAiContentInput): Promise<AiContentResult> {
 	return runWithModelChain(
 		input.aiContext.chain,
 		input.signal,
@@ -49,7 +48,6 @@ export async function generateAiContent(input: GenerateAiContentInput): Promise<
 	);
 }
 
-/** Runs a single fixed prompt through the chain for playlist and channel synthesis calls. */
 export async function generateAiCompletion(
 	aiContext: AiContentContext,
 	prompt: string,
@@ -63,7 +61,7 @@ export async function generateAiCompletion(
 }
 
 async function runWithModelChain(
-	chain: AiModelChain,
+	chain: ModelChain,
 	signal: AbortSignal,
 	attempt: (provider: AIModelProvider, model: ModelConfig) => Promise<string>,
 	onStatus?: (message: string) => void,
@@ -71,7 +69,7 @@ async function runWithModelChain(
 	const warnings: string[] = [];
 
 	for (;;) {
-		const model = chain.candidates[chain.index];
+		const model = chain.candidates[chain.currentIndex];
 		try {
 			assertModelUsable(model);
 			const provider = createProvider(model, chain.temperature, chain.requestTimeoutMs);
@@ -81,11 +79,11 @@ async function runWithModelChain(
 			if (isAbortError(error, signal)) {
 				throw error;
 			}
-			const next = chain.candidates[chain.index + 1];
+			const next = chain.candidates[chain.currentIndex + 1];
 			if (!next) {
 				throw error;
 			}
-			chain.index += 1;
+			chain.currentIndex += 1;
 			const message = `${modelLabel(model)} (${model.provider.name}) ${describeAiErrorCause(classifyAiError(error))}. Falling back to ${modelLabel(next)} (${next.provider.name}).`;
 			new Notice(message);
 			warnings.push(message);

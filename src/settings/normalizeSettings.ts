@@ -44,7 +44,6 @@ import {
 } from '../defaults';
 import { normalizeVaultFolderPath } from '../utils';
 import { isInstructionTemplate } from '../ai/templates/registry';
-import { resolveLegacyUseAi } from '../aiOutputPolicy';
 
 export type RawOutputDefaults = Partial<Omit<OutputDefaults, 'mediaEmbedMode' | 'channelContentTypes' | 'channelVideoLimit'>> & {
 	mediaEmbedMode?: unknown;
@@ -237,7 +236,7 @@ export function normalizeContextWindow(contextWindow?: number): number | undefin
 
 export function normalizeOutputDefaults(outputDefaults?: RawOutputDefaults): OutputDefaults {
 	return {
-		useAi: resolveLegacyUseAi(outputDefaults ?? {}, DEFAULT_USE_AI),
+		useAi: outputDefaults?.useAi ?? DEFAULT_USE_AI,
 		generateAiSummary: outputDefaults?.generateAiSummary ?? DEFAULT_GENERATE_AI_SUMMARY,
 		transcriptMode: normalizeTranscriptMode(outputDefaults?.transcriptMode),
 		playlistMode: normalizePlaylistMode(outputDefaults?.playlistMode),

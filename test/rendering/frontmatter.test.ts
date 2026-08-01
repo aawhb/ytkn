@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { getTemplate } from '../../src/ai/templates/registry';
 import { buildCollectionFrontmatter } from '../../src/rendering/frontmatter';
-import type { PlaylistTranscriptResponse } from '../../src/types';
+import type { VideoCollectionTranscriptResponse } from '../../src/types';
 
 describe('playlist frontmatter', () => {
 	it('renders allowlisted metadata with global and template tags', () => {
-		const playlist: PlaylistTranscriptResponse = {
+		const playlist: VideoCollectionTranscriptResponse = {
 			url: 'https://youtube.com/playlist?list=PL123',
 			playlistId: 'PL123',
 			title: 'Playlist',

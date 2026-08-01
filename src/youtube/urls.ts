@@ -1,10 +1,10 @@
 import { VIDEO_ID_REGEX } from '../defaults';
 import type { ChannelContentType } from '../types';
 
-export type YouTubeUrlClassification = 'video' | 'playlist' | 'channel' | 'invalid';
-export type ChannelUrlTab = 'home' | 'videos' | 'shorts' | 'streams';
-export type UnsupportedChannelTab = 'playlists' | 'podcasts' | 'releases';
-export type ChannelRef = {
+type YouTubeUrlClassification = 'video' | 'playlist' | 'channel' | 'invalid';
+type ChannelUrlTab = 'home' | 'videos' | 'shorts' | 'streams';
+type UnsupportedChannelTab = 'playlists' | 'podcasts' | 'releases';
+type ChannelRef = {
 	kind: 'id' | 'handle' | 'legacy';
 	value: string;
 	tab: ChannelUrlTab;
@@ -59,19 +59,10 @@ export function classifyVideoContentType(url: string): Extract<ChannelContentTyp
 }
 
 export function extractPlaylistId(url: string): string | null {
-	try {
-		const playlistId = new URL(url).searchParams.get('list');
-		if (playlistId) {
-			return playlistId;
-		}
-	} catch {
-		// Fall back to a query-fragment match for non-URL text.
-	}
-
 	return extractUrlMatch(url, /[?&]list=([a-zA-Z0-9_-]+)/);
 }
 
-export function isPlaylistUrl(url: string): boolean {
+function isPlaylistUrl(url: string): boolean {
 	return extractPlaylistId(url) !== null;
 }
 

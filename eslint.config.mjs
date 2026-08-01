@@ -76,21 +76,6 @@ export default defineConfig([
 		},
 	},
 	{
-		files: [
-			'src/ui/settings/confirmModal.ts',
-			'src/ui/queue/queueModal.ts',
-			'src/ui/settings/settingsTab.ts',
-		],
-		rules: {
-			// These files intentionally use Obsidian APIs deprecated in newer typings
-			// because they remain the compatible path for minAppVersion 1.11.4.
-			'@typescript-eslint/no-deprecated': 'off',
-			// Keep the custom tabbed settings UI while supporting Obsidian before 1.13.
-			// Migrating to setting definitions is a separate user-visible redesign.
-			'obsidianmd/settings-tab/prefer-setting-definitions': 'off',
-		},
-	},
-	{
 		files: ['*.mjs', 'scripts/**/*.mjs', 'scripts/**/*.js', 'vitest.config.ts'],
 		languageOptions: {
 			parserOptions: {

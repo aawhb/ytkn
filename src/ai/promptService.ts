@@ -208,7 +208,7 @@ ${chunkSummaryText}`;
 	}
 
 	buildCollectionSynthesisPrompt(
-		playlist: VideoCollectionTranscriptResponse,
+		collection: VideoCollectionTranscriptResponse,
 		videoSummaries: Array<{ transcript: TranscriptResponse; summary: string }>,
 	): string {
 		const summaryText = videoSummaries
@@ -219,12 +219,12 @@ ${chunkSummaryText}`;
 ${summary.trim()}`)
 			.join('\n\n');
 
-		const isChannel = 'channelId' in playlist;
+		const isChannel = 'channelId' in collection;
 		const collectionName = isChannel ? 'channel selection' : 'playlist';
 		const urlLabel = isChannel ? 'Channel URL' : 'Playlist URL';
 		const metadataLabel = isChannel ? 'Channel selection metadata' : 'Playlist metadata';
 
-		return `${this.buildInstructionBlock('playlist', true, collectionName)}
+		return `${this.buildInstructionBlock('collection', true, collectionName)}
 
 You are creating a single knowledge note for an entire YouTube ${collectionName}. Use only the summarized material below. Do not invent details that are not present in the provided video summaries.
 
@@ -235,16 +235,16 @@ Follow these non-negotiable rules:
 - Treat the ${collectionName} as one cohesive resource, but mention standout videos when they add important context.
 
 ${metadataLabel}:
-- Title: ${playlist.title}
-- ${urlLabel}: ${playlist.url}
-- Video count: ${playlist.transcripts.length}
+- Title: ${collection.title}
+- ${urlLabel}: ${collection.url}
+- Video count: ${collection.transcripts.length}
 
 Video summaries:
 ${summaryText}`;
 	}
 
 	buildCollectionAddonsSynthesisPrompt(
-		playlist: VideoCollectionTranscriptResponse,
+		collection: VideoCollectionTranscriptResponse,
 		videoAddonNotes: Array<{ transcript: TranscriptResponse; summary: string }>,
 	): string {
 		const addonText = videoAddonNotes
@@ -255,8 +255,8 @@ ${summaryText}`;
 ${summary.trim()}`)
 			.join('\n\n');
 
-		const collectionName = 'channelId' in playlist ? 'channel selection' : 'playlist';
-		return `${this.buildPlaylistAddonInstructions(playlist)}
+		const collectionName = 'channelId' in collection ? 'channel selection' : 'playlist';
+		return `${this.buildCollectionAddonInstructions(collection)}
 
 Use the per-video add-on notes below instead of raw transcripts to produce the requested add-on sections for the ${collectionName} as a whole. Do not mention chunks or per-video processing in the final answer.
 
@@ -340,7 +340,7 @@ ${lines}`;
 	}
 
 	private buildInstructionBlock(
-		context: 'video' | 'playlist',
+		context: 'video' | 'collection',
 		includeAddons = true,
 		collectionName = 'playlist',
 	): string {
@@ -350,7 +350,7 @@ ${lines}`;
 		}
 
 		const template = this.getPromptTemplate();
-		const playlistPrefix = context === 'playlist'
+		const collectionPrefix = context === 'collection'
 			? `Apply the same template to the ${collectionName} as a whole, using the provided per-video summaries instead of a raw transcript.\n\n`
 			: '';
 
@@ -361,7 +361,7 @@ ${lines}`;
 		].filter(Boolean);
 		const directiveBlock = directiveParts.length ? `\n\n${directiveParts.join('\n\n')}` : '';
 
-		return `${SHARED_BASE_INSTRUCTIONS}\n\n${playlistPrefix}${template.body}${directiveBlock}${addons ? `\n\n${addons}` : ''}`;
+		return `${SHARED_BASE_INSTRUCTIONS}\n\n${collectionPrefix}${template.body}${directiveBlock}${addons ? `\n\n${addons}` : ''}`;
 	}
 
 	private buildInstructionAddons(): string {
@@ -372,8 +372,8 @@ ${lines}`;
 		});
 	}
 
-	private buildPlaylistAddonInstructions(playlist: VideoCollectionTranscriptResponse): string {
-		const isChannel = 'channelId' in playlist;
+	private buildCollectionAddonInstructions(collection: VideoCollectionTranscriptResponse): string {
+		const isChannel = 'channelId' in collection;
 		const urlLabel = isChannel ? 'Channel URL' : 'Playlist URL';
 		const metadataLabel = isChannel ? 'Channel selection metadata' : 'Playlist metadata';
 		return `${ADDON_BASE_INSTRUCTIONS}
@@ -381,9 +381,9 @@ ${lines}`;
 ${this.buildInstructionAddons()}
 
 ${metadataLabel} (renderer adds this automatically; do not repeat it inside the body):
-- Title: ${playlist.title}
-- ${urlLabel}: ${playlist.url}
-- Video count: ${playlist.transcripts.length}`;
+- Title: ${collection.title}
+- ${urlLabel}: ${collection.url}
+- Video count: ${collection.transcripts.length}`;
 	}
 
 	private buildAddonCommonInstructions(transcript: TranscriptResponse, videoUrl: string): string {

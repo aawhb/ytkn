@@ -178,13 +178,13 @@ describe('SettingsService current contracts', () => {
 	});
 
 	it('clears stale selected models while preserving valid saved selections', async () => {
-		const stale = makeManager({ settings: { providers: [geminiProvider], selectedModelId: 'Missing:Model' } });
+		const stale = makeManager({ settings: { providers: [geminiProvider], modelIds: ['Missing:Model'] } });
 		await stale.manager.loadSettings();
 
 		expect(stale.manager.getSelectedModels()).toEqual([]);
 		expect(stale.plugin.saveData).toHaveBeenCalled();
 
-		const valid = makeManager({ settings: { providers: [geminiProvider], selectedModelId: 'Gemini:gemini-1.5-flash' } });
+		const valid = makeManager({ settings: { providers: [geminiProvider], modelIds: ['Gemini:gemini-1.5-flash'] } });
 		await valid.manager.loadSettings();
 
 		expect(valid.manager.getSelectedModels()[0]?.name).toBe('gemini-1.5-flash');
@@ -400,19 +400,6 @@ describe('SettingsService model chain', () => {
 		return { plugin, manager };
 	}
 
-	it('seeds the chain from a legacy selectedModelId', async () => {
-		const { manager } = makeManager({
-			settings: {
-				providers: [{ name: 'Local', type: 'openai-compatible', url: 'http://localhost:11434/v1', models: [{ name: 'qwen3.5:4b', displayName: 'Qwen' }] }],
-				selectedModelId: 'Local:qwen3.5:4b',
-			},
-		});
-		await manager.loadSettings();
-
-		expect(manager.getModelIds()).toEqual(['Local:qwen3.5:4b']);
-		expect(manager.getSelectedModels().map((m) => m.name)).toEqual(['qwen3.5:4b']);
-	});
-
 	it('persists only the canonical model chain', async () => {
 		const { plugin, manager } = await makeWithTwoModels();
 
@@ -420,7 +407,6 @@ describe('SettingsService model chain', () => {
 
 		expect(manager.getModelIds()).toEqual(['Local:llama3.2', 'Local:qwen3.5:4b']);
 		expect(plugin.data?.settings?.modelIds).toEqual(['Local:llama3.2', 'Local:qwen3.5:4b']);
-		expect(plugin.data?.settings?.selectedModelId).toBeUndefined();
 		expect(manager.getSelectedModels()[0]?.name).toBe('llama3.2');
 	});
 
@@ -436,7 +422,6 @@ describe('SettingsService model chain', () => {
 		const { manager } = makeManager({
 			settings: {
 				providers: [{ name: 'Local', type: 'openai-compatible', url: 'http://localhost:11434/v1', models: [{ name: 'llama3.2', displayName: 'Llama' }] }],
-				selectedModelId: 'Local:gone',
 				modelIds: ['Local:gone', 'Local:llama3.2'],
 			},
 		});

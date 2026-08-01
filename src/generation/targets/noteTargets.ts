@@ -107,7 +107,6 @@ export class NoteTargetWriter {
 		}
 	}
 
-	/** Closes the tab this writer opened for the target, unless the user navigated it elsewhere. */
 	private closeOpenedLeaf(target: NoteInsertionTarget): void {
 		const leaf = this.openedLeavesByJobId.get(target.jobId);
 		if (!leaf) {

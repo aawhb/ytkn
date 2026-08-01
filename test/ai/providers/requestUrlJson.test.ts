@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as obsidian from 'obsidian';
-import { RequestUrlHttpError, requestUrlJson } from '../../../src/ai/providers/requestUrlJson';
+import { requestUrlJson } from '../../../src/ai/providers/requestUrlJson';
 
 function response(text: string, status = 200): any {
 	return {
@@ -45,8 +45,7 @@ describe('requestUrlJson', () => {
 
 		const error = await requestUrlJson('https://api.example.com').catch((reason: unknown) => reason);
 
-		expect(error).toBeInstanceOf(RequestUrlHttpError);
-		expect(error).toMatchObject({ status: 429 });
+		expect(error).toMatchObject({ name: 'RequestUrlHttpError', status: 429 });
 		expect((error as Error).message.length).toBeLessThan(1100);
 	});
 

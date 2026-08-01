@@ -11,7 +11,7 @@ interface RequestUrlJsonOptions {
 	timeoutMs?: number;
 }
 
-export class RequestUrlHttpError extends Error {
+class RequestUrlHttpError extends Error {
 	constructor(message: string, readonly status: number) {
 		super(message);
 		this.name = 'RequestUrlHttpError';
@@ -54,8 +54,7 @@ function waitForResponse(
 	signal?: AbortSignal,
 	timeoutMs?: number,
 ): Promise<RequestUrlResponse> {
-	// requestUrl cannot abort; this race ignores late results, though the native
-	// request may still finish remotely.
+	/* requestUrl cannot abort, so cancellation ignores a request that may finish remotely. */
 	return new Promise((resolve, reject) => {
 		let settled = false;
 		let timeoutId: number | undefined;

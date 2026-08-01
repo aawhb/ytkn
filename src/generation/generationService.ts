@@ -47,8 +47,7 @@ export class GenerationService {
 
 			const initialTarget = await this.targets.resolveInitialTarget(run);
 
-			// Multi-URL editor batches need append behavior even though `current-note`
-			// means replace-range for single URLs; normalize the runtime mode here.
+			/* Multi-URL editor batches append because current-note replacement is only safe for one URL. */
 			if (run.initialTargetRef?.mode === 'append-end' && effectiveOptions.noteDestinationMode === 'current-note') {
 				effectiveOptions = { ...effectiveOptions, noteDestinationMode: 'append-to-active-note' };
 			}

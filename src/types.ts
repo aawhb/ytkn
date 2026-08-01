@@ -208,16 +208,12 @@ export interface PlaylistResponse {
 	entries: PlaylistEntry[];
 }
 
-export interface ChannelEntry extends VideoCollectionEntry {
-	contentType: ChannelContentType;
-}
-
 export interface ChannelResponse {
 	url: string;
 	channelId: string;
 	title: string;
 	contentTypes: ChannelContentType[];
-	entries: ChannelEntry[];
+	entries: Array<VideoCollectionEntry & { contentType: ChannelContentType }>;
 }
 
 export type VideoCollectionResponse = PlaylistResponse | ChannelResponse;
@@ -227,15 +223,9 @@ export interface ChannelFetchOptions {
 	videoLimit: number | null;
 }
 
-export interface PlaylistTranscriptResponse extends PlaylistResponse {
+export type VideoCollectionTranscriptResponse = VideoCollectionResponse & {
 	transcripts: TranscriptResponse[];
-}
-
-export interface ChannelTranscriptResponse extends ChannelResponse {
-	transcripts: TranscriptResponse[];
-}
-
-export type VideoCollectionTranscriptResponse = PlaylistTranscriptResponse | ChannelTranscriptResponse;
+};
 
 export interface TranscriptFetchResult {
 	transcript: TranscriptResponse;

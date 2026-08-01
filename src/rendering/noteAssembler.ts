@@ -8,7 +8,7 @@ import { ADDON_SECTIONS, type AddonFlags } from './noteSections';
 import { extractFrontmatterBlock, splitBodyByH2 } from './templateOutput';
 import { scanMarkdownLines, type ScannedMarkdownLine } from './markdownScanner';
 
-export interface AssembledNote {
+interface AssembledNote {
 	tldr: string | null;
 	body: string;
 	addonBlocks: string[];
@@ -16,15 +16,11 @@ export interface AssembledNote {
 	warnings: string[];
 }
 
-export interface AssembledBodySelection {
+interface AssembledBodySelection {
 	content: string;
 	warnings: string[];
 }
 
-/**
- * Splits model output into summary and addon sections while enforcing template order and
- * preserving unmatched sections. Manual mode keeps user-defined sections unchanged.
- */
 export function assembleNote(rawSummary: string | null | undefined, template: Template | null, flags: AddonFlags): AssembledNote {
 	const modelOutputProvided = rawSummary !== null && rawSummary !== undefined;
 	const sanitized = sanitizeModelOutput(rawSummary);

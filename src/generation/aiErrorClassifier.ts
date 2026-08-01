@@ -1,4 +1,4 @@
-export type AiErrorCause = 'rate-limit' | 'quota' | 'auth' | 'server' | 'timeout' | 'unknown';
+type AiErrorCause = 'rate-limit' | 'quota' | 'auth' | 'server' | 'timeout' | 'unknown';
 
 const CAUSE_DESCRIPTIONS: Record<AiErrorCause, string> = {
 	'rate-limit': 'hit a rate limit',

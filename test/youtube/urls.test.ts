@@ -6,7 +6,6 @@ import {
 	extractPlaylistId,
 	extractUnsupportedChannelTab,
 	extractVideoId,
-	isPlaylistUrl,
 	isYouTubeUrl,
 	parseUrls,
 } from '../../src/youtube/urls';
@@ -24,7 +23,6 @@ describe('YouTube URL helpers', () => {
 
 		expect(urls).toHaveLength(3);
 		expect(isYouTubeUrl(urls[0])).toBe(true);
-		expect(isPlaylistUrl(urls[1])).toBe(true);
 		expect(classifyUrls(urls)).toEqual(['video', 'playlist', 'invalid']);
 	});
 

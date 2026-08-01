@@ -13,8 +13,6 @@ import type {
 	TranscriptLanguageMode,
 	TranscriptMode,
 } from '../types';
-import { resolveLegacyUseAi } from '../aiOutputPolicy';
-
 export interface EffectiveGenerationOptions extends GenerationOptions {
 	useAi: boolean;
 	generateAiSummary: boolean;
@@ -58,7 +56,7 @@ export function resolveEffectiveGenerationOptions(
 
 	return {
 		...options,
-		useAi: resolveLegacyUseAi(options, outputDefaults.useAi),
+		useAi: options.useAi ?? outputDefaults.useAi,
 		generateAiSummary: options.generateAiSummary ?? outputDefaults.generateAiSummary,
 		instructionMode: options.instructionMode ?? instructionConfig.mode,
 		instructionTemplate: options.instructionTemplate ?? instructionConfig.template,

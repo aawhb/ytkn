@@ -56,8 +56,6 @@ function buildTree(items: IndentedLabel[]): ConceptNode | null {
 export function parseConceptOutline(body: string): ConceptNode | null {
 	const items: IndentedLabel[] = [];
 	for (const rawLine of body.split(/\r?\n/)) {
-		// Only list items are nodes. Non-list lines (a prose preface like "Here is the
-		// mindmap:", or trailing commentary) are skipped, so they never become a root.
 		const match = rawLine.match(LIST_ITEM);
 		if (!match) {
 			continue;

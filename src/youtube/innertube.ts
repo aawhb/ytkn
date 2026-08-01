@@ -3,7 +3,7 @@ import { getErrorMessage } from '../utils';
 import type { PlayerEnvelope, SupplementalVideoMetadata } from './metadata';
 import { microformatMetadata } from './metadata';
 
-// Split YouTube's public client key to avoid secret-scanner false positives.
+/* Split the public client key to avoid secret-scanner false positives. */
 const PUBLIC_INNERTUBE_KEY = [
 	'AIza',
 	'SyAO_FJ2SlqU8Q4STEHLGCilw',

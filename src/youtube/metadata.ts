@@ -47,7 +47,7 @@ export type SupplementalVideoMetadata = {
 	videoCategory?: string;
 };
 
-export type ThumbnailQuality = 'default' | 'medium' | 'high' | 'standard' | 'maxres';
+type ThumbnailQuality = 'default' | 'medium' | 'high' | 'standard' | 'maxres';
 
 const THUMBNAIL_SLUGS: Record<ThumbnailQuality, string> = {
 	default: 'default',

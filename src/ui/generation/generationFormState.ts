@@ -38,7 +38,6 @@ import {
 	DEFAULT_USE_AI,
 	DEFAULT_USE_VIDEO_TITLE_AS_NOTE_NAME,
 } from '../../defaults';
-import { resolveLegacyUseAi } from '../../aiOutputPolicy';
 import { buildModelId } from '../../modelId';
 import { getTemplate } from '../../ai/templates/registry';
 import { controlDefaultToString } from '../shared/templateControls';
@@ -117,7 +116,7 @@ export function buildGenerationFormState({
 
 	return {
 		url: initialUrl,
-		useAi: resolveLegacyUseAi(init, DEFAULT_USE_AI),
+		useAi: init.useAi ?? DEFAULT_USE_AI,
 		generateAiSummary: init.generateAiSummary ?? DEFAULT_GENERATE_AI_SUMMARY,
 		transcriptMode: init.transcriptMode ?? DEFAULT_OUTPUT_TRANSCRIPT_MODE,
 		playlistMode: init.playlistMode ?? DEFAULT_PLAYLIST_MODE,

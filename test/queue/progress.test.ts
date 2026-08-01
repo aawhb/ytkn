@@ -2,10 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
 	buildProgressContent,
 	buildProgressMarkers,
-	findProgressRange,
 	isAbortError,
 	replaceMarkedContent,
-	replaceRange,
 } from '../../src/queue/progress';
 
 describe('progress markers', () => {
@@ -59,47 +57,7 @@ describe('progress markers', () => {
 	});
 });
 
-describe('findProgressRange', () => {
-	const markers = buildProgressMarkers('job-x');
-	const block = buildProgressContent(markers, { url: 'https://yt/x', status: 'Working' });
-
-	it('finds the marker range when present', () => {
-		const data = `prefix\n${block}\nsuffix`;
-		const range = findProgressRange(markers, data);
-
-		expect(range).not.toBeNull();
-		expect(data.slice(range!.start, range!.end)).toBe(block);
-	});
-
-	it('returns null when the start marker is missing', () => {
-		expect(findProgressRange(markers, 'no markers here')).toBeNull();
-	});
-
-	it('returns null when the end marker is missing', () => {
-		const partial = `prefix\n${markers.startMarker}\nbody without end`;
-		expect(findProgressRange(markers, partial)).toBeNull();
-	});
-
-	it('handles multiple jobs in the same document', () => {
-		const otherMarkers = buildProgressMarkers('job-y');
-		const otherBlock = buildProgressContent(otherMarkers, { url: 'https://yt/y', status: 'Other' });
-		const data = `${block}\n\n${otherBlock}`;
-
-		const xRange = findProgressRange(markers, data);
-		const yRange = findProgressRange(otherMarkers, data);
-
-		expect(xRange).not.toBeNull();
-		expect(yRange).not.toBeNull();
-		expect(data.slice(xRange!.start, xRange!.end)).toBe(block);
-		expect(data.slice(yRange!.start, yRange!.end)).toBe(otherBlock);
-	});
-});
-
-describe('replaceRange and replaceMarkedContent', () => {
-	it('clamps replacement offsets that exceed the document length', () => {
-		expect(replaceRange('abc', { start: 10, end: 20 }, 'X')).toBe('abcX');
-	});
-
+describe('replaceMarkedContent', () => {
 	it('falls back to the initial range when no marker is found yet', () => {
 		const markers = buildProgressMarkers('first');
 		const result = replaceMarkedContent(markers, 'hello world', '[block]', { start: 6, end: 11 });
@@ -119,6 +77,14 @@ describe('replaceRange and replaceMarkedContent', () => {
 		expect(updated).not.toContain('Status: a');
 		expect(updated.startsWith('before\n')).toBe(true);
 		expect(updated.endsWith('\nafter')).toBe(true);
+	});
+
+	it('does not replace a partial marker block', () => {
+		const markers = buildProgressMarkers('partial');
+		const data = `before\n${markers.startMarker}\nunfinished`;
+
+		expect(replaceMarkedContent(markers, data, '[block]', { start: data.length, end: data.length }))
+			.toBe(`${data}[block]`);
 	});
 });
 

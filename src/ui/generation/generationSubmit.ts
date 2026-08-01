@@ -1,10 +1,10 @@
 import type { GenerationOptions } from '../../types';
 import { getTemplate } from '../../ai/templates/registry';
 import { isChannelUrl, parseUrls } from '../../youtube/urls';
-import { shouldGenerateAiSummary, shouldUseAi } from '../../aiOutputPolicy';
+import { shouldGenerateAiSummary, shouldUseAi } from '../../generation/aiPolicy';
 import type { GenerationFormState } from './generationFormState';
 
-export type GenerationSubmitResult =
+type GenerationSubmitResult =
 	| {
 		ok: true;
 		urls: string[];

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-	TEMPLATES,
 	findTemplateChoice,
 	getTemplate,
 	isInstructionTemplate,
@@ -19,15 +18,16 @@ const ALL_IDS: InstructionTemplate[] = [
 
 describe('template registry', () => {
 	it('exposes all 6 templates with required identity fields', () => {
-		expect(TEMPLATES).toHaveLength(6);
-		const ids = TEMPLATES.map((t) => t.id);
+		const templates = listTemplateChoices().map((choice) => getTemplate(choice.id));
+		expect(templates).toHaveLength(6);
+		const ids = templates.map((template) => template.id);
 		for (const id of ALL_IDS) {
 			expect(ids).toContain(id);
 		}
-		for (const t of TEMPLATES) {
-			expect(t.label.length).toBeGreaterThan(0);
-			expect(t.subtitle.length).toBeGreaterThan(0);
-			expect(t.body.length).toBeGreaterThan(0);
+		for (const template of templates) {
+			expect(template.label.length).toBeGreaterThan(0);
+			expect(template.subtitle.length).toBeGreaterThan(0);
+			expect(template.body.length).toBeGreaterThan(0);
 		}
 	});
 

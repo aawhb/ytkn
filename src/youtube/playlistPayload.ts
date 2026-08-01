@@ -36,8 +36,8 @@ type PlaylistRenderer = {
 	badges?: unknown[];
 };
 
-export type ContinuationLoader = (continuation: string) => Promise<unknown>;
-export type PlaylistEntryFilter = (entry: PlaylistEntry) => boolean;
+type ContinuationLoader = (continuation: string) => Promise<unknown>;
+type PlaylistEntryFilter = (entry: PlaylistEntry) => boolean;
 
 function isObject(value: unknown): value is JsonObject {
 	return typeof value === 'object' && value !== null;
