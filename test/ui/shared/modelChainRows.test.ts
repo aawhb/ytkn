@@ -38,10 +38,10 @@ function rowNames(containerEl: HTMLElement): string[] {
 	return Array.from(containerEl.querySelectorAll('.setting-item-name')).map((el) => el.textContent ?? '');
 }
 
-function rowButton(containerEl: HTMLElement, rowIndex: number, label: string): HTMLButtonElement {
+function rowButton(containerEl: HTMLElement, rowIndex: number, icon: string): HTMLButtonElement {
 	const rows = Array.from(containerEl.querySelectorAll('.setting-item'));
-	const button = Array.from(rows[rowIndex].querySelectorAll('button')).find((b) => b.textContent === label);
-	if (!button) throw new Error(`No "${label}" button on row ${rowIndex}`);
+	const button = rows[rowIndex].querySelector<HTMLButtonElement>(`button[data-icon="${icon}"]`);
+	if (!button) throw new Error(`No "${icon}" button on row ${rowIndex}`);
 	return button as HTMLButtonElement;
 }
 
@@ -50,42 +50,32 @@ describe('renderModelChainRows', () => {
 		const { containerEl } = render(['Anthropic:claude', 'OpenAI:gpt-4o']);
 
 		const names = rowNames(containerEl);
-		expect(names[0]).toBe('1. Anthropic / Claude');
-		expect(names[1]).toBe('2. OpenAI / GPT-4o');
+		const descriptions = Array.from(containerEl.querySelectorAll('.setting-item-description'))
+			.map((el) => el.textContent ?? '');
+		expect(names).toEqual(['Claude', 'GPT-4o']);
+		expect(descriptions).toEqual(['Anthropic', 'OpenAI']);
 	});
 
 	it('moves entries up and down and removes them', () => {
 		const { containerEl, onChange } = render(['Anthropic:claude', 'OpenAI:gpt-4o']);
 
-		rowButton(containerEl, 1, '↑').click();
+		rowButton(containerEl, 1, 'arrow-up').click();
 		expect(onChange).toHaveBeenLastCalledWith(['OpenAI:gpt-4o', 'Anthropic:claude']);
 
-		rowButton(containerEl, 0, '↓').click();
+		rowButton(containerEl, 0, 'arrow-down').click();
 		expect(onChange).toHaveBeenLastCalledWith(['OpenAI:gpt-4o', 'Anthropic:claude']);
 
-		rowButton(containerEl, 0, '✕').click();
+		rowButton(containerEl, 0, 'x').click();
 		expect(onChange).toHaveBeenLastCalledWith(['OpenAI:gpt-4o']);
 	});
 
-	it('offers only models missing from the chain in the add row and appends the pick', () => {
-		const { containerEl, onChange } = render(['Anthropic:claude']);
+	it('uses compact icon actions with disabled boundary controls', () => {
+		const { containerEl } = render(['Anthropic:claude', 'OpenAI:gpt-4o']);
 
-		const addRowIndex = rowNames(containerEl).findIndex((name) => name === 'Add model');
-		expect(addRowIndex).toBeGreaterThan(-1);
-		const addRow = Array.from(containerEl.querySelectorAll('.setting-item'))[addRowIndex];
-		const select = addRow.querySelector('select') as HTMLSelectElement;
-		const optionValues = Array.from(select.options).map((o) => o.value);
-		expect(optionValues).toEqual(['OpenAI:gpt-4o', 'Local:qwen3:8b']);
-
-		select.value = 'Local:qwen3:8b';
-		select.dispatchEvent(new Event('change'));
-		rowButton(containerEl, addRowIndex, 'Add').click();
-		expect(onChange).toHaveBeenLastCalledWith(['Anthropic:claude', 'Local:qwen3:8b']);
-	});
-
-	it('hides the add row when every model is already chained', () => {
-		const { containerEl } = render(['Anthropic:claude', 'OpenAI:gpt-4o', 'Local:qwen3:8b']);
-
-		expect(rowNames(containerEl)).not.toContain('Add model');
+		expect(rowButton(containerEl, 0, 'arrow-up').disabled).toBe(true);
+		expect(rowButton(containerEl, 0, 'arrow-down').disabled).toBe(false);
+		expect(rowButton(containerEl, 1, 'arrow-up').disabled).toBe(false);
+		expect(rowButton(containerEl, 1, 'arrow-down').disabled).toBe(true);
+		expect(rowButton(containerEl, 0, 'x').title).toBe('Remove');
 	});
 });

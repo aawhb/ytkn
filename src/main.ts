@@ -5,7 +5,7 @@ import type {
 	PluginSettings,
 } from './types';
 
-import { SettingsTab } from './ui/settings/settingsTab';
+import { SettingsScreen } from './ui/settings/settingsScreen';
 import { notifyError } from './ui/shared/notifications';
 import { YouTubeService } from './youtube/youtubeService';
 import { classifyUrls, extractUnsupportedChannelTab, isYouTubeUrl } from './youtube/urls';
@@ -41,7 +41,7 @@ export class YTKN extends Plugin {
 		try {
 			await this.initializeServices();
 			this.initializeStatusBar();
-			this.addSettingTab(new SettingsTab(
+			this.addSettingTab(new SettingsScreen(
 				this.app,
 				this,
 				this.settings,

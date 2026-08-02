@@ -1,5 +1,9 @@
 export class Notice {
-	constructor(_msg?: string) { }
+	static messages: string[] = [];
+
+	constructor(msg?: string) {
+		if (msg) Notice.messages.push(msg);
+	}
 }
 
 export async function requestUrl(_request: { url: string; body?: string }): Promise<{ text: string; json: unknown }> {
@@ -49,6 +53,64 @@ export class Modal {
 	close(): void {
 		(this as any).onClose?.();
 	}
+
+	setTitle(title: string): this {
+		this.contentEl.createEl('h2', { text: title });
+		return this;
+	}
+
+	setContent(content: string): this {
+		this.contentEl.createEl('p', { text: content });
+		return this;
+	}
+}
+
+export class ConfirmationModal extends Modal {
+	buttonContainerEl: HTMLElement;
+
+	constructor(app: App) {
+		super(app);
+		this.buttonContainerEl = this.contentEl.createDiv();
+	}
+
+	addClass(cls: string): this {
+		this.contentEl.addClass(cls);
+		return this;
+	}
+
+	addCheckbox(_label: string, _cb: (value: boolean) => unknown): this {
+		return this;
+	}
+
+	addCancelButton(text = 'Cancel'): this {
+		const button = document.createElement('button');
+		button.textContent = text;
+		button.addEventListener('click', () => this.close());
+		this.buttonContainerEl.appendChild(button);
+		return this;
+	}
+
+	addButton(cb: (button: any) => unknown): this {
+		const element = document.createElement('button');
+		this.buttonContainerEl.appendChild(element);
+		const button = {
+			setButtonText(text: string): any { element.textContent = text; return this; },
+			setDestructive(): any { element.classList.add('mod-destructive'); return this; },
+			setCta(): any { return this; },
+			setInitialFocus(): any { return this; },
+			setSecondary(): any { return this; },
+			setCancel(): any { return this; },
+			onClick: (handler: (event: MouseEvent) => unknown): any => {
+				element.addEventListener('click', async (event) => {
+					const keepOpen = await handler(event);
+					if (!keepOpen) this.close();
+				});
+				return button;
+			},
+		};
+		cb(button);
+		return this;
+	}
 }
 
 interface MockToggle {
@@ -85,6 +147,74 @@ interface MockDropdown {
 	getValue(): string;
 	onChange(cb: (v: string) => void): MockDropdown;
 	setDisabled(disabled: boolean): MockDropdown;
+}
+
+export abstract class SettingPage {
+	rootEl: HTMLElement;
+	titlebarEl: HTMLElement;
+	containerEl: HTMLElement;
+	title = '';
+
+	constructor() {
+		this.rootEl = document.createElement('div');
+		this.titlebarEl = document.createElement('div');
+		this.containerEl = document.createElement('div');
+		this.rootEl.append(this.titlebarEl, this.containerEl);
+	}
+
+	abstract display(): void;
+
+	hide(): void { }
+}
+
+export class SettingGroup {
+	listEl: HTMLElement;
+	private groupEl: HTMLElement;
+	private headingEl: HTMLElement;
+
+	constructor(containerEl: HTMLElement) {
+		this.groupEl = document.createElement('div');
+		this.headingEl = document.createElement('div');
+		this.listEl = document.createElement('div');
+		this.headingEl.className = 'setting-item-heading';
+		this.listEl.className = 'setting-items';
+		this.groupEl.append(this.headingEl, this.listEl);
+		containerEl.appendChild(this.groupEl);
+	}
+
+	setHeading(text: string | DocumentFragment): this {
+		this.headingEl.textContent = '';
+		if (typeof text === 'string') this.headingEl.textContent = text;
+		else this.headingEl.appendChild(text);
+		return this;
+	}
+
+	addClass(...classes: string[]): this {
+		this.groupEl.classList.add(...classes);
+		return this;
+	}
+
+	addSetting(cb: (setting: Setting) => void): this {
+		cb(new Setting(this.listEl));
+		return this;
+	}
+
+	addSearch(_cb: (component: unknown) => unknown): this {
+		return this;
+	}
+
+	addExtraButton(cb: (component: any) => unknown): this {
+		const element = document.createElement('button');
+		this.headingEl.appendChild(element);
+		const component = {
+			setIcon(icon: string): any { element.dataset.icon = icon; return this; },
+			setTooltip(tooltip: string): any { element.title = tooltip; return this; },
+			setDisabled(disabled: boolean): any { element.disabled = disabled; return this; },
+			onClick(handler: () => unknown): any { element.addEventListener('click', handler); return this; },
+		};
+		cb(component);
+		return this;
+	}
 }
 
 export class Setting {
@@ -230,10 +360,13 @@ export class Setting {
 	}
 
 	addExtraButton(cb: (b: any) => void): this {
+		const element = document.createElement('button');
+		this.controlEl.appendChild(element);
 		const b = {
-			setIcon(_i: string): any { return this; },
-			setTooltip(_t: string): any { return this; },
-			onClick(_fn: any): any { return this; },
+			setIcon(icon: string): any { element.dataset.icon = icon; return this; },
+			setTooltip(tooltip: string): any { element.title = tooltip; return this; },
+			setDisabled(disabled: boolean): any { element.disabled = disabled; return this; },
+			onClick(fn: () => unknown): any { element.addEventListener('click', fn); return this; },
 		};
 		cb(b);
 		return this;

@@ -133,15 +133,14 @@ describe('SettingsService current contracts', () => {
 		});
 	});
 
-	it('rejects invalid provider and model identifiers', async () => {
+	it('allows incomplete provider connections while enforcing provider identity', async () => {
 		const { manager } = makeManager();
 		await manager.loadSettings();
 
-		await expect(manager.addProvider({ name: 'Ollama', type: 'openai-compatible', apiKey: '', url: '', models: [] })).rejects.toThrow(
-			'OpenAI-compatible providers require a URL.',
-		);
+		await manager.addProvider({ name: 'Ollama', type: 'openai-compatible', apiKey: '', url: '', models: [] });
 		await expect(manager.addProvider({ name: 'Open:AI', type: 'openai', apiKey: '', apiKeySecretId: 'openai-secret', url: '', models: [] })).rejects.toThrow(/colon/i);
-		await expect(manager.addProvider({ name: 'Gemini', type: 'gemini', apiKey: '', models: [] })).rejects.toThrow(/Gemini providers require an API key/);
+		await manager.addProvider({ name: 'Gemini incomplete', type: 'gemini', apiKey: '', models: [] });
+		expect(manager.getProviders().map((provider) => provider.name)).toEqual(['Ollama', 'Gemini incomplete']);
 
 		expect(manager.validateModelId('')).toBe(false);
 		expect(manager.validateModelId('NoColon')).toBe(false);
@@ -175,20 +174,6 @@ describe('SettingsService current contracts', () => {
 		expect(manager.getProviders().find((provider) => provider.type === 'anthropic')?.url).toBeUndefined();
 		expect(manager.getProviders().find((provider) => provider.type === 'openai-compatible')?.url)
 			.toBe('https://gateway.example/v1');
-	});
-
-	it('clears stale selected models while preserving valid saved selections', async () => {
-		const stale = makeManager({ settings: { providers: [geminiProvider], modelIds: ['Missing:Model'] } });
-		await stale.manager.loadSettings();
-
-		expect(stale.manager.getSelectedModels()).toEqual([]);
-		expect(stale.plugin.saveData).toHaveBeenCalled();
-
-		const valid = makeManager({ settings: { providers: [geminiProvider], modelIds: ['Gemini:gemini-1.5-flash'] } });
-		await valid.manager.loadSettings();
-
-		expect(valid.manager.getSelectedModels()[0]?.name).toBe('gemini-1.5-flash');
-		expect(valid.manager.getSelectedModels()[0]?.provider.apiKey).toBe('test-key');
 	});
 
 	it('normalizes persisted output defaults without overwriting explicit current choices', async () => {
@@ -248,32 +233,39 @@ describe('SettingsService current contracts', () => {
 		expect(plugin.saveData).toHaveBeenCalled();
 	});
 
-	it('migrates 1.8.1 report keys with current keys taking precedence', async () => {
-		const legacy = makeManager({
+	it('migrates 1.8.1 report keys once with current keys taking precedence', async () => {
+		const from181 = makeManager({
 			settings: {
 				providers: [geminiProvider],
 				modelIds: ['Gemini:gemini-1.5-flash'],
 				outputDefaults: {
+					useAi: false,
+					generateAiSummary: false,
 					includeRunReport: false,
 					runReportLocation: 'separate-note',
 					openCreatedNote: true,
+					frontmatterPropertyAllowlist: 'title channel topic',
 				},
 			},
 		});
-		await legacy.manager.loadSettings();
+		await from181.manager.loadSettings();
 
-		expect(legacy.manager.getOutputDefaults()).toMatchObject({
+		expect(from181.manager.getOutputDefaults()).toMatchObject({
+			useAi: false,
+			generateAiSummary: false,
 			includeReport: false,
 			reportLocation: 'separate-note',
 			openCreatedNote: true,
+			frontmatterPropertyAllowlist: 'title channel topic',
 		});
-		expect(legacy.manager.getModelIds()).toEqual(['Gemini:gemini-1.5-flash']);
-		expect(legacy.plugin.data?.settings?.outputDefaults).toMatchObject({
+		expect(from181.manager.getProviders()).toHaveLength(1);
+		expect(from181.manager.getModelIds()).toEqual(['Gemini:gemini-1.5-flash']);
+		expect(from181.plugin.data?.settings?.outputDefaults).toMatchObject({
 			includeReport: false,
 			reportLocation: 'separate-note',
 		});
-		expect(legacy.plugin.data?.settings?.outputDefaults?.includeRunReport).toBeUndefined();
-		expect(legacy.plugin.data?.settings?.outputDefaults?.runReportLocation).toBeUndefined();
+		expect(from181.plugin.data?.settings?.outputDefaults?.includeRunReport).toBeUndefined();
+		expect(from181.plugin.data?.settings?.outputDefaults?.runReportLocation).toBeUndefined();
 
 		const mixed = makeManager({
 			settings: {
@@ -361,11 +353,81 @@ describe('SettingsService current contracts', () => {
 		expect(manager.getLastSeenReleaseNotesVersion()).toBe('1.7.0');
 
 		await manager.setLastSeenReleaseNotesVersion('1.7.2');
-		await manager.resetSettings();
+		await manager.resetAllSettings();
 
 		expect(manager.getProviders()).toEqual([]);
 		expect(manager.getLastSeenReleaseNotesVersion()).toBe('1.7.2');
 		expect(plugin.data?.settings?.lastSeenReleaseNotesVersion).toBe('1.7.2');
+	});
+
+	it('resets General and AI defaults independently', async () => {
+		const { manager } = makeManager();
+		await manager.loadSettings();
+		const defaults = structuredClone(manager.getOutputDefaults());
+
+		await manager.addProvider({
+			name: 'Local',
+			type: 'openai-compatible',
+			apiKey: '',
+			url: 'http://localhost:11434/v1',
+			models: [],
+		});
+		await manager.updateOutputDefaults({
+			...manager.getOutputDefaults(),
+			useAi: false,
+			generateAiSummary: false,
+			tldrCalloutAtTop: false,
+			transcriptMode: 'none',
+			playlistMode: 'combined',
+			channelContentTypes: ['shorts'],
+			channelVideoLimit: null,
+			transcriptLanguageMode: 'preferred',
+			preferredTranscriptLanguage: 'ar',
+			transcriptFailureMode: 'fail',
+			mediaEmbedMode: 'none',
+			includeReport: false,
+			reportLocation: 'separate-note',
+			useVideoTitleAsNoteName: false,
+			noteDestinationMode: 'folder',
+			noteDestinationFolder: 'YT',
+			openCreatedNote: true,
+			includeFrontmatter: false,
+			frontmatterTags: 'video',
+			frontmatterPropertyAllowlist: '',
+			sourceSectionPosition: 'top',
+			linkTimestamps: false,
+		});
+		await manager.updateInstructionConfig({
+			mode: 'manual',
+			manualInstructions: 'Custom',
+			includeMindmap: false,
+			includeMemorableQuotes: false,
+		});
+		await manager.updateTemperature(1.7);
+		await manager.updateRequestTimeoutMs(45000);
+
+		await manager.resetGeneralDefaults();
+		expect(manager.getOutputDefaults()).toEqual({
+			...defaults,
+			useAi: false,
+			generateAiSummary: false,
+			tldrCalloutAtTop: false,
+		});
+		expect(manager.getInstructionConfig().mode).toBe('manual');
+		expect(manager.getProviders()).toHaveLength(1);
+
+		await manager.resetAiDefaults();
+		expect(manager.getOutputDefaults()).toEqual(defaults);
+		expect(manager.getInstructionConfig()).toEqual({
+			mode: DEFAULT_INSTRUCTION_MODE,
+			template: DEFAULT_INSTRUCTION_TEMPLATE,
+			manualInstructions: DEFAULT_MANUAL_INSTRUCTIONS,
+			includeMindmap: DEFAULT_INCLUDE_MINDMAP,
+			includeMemorableQuotes: DEFAULT_INCLUDE_MEMORABLE_QUOTES,
+		});
+		expect(manager.getTemperature()).toBe(0.3);
+		expect(manager.getRequestTimeoutMs()).toBe(DEFAULT_REQUEST_TIMEOUT_MS);
+		expect(manager.getProviders()).toHaveLength(1);
 	});
 
 	it('stores provider secrets by secret id and never persists plaintext API keys', async () => {

@@ -6,7 +6,7 @@ YT Knowledge Notes works with or without AI. The shortest path is to create a tr
 
 You need:
 
-- Obsidian `1.11.4` or newer
+- Obsidian `1.13.1` or newer
 - a YouTube video, playlist, or channel URL
 - an open Markdown note only if you want to use **Current note** or **Append to active note**
 - an optional AI provider and model for AI-assisted output

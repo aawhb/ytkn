@@ -10,195 +10,20 @@ vi.mock('obsidian', async () => {
 	};
 });
 
-import { App, Setting } from 'obsidian';
-import { createSettingsCard } from '../../../src/ui/shared/cards';
-import { ProviderAccordion } from '../../../src/ui/settings/providerAccordion';
+import { createCard } from '../../../src/ui/shared/cards';
 import { renderBrandActions } from '../../../src/ui/shared/brandActions';
 import { TabGroup } from '../../../src/ui/shared/tabs';
-import { stampSettingRowClasses } from '../../../src/ui/shared/settingRows';
-import type { ProviderConfig } from '../../../src/types';
-
-function makeHandlers() {
-	return {
-		handleAccordionToggle: vi.fn((accordion: HTMLElement) => accordion.toggleClass('is-expanded', true)),
-		handleFetchProviderModels: vi.fn(async () => undefined),
-		handleProviderEditClick: vi.fn(),
-		handleProviderDeleteClick: vi.fn(),
-		handleApiKeySecretChange: vi.fn(async () => undefined),
-		handleProviderUrlChange: vi.fn(async () => undefined),
-		handleModelEditClick: vi.fn(),
-		handleModelDeleteClick: vi.fn(),
-		handleAddModelClick: vi.fn(),
-	} as any;
-}
-
-const provider: ProviderConfig = {
-	name: 'Local',
-	type: 'openai-compatible',
-	apiKey: '',
-	apiKeySecretId: 'local-key',
-	url: 'http://localhost:11434/v1',
-	models: [
-		{
-			name: 'llama3',
-			displayName: 'Llama 3',
-			provider: { name: 'Local', type: 'openai-compatible', apiKey: '' },
-		},
-	],
-};
-
-function makeProvider(type: ProviderConfig['type'], modelCount: number): ProviderConfig {
-	const testProvider: ProviderConfig = {
-		name: type,
-		type,
-		apiKey: '',
-		models: [],
-	};
-	testProvider.models = Array.from({ length: modelCount }, (_, index) => ({
-		name: `model-${index}`,
-		displayName: `Model ${index}`,
-		provider: testProvider,
-	}));
-	return testProvider;
-}
 
 describe('settings UI helpers', () => {
-	it('creates a settings card with the shared card selector hooks', () => {
+	it('creates a card with the shared selector hooks', () => {
 		const host = document.createElement('div');
-		const card = createSettingsCard(host, 'Card title', (body) => {
+		const card = createCard(host, 'Card title', (body) => {
 			body.createDiv({ text: 'Body content' });
 		}, 'h4');
 
 		expect(card.className).toContain('ytkn-card');
 		expect(card.querySelector('h4')?.textContent).toBe('Card title');
 		expect(card.querySelector('.ytkn-card__body')?.textContent).toBe('Body content');
-	});
-
-	it('renders provider accordions and wires header/action clicks to handlers', () => {
-		const host = document.createElement('div');
-		const handlers = makeHandlers();
-		new ProviderAccordion(new App()).addProviderAccordion(host, provider, handlers);
-
-		const accordion = host.querySelector<HTMLElement>('.ytkn-settings__provider-accordion')!;
-		const header = host.querySelector<HTMLElement>('.ytkn-settings__provider-header')!;
-		const providerInfo = host.querySelector<HTMLElement>('.ytkn-settings__provider-info')!;
-		const title = host.querySelector<HTMLElement>('.ytkn-settings__provider-title')!;
-		const description = host.querySelector<HTMLElement>('.ytkn-settings__provider-description')!;
-		const providerControls = host.querySelector<HTMLElement>('.ytkn-settings__provider-controls')!;
-		const fetchButton = host.querySelector<HTMLButtonElement>('.ytkn-settings__provider-fetch')!;
-		const editButton = host.querySelector<HTMLButtonElement>('.ytkn-settings__provider-edit')!;
-		const deleteButton = host.querySelector<HTMLButtonElement>('.ytkn-settings__provider-delete')!;
-		const providerFields = host.querySelector<HTMLElement>('.ytkn-settings__provider-fields')!;
-		const modelsHeader = host.querySelector<HTMLElement>('.ytkn-settings__models-header')!;
-		const modelsHeaderInfo = modelsHeader.querySelector<HTMLElement>(':scope > .setting-item-info')!;
-		const modelsHeaderControl = modelsHeader.querySelector<HTMLElement>(':scope > .setting-item-control')!;
-		const modelActionButtons = Array.from(
-			modelsHeaderControl.querySelectorAll<HTMLButtonElement>(':scope > button'),
-		);
-		const modelItem = host.querySelector<HTMLElement>('.setting-model')!;
-		const modelEditButton = modelItem.querySelector<HTMLButtonElement>('[aria-label="Edit model"]')!;
-		const modelDeleteButton = modelItem.querySelector<HTMLButtonElement>('[aria-label="Delete model"]')!;
-
-		expect(accordion.getAttribute('data-provider-name')).toBe('Local');
-		expect(header.classList.contains('setting-item')).toBe(true);
-		expect(header.classList.contains('ytkn-setting-row--fit-control')).toBe(true);
-		expect(providerInfo.classList.contains('setting-item-info')).toBe(true);
-		expect(providerControls.classList.contains('setting-item-control')).toBe(true);
-		expect(title.classList.contains('setting-item-name')).toBe(true);
-		expect(description.classList.contains('setting-item-description')).toBe(true);
-		expect(providerInfo.children[0]).toBe(title);
-		expect(providerInfo.children[1]).toBe(description);
-		expect(providerInfo.children).toHaveLength(2);
-		expect(title.textContent).toBe('Local');
-		expect(description.textContent).toBe('OpenAI-compatible · 1 model');
-		expect(providerFields.querySelectorAll('.ytkn-settings__provider-field')).toHaveLength(2);
-		expect(modelsHeader.classList.contains('setting-item')).toBe(true);
-		expect(modelsHeaderInfo.querySelector('.setting-item-name')?.textContent).toBe('Models');
-		expect(modelActionButtons.map((button) => button.textContent)).toEqual(['Fetch models', 'Add model']);
-		expect(modelActionButtons.every((button) => button.closest('.setting-item') === modelsHeader)).toBe(true);
-		expect(modelItem.getAttribute('data-model-id')).toBe('Local:llama3');
-		expect(modelItem.classList.contains('ytkn-setting-row--model')).toBe(true);
-
-		header.click();
-		fetchButton.click();
-		editButton.click();
-		deleteButton.click();
-		modelActionButtons[0].click();
-		modelActionButtons[1].click();
-		modelEditButton.click();
-		modelDeleteButton.click();
-
-		expect(handlers.handleAccordionToggle).toHaveBeenCalledWith(accordion);
-		expect(handlers.handleFetchProviderModels).toHaveBeenCalledTimes(2);
-		expect(handlers.handleFetchProviderModels).toHaveBeenLastCalledWith(provider);
-		expect(handlers.handleProviderEditClick).toHaveBeenCalledWith(provider);
-		expect(handlers.handleProviderDeleteClick).toHaveBeenCalledWith(provider);
-		expect(handlers.handleAddModelClick).toHaveBeenCalledWith(provider);
-		expect(handlers.handleModelEditClick).toHaveBeenCalledWith(provider.models![0]);
-		expect(handlers.handleModelDeleteClick).toHaveBeenCalledWith(provider.models![0]);
-	});
-
-	it('formats provider descriptions as plain type and model-count summaries', () => {
-		const cases: Array<[ProviderConfig['type'], number, string]> = [
-			['openai', 3, 'OpenAI · 3 models'],
-			['openai-compatible', 7, 'OpenAI-compatible · 7 models'],
-			['anthropic', 2, 'Anthropic · 2 models'],
-			['gemini', 12, 'Gemini · 12 models'],
-		];
-		const host = document.createElement('div');
-		const components = new ProviderAccordion(new App());
-
-		for (const [type, modelCount, expected] of cases) {
-			host.replaceChildren();
-			components.createProviderAccordion(host, makeProvider(type, modelCount));
-
-			expect(host.querySelector('.ytkn-settings__provider-description')?.textContent).toBe(expected);
-		}
-	});
-
-	it('shows the URL field only for OpenAI-compatible providers', () => {
-		const cases: Array<[ProviderConfig['type'], boolean]> = [
-			['openai-compatible', true],
-			['openai', false],
-			['anthropic', false],
-			['gemini', false],
-		];
-		const host = document.createElement('div');
-		const components = new ProviderAccordion(new App());
-
-		for (const [type, shouldShowUrl] of cases) {
-			host.replaceChildren();
-			components.addProviderAccordion(host, makeProvider(type, 0), makeHandlers());
-			const fieldNames = Array.from(host.querySelectorAll('.ytkn-settings__provider-field .setting-item-name'))
-				.map((element) => element.textContent);
-
-			expect(fieldNames.includes('Base URL'), type).toBe(shouldShowUrl);
-		}
-	});
-
-	it('stamps setting rows based on direct controls and modal stacking context', () => {
-		const host = document.createElement('div');
-		new Setting(host).setName('Select').addDropdown((dropdown) => dropdown.addOption('a', 'A'));
-		new Setting(host).setName('Number').addText((text) => {
-			text.inputEl.type = 'number';
-		});
-		new Setting(host).setName('Button').addButton((button) => button.setButtonText('Run'));
-		const providerHeader = new Setting(host).setName('Provider');
-		providerHeader.settingEl.addClass('ytkn-settings__provider-header');
-		providerHeader.controlEl.createEl('button', { cls: 'clickable-icon' });
-		const quickGrid = host.createDiv({ cls: 'ytkn-modal__quick-grid' });
-		new Setting(quickGrid).setName('Quick select').addDropdown((dropdown) => dropdown.addOption('a', 'A'));
-
-		stampSettingRowClasses(host);
-
-		const rows = Array.from(host.querySelectorAll<HTMLElement>('.setting-item'));
-		expect(rows[0].classList.contains('ytkn-setting-row--select')).toBe(true);
-		expect(rows[0].classList.contains('ytkn-setting-row--fit-control')).toBe(true);
-		expect(rows[1].classList.contains('ytkn-setting-row--number')).toBe(true);
-		expect(rows[2].classList.contains('ytkn-setting-row--button')).toBe(true);
-		expect(rows[3].classList.contains('ytkn-setting-row--fit-control')).toBe(true);
-		expect(rows[4].classList.contains('ytkn-setting-row--stacked')).toBe(true);
-		expect(rows[4].classList.contains('ytkn-setting-row--fit-control')).toBe(false);
 	});
 
 	it('renders brand actions as accessible icon-only links and buttons', () => {
@@ -234,7 +59,7 @@ describe('settings UI helpers', () => {
 		);
 
 		expect(group.getPanel('one')?.classList.contains('is-active')).toBe(true);
-		expect(group.navEl.getAttribute('role')).toBe('tablist');
+		expect(host.querySelector('[role="tablist"]')).not.toBeNull();
 
 		(host.querySelector('#ytkn-tab-two') as HTMLButtonElement).click();
 

@@ -123,7 +123,9 @@ export interface PluginSettings {
 	updateTemperature(temperature: number): Promise<void>;
 	updateRequestTimeoutMs(timeoutMs: number): Promise<void>;
 	mergeProviderModels(providerName: string, models: DiscoveredModel[]): Promise<number>;
-	resetSettings(): Promise<void>;
+	resetGeneralDefaults(): Promise<void>;
+	resetAiDefaults(): Promise<void>;
+	resetAllSettings(): Promise<void>;
 	saveProviderSecretId(providerName: string, secretId: string): Promise<void>;
 	validateModelId(modelId: string): boolean;
 }

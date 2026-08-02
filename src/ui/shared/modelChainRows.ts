@@ -1,9 +1,8 @@
 import { Setting } from 'obsidian';
 import type { ModelConfig } from '../../types';
 import { buildModelId } from '../../modelId';
-import { SETTING_COPY } from './settingCopy';
 
-export interface ModelChainRowsOptions {
+interface ModelChainRowsOptions {
 	availableModels: ModelConfig[];
 	modelIds: string[];
 	onChange: (next: string[]) => void;
@@ -20,11 +19,12 @@ export function renderModelChainRows(containerEl: HTMLElement, options: ModelCha
 		}
 
 		const row = new Setting(containerEl)
-			.setName(`${index + 1}. ${model.provider.name} / ${model.displayName || model.name}`);
+			.setName(model.displayName || model.name)
+			.setDesc(model.provider.name);
 		row.settingEl.addClass('ytkn-model-chain__row');
 
-		row.addButton((button) => button
-			.setButtonText('↑')
+		row.addExtraButton((button) => button
+			.setIcon('arrow-up')
 			.setTooltip('Move up')
 			.setDisabled(index === 0)
 			.onClick(() => {
@@ -33,8 +33,8 @@ export function renderModelChainRows(containerEl: HTMLElement, options: ModelCha
 				[next[index - 1], next[index]] = [next[index], next[index - 1]];
 				onChange(next);
 			}));
-		row.addButton((button) => button
-			.setButtonText('↓')
+		row.addExtraButton((button) => button
+			.setIcon('arrow-down')
 			.setTooltip('Move down')
 			.setDisabled(index === modelIds.length - 1)
 			.onClick(() => {
@@ -43,35 +43,11 @@ export function renderModelChainRows(containerEl: HTMLElement, options: ModelCha
 				[next[index], next[index + 1]] = [next[index + 1], next[index]];
 				onChange(next);
 			}));
-		row.addButton((button) => button
-			.setButtonText('✕')
+		row.addExtraButton((button) => button
+			.setIcon('x')
 			.setTooltip('Remove')
 			.onClick(() => {
 				onChange(modelIds.filter((id) => id !== modelId));
 			}));
 	});
-
-	const remaining = availableModels.filter((model) => !modelIds.includes(buildModelId(model)));
-	if (!remaining.length) {
-		return;
-	}
-
-	const addRow = new Setting(containerEl).setName(SETTING_COPY.aiModels.addLabel);
-	addRow.settingEl.addClass('ytkn-model-chain__add-row');
-	let pendingId = buildModelId(remaining[0]);
-	addRow.addDropdown((dropdown) => {
-		for (const model of remaining) {
-			dropdown.addOption(buildModelId(model), `${model.provider.name} / ${model.displayName || model.name}`);
-		}
-		dropdown.setValue(pendingId).onChange((value) => {
-			pendingId = value;
-		});
-	});
-	addRow.addButton((button) => button
-		.setButtonText('Add')
-		.setTooltip('Add to the model chain')
-		.onClick(() => {
-			if (!pendingId || modelIds.includes(pendingId)) return;
-			onChange([...modelIds, pendingId]);
-		}));
 }

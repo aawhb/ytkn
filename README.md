@@ -24,7 +24,7 @@ AI is optional. Transcript and metadata notes do not require an API key.
 
 ## Install
 
-YT Knowledge Notes requires Obsidian `1.11.4` or newer.
+YT Knowledge Notes requires Obsidian `1.13.1` or newer.
 
 ### Community Plugins
 
@@ -42,7 +42,7 @@ For a manual installation from a release, see [Install manually](docs/getting-st
 
 1. Open the Obsidian command palette and run **YT Knowledge Notes: Generate**.
 2. Paste a YouTube video, playlist, or channel URL.
-3. If you have not configured an AI model, turn **Use AI** off.
+3. If you have not configured an AI model, turn **AI** off.
 4. Choose where the note should go and how the transcript should appear.
 5. Select **Generate**.
 

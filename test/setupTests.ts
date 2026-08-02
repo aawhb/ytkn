@@ -4,8 +4,7 @@ import path from 'node:path';
 (globalThis as any).activeWindow = window;
 (globalThis as any).activeDocument = document;
 
-// Polyfills for Obsidian's HTMLElement extensions (createEl, empty, etc.) so
-// jsdom can run the plugin's DOM-emitting helpers.
+/* Provides the Obsidian DOM extensions missing from jsdom. */
 const proto = HTMLElement.prototype as HTMLElement & {
 	empty?: () => void;
 	createEl?: <K extends keyof HTMLElementTagNameMap>(
@@ -62,7 +61,6 @@ if (!proto.createSpan) {
 	};
 }
 
-// Obsidian HTMLElement extensions not in jsdom
 const htmlProto = HTMLElement.prototype as any;
 
 if (!htmlProto.addClass) {
@@ -129,7 +127,6 @@ if (!htmlProto.toggle) {
 	};
 }
 
-// IntersectionObserver polyfill (not in jsdom)
 if (typeof globalThis.IntersectionObserver === 'undefined') {
 	(globalThis as any).IntersectionObserver = class {
 		constructor(_callback: any, _options?: any) { }

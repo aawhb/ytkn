@@ -157,7 +157,7 @@ export class SettingsService implements PluginSettings {
 			models: [],
 		};
 
-		this.assertProviderValid(storedProvider);
+		this.assertProviderIdentityValid(storedProvider);
 		this.settings.providers.push(storedProvider);
 		await this.saveData();
 	}
@@ -229,7 +229,7 @@ export class SettingsService implements PluginSettings {
 			models: storedProvider.models,
 		};
 
-		this.assertProviderValid(updatedProvider, originalName);
+		this.assertProviderIdentityValid(updatedProvider, originalName);
 
 		const index = this.settings.providers.indexOf(storedProvider);
 		this.settings.providers[index] = updatedProvider;
@@ -319,7 +319,32 @@ export class SettingsService implements PluginSettings {
 		await this.saveData();
 	}
 
-	async resetSettings(): Promise<void> {
+	async resetGeneralDefaults(): Promise<void> {
+		const defaults = normalizeOutputDefaults();
+		this.settings.outputDefaults = {
+			...defaults,
+			useAi: this.settings.outputDefaults.useAi,
+			generateAiSummary: this.settings.outputDefaults.generateAiSummary,
+			tldrCalloutAtTop: this.settings.outputDefaults.tldrCalloutAtTop,
+		};
+		await this.saveData();
+	}
+
+	async resetAiDefaults(): Promise<void> {
+		const defaults = normalizeOutputDefaults();
+		this.settings.outputDefaults = {
+			...this.settings.outputDefaults,
+			useAi: defaults.useAi,
+			generateAiSummary: defaults.generateAiSummary,
+			tldrCalloutAtTop: defaults.tldrCalloutAtTop,
+		};
+		this.settings.instructionConfig = normalizeInstructionConfig();
+		this.settings.temperature = DEFAULT_TEMPERATURE;
+		this.settings.requestTimeoutMs = DEFAULT_REQUEST_TIMEOUT_MS;
+		await this.saveData();
+	}
+
+	async resetAllSettings(): Promise<void> {
 		const lastSeenReleaseNotesVersion = this.settings.lastSeenReleaseNotesVersion;
 		this.settings = this.getDefaultSettings();
 		this.settings.lastSeenReleaseNotesVersion = lastSeenReleaseNotesVersion;
@@ -425,7 +450,7 @@ export class SettingsService implements PluginSettings {
 		};
 	}
 
-	private assertProviderValid(provider: StoredProvider, originalName?: string): void {
+	private assertProviderIdentityValid(provider: StoredProvider, originalName?: string): void {
 		if (!provider.name || !provider.type) {
 			throw new Error('Invalid provider configuration');
 		}
@@ -439,21 +464,6 @@ export class SettingsService implements PluginSettings {
 			throw new Error('Provider names must be unique.');
 		}
 
-		if (provider.type === 'openai' && !this.hasProviderApiKey(provider)) {
-			throw new Error('OpenAI providers require an API key.');
-		}
-
-		if (provider.type === 'openai-compatible' && !provider.url) {
-			throw new Error('OpenAI-compatible providers require a URL.');
-		}
-
-		if ((provider.type === 'anthropic' || provider.type === 'gemini') && !this.hasProviderApiKey(provider)) {
-			throw new Error(`${provider.type === 'anthropic' ? 'Anthropic' : 'Gemini'} providers require an API key.`);
-		}
-	}
-
-	private hasProviderApiKey(provider: StoredProvider): boolean {
-		return Boolean(this.resolveProviderApiKey(provider));
 	}
 
 	private assertNewModelValid(model: StoredModel, provider: StoredProvider): void {

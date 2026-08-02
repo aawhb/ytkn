@@ -88,8 +88,8 @@ vi.mock('obsidian', () => {
 	return { Editor: class { }, MarkdownView, Notice, Plugin, TFile, setIcon: mocks.setIcon };
 });
 
-vi.mock('../src/ui/settings/settingsTab', () => ({
-	SettingsTab: class {
+vi.mock('../src/ui/settings/settingsScreen', () => ({
+	SettingsScreen: class {
 		constructor(public app: unknown, public plugin: unknown) { }
 	},
 }));
