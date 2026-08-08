@@ -1,6 +1,6 @@
 import { setIcon } from 'obsidian';
 
-export interface TabDefinition {
+interface TabDefinition {
 	id: string;
 	label: string;
 	icon?: string;
@@ -8,34 +8,28 @@ export interface TabDefinition {
 
 export const SETTINGS_TABS: TabDefinition[] = [
 	{ id: 'general', label: 'General', icon: 'settings' },
-	{ id: 'genai', label: 'AI', icon: 'bot' },
+	{ id: 'ai', label: 'AI', icon: 'bot' },
 ];
 
-export const DEFAULT_SETTINGS_TAB_ID = 'general';
-
 export class TabGroup {
-	public containerEl: HTMLElement;
-	public navEl: HTMLElement;
-	public panelsContainerEl: HTMLElement;
-
 	private tabs: Map<string, HTMLElement> = new Map();
 	private panels: Map<string, HTMLElement> = new Map();
 	private activeTabId: string | null = null;
 	private onTabChange?: (tabId: string) => void;
 
 	constructor(container: HTMLElement, tabDefs: TabDefinition[], defaultTabId?: string, onTabChange?: (tabId: string) => void) {
-		this.containerEl = container.createDiv({ cls: 'ytkn-tabs-container' });
+		const containerEl = container.createDiv();
 		this.onTabChange = onTabChange;
 
-		this.navEl = this.containerEl.createDiv({ cls: 'ytkn-tabs' });
-		this.navEl.setAttribute('role', 'tablist');
-		this.navEl.setAttribute('aria-orientation', 'horizontal');
+		const navEl = containerEl.createDiv({ cls: 'ytkn-tabs' });
+		navEl.setAttribute('role', 'tablist');
+		navEl.setAttribute('aria-orientation', 'horizontal');
 
-		this.panelsContainerEl = this.containerEl.createDiv({ cls: 'ytkn-tabs-panels' });
+		const panelsContainerEl = containerEl.createDiv();
 
 		const tabIds = tabDefs.map((definition) => definition.id);
 		tabDefs.forEach(def => {
-			const tabEl = this.navEl.createEl('button', { cls: 'ytkn-tab' });
+			const tabEl = navEl.createEl('button', { cls: 'ytkn-tab' });
 			tabEl.setAttribute('role', 'tab');
 			tabEl.setAttribute('aria-controls', `ytkn-tab-panel-${def.id}`);
 			tabEl.setAttribute('id', `ytkn-tab-${def.id}`);
@@ -45,7 +39,7 @@ export class TabGroup {
 				setIcon(iconEl, def.icon);
 			}
 
-			tabEl.createSpan({ cls: 'ytkn-tab-label', text: def.label });
+			tabEl.createSpan({ text: def.label });
 
 			tabEl.addEventListener('click', () => {
 				this.setActiveTab(def.id);
@@ -72,7 +66,7 @@ export class TabGroup {
 
 			this.tabs.set(def.id, tabEl);
 
-			const panelEl = this.panelsContainerEl.createDiv({ cls: 'ytkn-tab-panel' });
+			const panelEl = panelsContainerEl.createDiv({ cls: 'ytkn-tab-panel' });
 			panelEl.setAttribute('role', 'tabpanel');
 			panelEl.setAttribute('id', `ytkn-tab-panel-${def.id}`);
 			panelEl.setAttribute('aria-labelledby', `ytkn-tab-${def.id}`);

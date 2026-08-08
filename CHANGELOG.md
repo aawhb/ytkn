@@ -66,7 +66,7 @@
 ### New
 
 - Existing installs now get an in-plugin recent updates modal for this release.
-- The generation modal and settings tab now include quick access to the queue for long-running batches.
+- The generation modal and settings now include quick access to the queue for long-running batches.
 - Metadata-only notes can now be generated with AI off and transcript inclusion off.
 - Video frontmatter can include `thumbnailUrl`, `videoDescription`, `channelId`, `durationSeconds`, and `keywords`.
 - A new "Use AI" master switch to turn off AI summary, mindmap, and memorable quote generation.

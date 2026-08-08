@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { ReleaseNote } from '../src/releaseNotes';
 import {
 	getRecentReleaseNotes,
-	getReleaseNote,
 	resolveReleaseNotesStartupAction,
 } from '../src/releaseNotes';
 
@@ -13,11 +12,6 @@ const notes: ReleaseNote[] = [
 ];
 
 describe('release notes helpers', () => {
-	it('finds notes by exact version', () => {
-		expect(getReleaseNote('2.0.0', notes)?.new).toEqual(['Two']);
-		expect(getReleaseNote('missing', notes)).toBeNull();
-	});
-
 	it('returns the most recent notes up to the requested limit', () => {
 		expect(getRecentReleaseNotes(2, notes).map((note) => note.version)).toEqual(['2.0.0', '1.9.0']);
 		expect(getRecentReleaseNotes(0, notes)).toEqual([]);

@@ -1,6 +1,6 @@
 import { setIcon } from 'obsidian';
 
-export interface BrandAction {
+interface BrandAction {
 	id: string;
 	label: string;
 	icon: string;
@@ -12,15 +12,9 @@ export function renderBrandActions(containerEl: HTMLElement, actions: BrandActio
 	const actionsEl = containerEl.createDiv({ cls: 'ytkn-brand-actions' });
 
 	for (const action of actions) {
-		const actionClasses = [
-			'ytkn-brand-action',
-			action.href ? 'ytkn-brand-action--link' : 'ytkn-brand-action--button',
-			action.onClick ? 'ytkn-brand-action--utility' : '',
-		].filter(Boolean).join(' ');
-
 		const actionEl = action.href
 			? actionsEl.createEl('a', {
-				cls: actionClasses,
+				cls: 'ytkn-brand-action',
 				attr: {
 					'aria-label': action.label,
 					'data-action-id': action.id,
@@ -31,7 +25,7 @@ export function renderBrandActions(containerEl: HTMLElement, actions: BrandActio
 				},
 			})
 			: actionsEl.createEl('button', {
-				cls: actionClasses,
+				cls: 'ytkn-brand-action',
 				attr: {
 					'aria-label': action.label,
 					'data-action-id': action.id,

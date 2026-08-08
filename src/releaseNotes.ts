@@ -9,14 +9,14 @@ export interface ReleaseNote {
 	changed?: string[];
 }
 
-export interface ReleaseNotesStartupInput {
+interface ReleaseNotesStartupInput {
 	currentVersion: string;
 	hasSavedSettings: boolean;
 	lastSeenVersion: string | null;
 	notes?: readonly ReleaseNote[];
 }
 
-export type ReleaseNotesStartupAction =
+type ReleaseNotesStartupAction =
 	| { kind: 'none' }
 	| { kind: 'mark-seen' }
 	| { kind: 'show'; notes: ReleaseNote[] };
@@ -99,13 +99,13 @@ const RELEASE_NOTES: ReleaseNote[] = [
 		summary: 'Better long-playlist runs, richer video metadata, AI-optional notes, and clearer provider/queue UI.',
 		new: [
 			'Existing installs now get an in-plugin recent updates modal for this release.',
-			'The generation modal and settings tab now include quick access to the queue for long-running batches.',
+			'The generation modal and settings now include quick access to the queue for long-running batches.',
 			'Metadata-only notes can now be generated with AI off and transcript inclusion off.',
 			'Video frontmatter can include thumbnailUrl, videoDescription, channelId, durationSeconds, and keywords.',
 			'A new AI master switch to turn off AI summary, mindmap, and memorable quote generation.',
 		],
 		improved: [
-			'Run reports now count videos inside playlists instead of only the submitted playlist URL.',
+			'Reports now count videos inside playlists instead of only the submitted playlist URL.',
 			'Captionless videos can still produce useful source and metadata notes in metadata-only mode.',
 			'AI provider settings now use simpler provider cards with plain provider/model summaries and standard model action buttons.',
 			'Settings and generation-modal copy now share one source of truth for more consistent labels, descriptions, and dropdown options.',
@@ -121,7 +121,7 @@ const RELEASE_NOTES: ReleaseNote[] = [
 	},
 ];
 
-export function getReleaseNote(version: string, notes: readonly ReleaseNote[] = RELEASE_NOTES): ReleaseNote | null {
+function getReleaseNote(version: string, notes: readonly ReleaseNote[] = RELEASE_NOTES): ReleaseNote | null {
 	return notes.find((note) => note.version === version) ?? null;
 }
 
