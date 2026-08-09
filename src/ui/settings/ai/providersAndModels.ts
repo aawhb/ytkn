@@ -10,7 +10,7 @@ import type { PluginSettings, ProviderConfig, ProviderType } from '../../../type
 import { DEFAULT_OPENAI_COMPATIBLE_URL } from '../../../defaults';
 import { buildModelId } from '../../../modelId';
 import { GENERATION_OPTIONS_SCHEMA as OPTIONS } from '../../shared/generationOptionsSchema';
-import type { ProviderManager } from './providerManager';
+import type { ProviderManager, ProviderPageChange } from './providerManager';
 import { sectionInfoButton } from '../sectionInfo';
 
 const PROVIDER_TYPE_LABELS: Record<ProviderType, string> = {
@@ -75,15 +75,21 @@ function getProviderPage(
 }
 
 class ProviderSettingsPage extends SettingPage {
+	private currentName: string;
+	private parentDirty = false;
+	private unregister?: () => void;
+
 	constructor(
 		private context: AiProvidersContext,
-		private currentName: string,
+		providerName: string,
 	) {
 		super();
-		this.title = currentName;
+		this.currentName = providerName;
+		this.title = providerName;
 	}
 
 	display(): void {
+		this.registerListener();
 		this.containerEl.empty();
 		const provider = this.context.manager.getProvider(this.currentName);
 		if (!provider) {
@@ -100,6 +106,34 @@ class ProviderSettingsPage extends SettingPage {
 		this.title = provider.name;
 		this.renderConnection(provider);
 		this.renderModels(provider);
+	}
+
+	hide(): void {
+		this.unregister?.();
+		this.unregister = undefined;
+		super.hide();
+		if (this.parentDirty) {
+			this.parentDirty = false;
+			queueMicrotask(() => this.context.manager.refreshSettingsStructure());
+		}
+	}
+
+	private registerListener(): void {
+		this.unregister ??= this.context.manager.registerActiveProviderPage(
+			(change) => this.handleProviderChange(change),
+		);
+	}
+
+	private handleProviderChange(change: ProviderPageChange): boolean {
+		const matches = change.kind === 'renamed'
+			? change.previousName === this.currentName
+			: change.providerName === this.currentName;
+		if (!matches) return false;
+		if (change.kind === 'renamed') this.currentName = change.providerName;
+		this.parentDirty = true;
+		this.title = this.currentName;
+		this.display();
+		return true;
 	}
 
 	private renderConnection(provider: ProviderConfig): void {

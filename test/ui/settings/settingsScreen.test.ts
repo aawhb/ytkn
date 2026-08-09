@@ -424,6 +424,42 @@ describe('SettingsScreen declarative settings', () => {
 		expect(page.containerEl.textContent).toContain('Llama 3.2');
 	});
 
+	it('keeps a renamed provider page populated and refreshes its parent on exit', async () => {
+		const settings = makeFakeSettings({ providers: [makeProvider()] });
+		const tab = createSettingsScreen(makeFakePlugin(settings));
+		const providerDefinition = findDefinition(tab, 'Local');
+		const page = providerDefinition.page() as SettingPage;
+		page.display();
+		const input = page.containerEl.querySelector<HTMLInputElement>('input');
+		const rename = Array.from(page.containerEl.querySelectorAll<HTMLButtonElement>('button'))
+			.find((button) => button.textContent === 'Rename');
+		const update = (tab as any).update as ReturnType<typeof vi.fn>;
+		update.mockClear();
+
+		if (!input || !rename) throw new Error('Provider rename controls were not rendered.');
+		input.value = 'Home AI';
+		input.dispatchEvent(new Event('input'));
+		rename.click();
+		await vi.waitFor(() => expect(settings.getProviders()[0].name).toBe('Home AI'));
+		expect(page.title).toBe('Home AI');
+		expect(page.containerEl.textContent).toContain('Provider name');
+		expect(page.containerEl.textContent).toContain('Llama 3.2');
+		expect(update).not.toHaveBeenCalled();
+
+		const type = page.containerEl.querySelector<HTMLSelectElement>('select');
+		if (!type) throw new Error('Provider type control was not rendered after rename.');
+		type.value = 'openai';
+		type.dispatchEvent(new Event('change'));
+		await vi.waitFor(() => expect(settings.getProviders()[0].type).toBe('openai'));
+		expect(settings.updateProvider).toHaveBeenLastCalledWith(
+			expect.objectContaining({ name: 'Home AI', type: 'openai' }),
+			'Home AI',
+		);
+
+		page.hide();
+		await vi.waitFor(() => expect(update).toHaveBeenCalledOnce());
+	});
+
 	it('warns about incomplete AI setup and disables model fetching until ready', () => {
 		const cloud: ProviderConfig = {
 			name: 'Cloud',
