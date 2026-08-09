@@ -26,8 +26,6 @@ describe('WhatsNewModal', () => {
 		expect(modal.contentEl.textContent).toContain('Metadata-only notes');
 		expect(modal.contentEl.textContent).toContain('Better reports');
 		expect(modal.contentEl.textContent).toContain('Playlist pagination');
-		expect(modal.contentEl.textContent).not.toContain('Help and support');
-
 		const links = Array.from(modal.contentEl.querySelectorAll('a'));
 		expect(links.map((link) => link.getAttribute('href'))).toEqual([
 			DOCUMENTATION_LINK,

@@ -2,8 +2,7 @@ import type { App } from 'obsidian';
 import { Modal, Setting, setIcon } from 'obsidian';
 import type { QueuedRun, RunQueueService } from '../../queue/runQueueService';
 import type { QueueRunResult } from '../../types';
-import { createSettingsCard } from '../shared/cards';
-import { setDestructiveButton } from '../shared/buttonStyles';
+import { createCard } from '../shared/cards';
 
 const MAX_VISIBLE_HISTORY = 10;
 type QueueStatus = QueueRunResult['outcome'] | 'queued' | 'running';
@@ -39,13 +38,13 @@ export class QueueModal extends Modal {
 		}
 
 		if (snap.current) {
-			createSettingsCard(contentEl, 'Active', (body) => {
+			createCard(contentEl, 'Active', (body) => {
 				this.renderActiveRun(body, snap.current!);
 			});
 		}
 
 		if (snap.queued.length > 0) {
-			createSettingsCard(contentEl, `Queued (${snap.queued.length})`, (body) => {
+			createCard(contentEl, `Queued (${snap.queued.length})`, (body) => {
 				for (const run of snap.queued) {
 					this.renderQueuedRun(body, run);
 				}
@@ -53,7 +52,7 @@ export class QueueModal extends Modal {
 		}
 
 		if (snap.history.length > 0) {
-			createSettingsCard(contentEl, `Recent results (${snap.history.length})`, (body) => {
+			createCard(contentEl, `Recent results (${snap.history.length})`, (body) => {
 				const entries = snap.history.slice(-MAX_VISIBLE_HISTORY).reverse();
 				for (const entry of entries) {
 					this.renderHistoryEntry(body, entry);
@@ -81,7 +80,8 @@ export class QueueModal extends Modal {
 		const controls = container.createDiv({ cls: 'ytkn-queue-modal__controls' });
 		new Setting(controls)
 			.addButton((btn) =>
-				setDestructiveButton(btn.setButtonText('Cancel all runs'))
+				btn.setButtonText('Cancel all runs')
+					.setDestructive()
 					.onClick(() => {
 						this.runQueue.cancelAll();
 					}),
@@ -95,7 +95,7 @@ export class QueueModal extends Modal {
 		historyCount: number,
 	): void {
 		const header = container.createDiv({ cls: 'ytkn-queue-modal__header ytkn-brand-header' });
-		const mark = header.createDiv({ cls: 'ytkn-brand-mark ytkn-queue-modal__mark' });
+		const mark = header.createDiv({ cls: 'ytkn-brand-mark' });
 		mark.setAttribute('aria-hidden', 'true');
 		setIcon(mark, 'play');
 		const copy = header.createDiv({ cls: 'ytkn-queue-modal__header-copy' });

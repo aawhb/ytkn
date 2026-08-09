@@ -170,4 +170,33 @@ describe('buildGenerationSubmit', () => {
 		expect(result.options.includeMindmap).toBe(true);
 		expect(result.options.controlValues).toBeUndefined();
 	});
+
+	it('disables AI when no AI output is selected', () => {
+		const result = buildGenerationSubmit({
+			...baseState(),
+			useAi: true,
+			generateAiSummary: false,
+			tldrCalloutAtTop: false,
+			includeMindmap: false,
+			includeMemorableQuotes: false,
+		});
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) throw new Error(result.message);
+		expect(result.options.useAi).toBe(false);
+	});
+
+	it('keeps AI enabled for TL;DR-only output', () => {
+		const result = buildGenerationSubmit({
+			...baseState(),
+			useAi: true,
+			generateAiSummary: false,
+			tldrCalloutAtTop: true,
+		});
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) throw new Error(result.message);
+		expect(result.options.useAi).toBe(true);
+		expect(result.options.tldrCalloutAtTop).toBe(true);
+	});
 });

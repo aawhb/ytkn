@@ -98,7 +98,7 @@ export class WhatsNewModal extends Modal {
 	}
 
 	private renderSupport(container: HTMLElement): void {
-		const support = container.createDiv({ cls: 'ytkn-whats-new-modal__support' });
+		const support = container.createDiv();
 		const actions = support.createDiv({ cls: 'ytkn-whats-new-modal__support-actions' });
 		this.createSupportLink(actions, DOCUMENTATION_LINK, 'Help', 'circle-help');
 		this.createSupportLink(actions, SUPPORT_LINKS.githubSponsors, 'Sponsor', 'heart-handshake');

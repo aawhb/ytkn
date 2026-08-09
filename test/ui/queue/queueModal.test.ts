@@ -57,7 +57,7 @@ describe('QueueModal', () => {
 		modal.open();
 
 		expect(modal.contentEl.querySelector('h2')?.textContent).toBe('Generation queue');
-		const brandMark = modal.contentEl.querySelector('.ytkn-queue-modal__mark.ytkn-brand-mark');
+		const brandMark = modal.contentEl.querySelector('.ytkn-queue-modal__header .ytkn-brand-mark');
 		expect(brandMark?.getAttribute('aria-hidden')).toBe('true');
 		const empty = modal.contentEl.querySelector('.ytkn-queue-modal__empty');
 		expect(empty).not.toBeNull();

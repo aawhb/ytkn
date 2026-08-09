@@ -11,5 +11,3 @@ export function createCard(
 	render(body);
 	return wrapper;
 }
-
-export const createSettingsCard = createCard;

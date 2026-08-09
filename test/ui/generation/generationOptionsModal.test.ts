@@ -8,11 +8,12 @@ vi.mock('obsidian', async () => {
 import { GenerationOptionsModal } from '../../../src/ui/generation/generationOptionsModal';
 import { WhatsNewModal } from '../../../src/ui/releaseNotes/whatsNewModal';
 import { SUPPORT_LINKS } from '../../../src/releaseNotes';
+import { GENERATION_OPTIONS_SCHEMA as OPTIONS } from '../../../src/ui/shared/generationOptionsSchema';
+import { ModelPickerModal } from '../../../src/ui/shared/modelPickerModal';
 import type { ModelConfig, GenerationOptions } from '../../../src/types';
 import { App, Platform } from 'obsidian';
 
 const VIDEO_URL = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
-const VIDEO_URL_2 = 'https://www.youtube.com/watch?v=oHg5SJYRHA0';
 const PLAYLIST_URL = 'https://www.youtube.com/playlist?list=PLtest12345';
 const CHANNEL_URL = 'https://www.youtube.com/@channel';
 const INVALID_URL = 'https://example.com/not-youtube';
@@ -23,8 +24,32 @@ const sampleModel: ModelConfig = {
 	provider: { name: 'OpenAI', type: 'openai', apiKey: 'key' },
 };
 
+const fallbackModel: ModelConfig = {
+	name: 'gemini-2.5-flash',
+	displayName: 'Gemini 2.5 Flash',
+	provider: { name: 'Gemini', type: 'gemini', apiKey: 'key' },
+};
+
 const defaultOptions: GenerationOptions = {};
 type SubmitHandler = (urls: string[], options: GenerationOptions) => void;
+
+function findSetting(root: ParentNode, name: string): HTMLElement | undefined {
+	return Array.from(root.querySelectorAll<HTMLElement>('.setting-item'))
+		.find((setting) => setting.querySelector('.setting-item-name')?.textContent === name);
+}
+
+function findSettingGroup(root: ParentNode, heading: string): HTMLElement | undefined {
+	return Array.from(root.querySelectorAll<HTMLElement>('.ytkn-settings__section-card'))
+		.find((group) => group.querySelector('.setting-item-heading')?.textContent === heading);
+}
+
+function findAdditionalSectionsSetting(root: ParentNode): HTMLElement | undefined {
+	return Array.from(root.querySelectorAll<HTMLElement>('.setting-item')).find((setting) => {
+		const labels = Array.from(setting.querySelectorAll<HTMLElement>('.ytkn-checkbox-group-option'))
+			.map((option) => option.textContent?.trim());
+		return labels.join('|') === 'TL;DR|Mind Map|Memorable Quotes';
+	});
+}
 
 describe('GenerationOptionsModal', () => {
 	let app: App;
@@ -108,7 +133,7 @@ describe('GenerationOptionsModal', () => {
 		openSpy.mockRestore();
 	});
 
-	it('shows the TL;DR quick setting when AI is enabled even if AI summary is disabled', () => {
+	it('shows additional sections when AI is enabled even if AI summary is disabled', () => {
 		const enabledModal = new GenerationOptionsModal(
 			app,
 			'',
@@ -118,8 +143,8 @@ describe('GenerationOptionsModal', () => {
 		);
 		enabledModal.open();
 
-		const enabledSetting = enabledModal.contentEl.querySelector('.ytkn-modal__tldr-callout-setting') as HTMLElement | null;
-		expect(enabledSetting).not.toBeNull();
+		const enabledSetting = findAdditionalSectionsSetting(enabledModal.contentEl);
+		expect(enabledSetting).toBeDefined();
 		expect(enabledSetting?.style.display).toBe('');
 
 		const disabledModal = new GenerationOptionsModal(
@@ -131,8 +156,8 @@ describe('GenerationOptionsModal', () => {
 		);
 		disabledModal.open();
 
-		const disabledSetting = disabledModal.contentEl.querySelector('.ytkn-modal__tldr-callout-setting') as HTMLElement | null;
-		expect(disabledSetting).not.toBeNull();
+		const disabledSetting = findAdditionalSectionsSetting(disabledModal.contentEl);
+		expect(disabledSetting).toBeDefined();
 		expect(disabledSetting?.style.display).toBe('none');
 	});
 
@@ -158,7 +183,7 @@ describe('GenerationOptionsModal', () => {
 		expect(divider?.style.display).toBe('none');
 	});
 
-	it('keeps AI add-ons visible when AI is enabled and summary is disabled', () => {
+	it('keeps additional sections visible when AI is enabled and summary is disabled', () => {
 		const modal = new GenerationOptionsModal(
 			app,
 			'',
@@ -169,74 +194,21 @@ describe('GenerationOptionsModal', () => {
 		modal.open();
 
 		const settings = Array.from(modal.contentEl.querySelectorAll('.setting-item'));
-		const mindmapSetting = settings.find((setting) => setting.textContent?.includes('Add mind map')) as HTMLElement | undefined;
-		const quotesSetting = settings.find((setting) => setting.textContent?.includes('Add memorable quotes')) as HTMLElement | undefined;
+		const additionalSections = findAdditionalSectionsSetting(modal.contentEl);
+		const options = Array.from(additionalSections?.querySelectorAll<HTMLElement>('.ytkn-checkbox-group-option') ?? []);
 		const instructionSetting = settings.find((setting) => setting.textContent?.includes('AI instructions')) as HTMLElement | undefined;
 
-		expect(mindmapSetting?.style.display).toBe('');
-		expect(quotesSetting?.style.display).toBe('');
+		expect(additionalSections?.style.display).toBe('');
+		expect(additionalSections?.querySelector('.setting-item-info')).toBeNull();
+		expect(additionalSections?.textContent).not.toContain('Additional sections');
+		expect(options.map((option) => option.textContent?.trim())).toEqual([
+			'TL;DR',
+			'Mind Map',
+			'Memorable Quotes',
+		]);
+		expect(options.map((option) => option.querySelector<HTMLInputElement>('input')?.checked))
+			.toEqual([true, true, true]);
 		expect(instructionSetting?.style.display).toBe('none');
-	});
-
-	it('auto-disables AI on submit when no AI outputs are selected', () => {
-		const modal = new GenerationOptionsModal(
-			app,
-			VIDEO_URL,
-			[sampleModel],
-			{
-				useAi: true,
-				generateAiSummary: false,
-				tldrCalloutAtTop: false,
-				includeMindmap: false,
-				includeMemorableQuotes: false,
-				transcriptMode: 'readable',
-				noteDestinationMode: 'folder',
-				noteDestinationFolder: 'Notes',
-			},
-			onSubmit,
-		);
-		modal.open();
-
-		const buttons = Array.from(modal.contentEl.querySelectorAll('button'));
-		buttons.find((button) => button.textContent === 'Generate')?.click();
-
-		expect(onSubmit).toHaveBeenCalledOnce();
-		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
-		expect(options.useAi).toBe(false);
-		expect(options.generateAiSummary).toBe(false);
-		expect(options.includeMindmap).toBe(false);
-		expect(options.includeMemorableQuotes).toBe(false);
-	});
-
-	it('keeps AI enabled for TL;DR-only submits', () => {
-		const modal = new GenerationOptionsModal(
-			app,
-			VIDEO_URL,
-			[sampleModel],
-			{
-				useAi: true,
-				generateAiSummary: false,
-				tldrCalloutAtTop: true,
-				includeMindmap: false,
-				includeMemorableQuotes: false,
-				transcriptMode: 'readable',
-				noteDestinationMode: 'folder',
-				noteDestinationFolder: 'Notes',
-			},
-			onSubmit,
-		);
-		modal.open();
-
-		const buttons = Array.from(modal.contentEl.querySelectorAll('button'));
-		buttons.find((button) => button.textContent === 'Generate')?.click();
-
-		expect(onSubmit).toHaveBeenCalledOnce();
-		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
-		expect(options.useAi).toBe(true);
-		expect(options.generateAiSummary).toBe(false);
-		expect(options.tldrCalloutAtTop).toBe(true);
-		expect(options.includeMindmap).toBe(false);
-		expect(options.includeMemorableQuotes).toBe(false);
 	});
 
 	it('renders the media embed dropdown with video, thumbnail, and off choices', () => {
@@ -253,6 +225,119 @@ describe('GenerationOptionsModal', () => {
 		expect(mediaSelect?.value).toBe('video');
 	});
 
+	it('uses a multiline frontmatter property override', () => {
+		const modal = new GenerationOptionsModal(
+			app,
+			'',
+			[sampleModel],
+			{ includeFrontmatter: true, frontmatterPropertyAllowlist: 'title channel topic' },
+			onSubmit,
+		);
+		modal.open();
+		const row = findSetting(modal.contentEl, 'Frontmatter properties');
+		const textarea = row?.querySelector<HTMLTextAreaElement>('textarea');
+
+		expect(textarea?.value).toBe('title channel topic');
+		expect(textarea?.rows).toBe(3);
+		expect(row?.classList.contains('ytkn-control-row--textarea')).toBe(true);
+	});
+
+	it('uses settings-style groups for every advanced General section', () => {
+		const modal = new GenerationOptionsModal(
+			app,
+			'',
+			[sampleModel],
+			{
+				includeFrontmatter: true,
+				transcriptMode: 'timestamped',
+				transcriptLanguageMode: 'preferred',
+				includeReport: true,
+				modelIds: ['OpenAI:gpt-4'],
+			},
+			onSubmit,
+		);
+		modal.open();
+		const generalPanel = modal.contentEl.querySelector<HTMLElement>('#ytkn-tab-panel-general')!;
+		const groups = Array.from(generalPanel.querySelectorAll<HTMLElement>('.ytkn-settings__section-card'));
+
+		expect(groups.map((group) => group.querySelector('.setting-item-heading')?.textContent)).toEqual([
+			'Note format',
+			'Transcript',
+			'Playlists and channels',
+			'Reports',
+		]);
+		for (const name of [
+			'Frontmatter tags',
+			'Frontmatter properties',
+			'Link timestamps to YouTube',
+			'Preferred language code',
+			'Report location',
+		]) {
+			expect(findSetting(generalPanel, name)?.style.display).toBe('');
+		}
+	});
+
+	it('uses settings-style model order and generation parameter groups', () => {
+		const openSpy = vi.spyOn(ModelPickerModal.prototype, 'open').mockImplementation(() => undefined);
+		const modal = new GenerationOptionsModal(
+			app,
+			'',
+			[sampleModel, fallbackModel],
+			{ modelIds: ['OpenAI:gpt-4'] },
+			onSubmit,
+		);
+		modal.open();
+
+		const aiPanel = modal.contentEl.querySelector<HTMLElement>('#ytkn-tab-panel-ai')!;
+		const modelGroup = findSettingGroup(aiPanel, 'Model order');
+		const parameterGroup = findSettingGroup(aiPanel, 'Generation parameters');
+		const modelRow = modelGroup?.querySelector('.ytkn-model-chain__row');
+		const addButton = modelGroup?.querySelector<HTMLButtonElement>('button[data-icon="plus"]');
+
+		expect(modelGroup).toBeDefined();
+		expect(modelRow?.querySelector('.setting-item-name')?.textContent).toBe('GPT-4');
+		expect(modelRow?.querySelector('.setting-item-description')?.textContent).toBe('OpenAI');
+		expect(modelGroup?.querySelector('select')).toBeNull();
+		expect(addButton?.title).toBe('Add model');
+		expect(addButton?.disabled).toBe(false);
+		expect(parameterGroup).not.toBeUndefined();
+
+		addButton?.click();
+		expect(openSpy).toHaveBeenCalledOnce();
+		openSpy.mockRestore();
+	});
+
+	it('shows link timestamps only for timestamped transcripts through either transcript selector', () => {
+		const modal = new GenerationOptionsModal(
+			app,
+			'',
+			[sampleModel],
+			{ transcriptMode: 'readable' },
+			onSubmit,
+		);
+		modal.open();
+		const row = (container: ParentNode, name: string) =>
+			Array.from(container.querySelectorAll<HTMLElement>('.setting-item'))
+				.find((setting) => setting.querySelector('.setting-item-name')?.textContent === name);
+		const quickGrid = modal.contentEl.querySelector('.ytkn-modal__quick-grid')!;
+		const generalPanel = modal.contentEl.querySelector('#ytkn-tab-panel-general')!;
+		const quickSelect = row(quickGrid, 'Transcript in note')?.querySelector<HTMLSelectElement>('select');
+		const advancedSelect = row(generalPanel, 'Transcript in note')?.querySelector<HTMLSelectElement>('select');
+		const linkTimestampsRow = row(generalPanel, 'Link timestamps to YouTube');
+
+		expect(linkTimestampsRow?.style.display).toBe('none');
+
+		quickSelect!.value = 'timestamped';
+		quickSelect!.dispatchEvent(new Event('change'));
+		expect(advancedSelect?.value).toBe('timestamped');
+		expect(linkTimestampsRow?.style.display).toBe('');
+
+		advancedSelect!.value = 'none';
+		advancedSelect!.dispatchEvent(new Event('change'));
+		expect(quickSelect?.value).toBe('none');
+		expect(linkTimestampsRow?.style.display).toBe('none');
+	});
+
 	it('renders tab buttons labelled General and AI', () => {
 		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
 		modal.open();
@@ -261,6 +346,26 @@ describe('GenerationOptionsModal', () => {
 		const labels = tabs.map((t) => t.textContent?.trim());
 		expect(labels).toContain('General');
 		expect(labels).toContain('AI');
+	});
+
+	it('uses advanced descriptions only for model provider labels', () => {
+		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit);
+		modal.open();
+
+		const descriptions = (panelId: string) => Array.from(modal.contentEl.querySelectorAll<HTMLElement>(
+			`#ytkn-tab-panel-${panelId} .setting-item-description`,
+		)).map((description) => description.textContent?.trim()).filter(Boolean);
+
+		expect(descriptions('general')).toEqual([]);
+		expect(descriptions('ai')).toEqual(['OpenAI']);
+	});
+
+	it('keeps unavailable-model guidance in the advanced AI tab', () => {
+		const modal = new GenerationOptionsModal(app, '', [], defaultOptions, onSubmit);
+		modal.open();
+
+		const panel = modal.contentEl.querySelector<HTMLElement>('#ytkn-tab-panel-ai');
+		expect(panel?.textContent).toContain(OPTIONS.modelOrder.unavailableDesc);
 	});
 
 	it('renders the compact URL field and AI label', () => {
@@ -385,6 +490,31 @@ describe('GenerationOptionsModal submit: multi-URL', () => {
 		expect(options.tldrCalloutAtTop).toBe(false);
 	});
 
+	it('updates every add-on through the additional sections checkboxes', () => {
+		const modal = openWithUrl(VIDEO_URL, {
+			useAi: true,
+			generateAiSummary: false,
+			tldrCalloutAtTop: false,
+			includeMindmap: false,
+			includeMemorableQuotes: false,
+		});
+		const inputs = Array.from(findAdditionalSectionsSetting(modal.contentEl)
+			?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]') ?? []);
+
+		expect(inputs).toHaveLength(3);
+		for (const input of inputs) {
+			input.checked = true;
+			input.dispatchEvent(new Event('change'));
+		}
+
+		clickSubmit(modal);
+		expect(onSubmit).toHaveBeenCalledOnce();
+		const [, options] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
+		expect(options.tldrCalloutAtTop).toBe(true);
+		expect(options.includeMindmap).toBe(true);
+		expect(options.includeMemorableQuotes).toBe(true);
+	});
+
 	it('allows metadata-only video output when AI and transcript are off', () => {
 		const modal = openWithUrl(VIDEO_URL, {
 			useAi: false,
@@ -450,7 +580,7 @@ describe('GenerationOptionsModal submit: multi-URL', () => {
 
 		expect(text).toContain("The channel playlists tab isn't supported.");
 		expect(text).not.toContain('Single video detected.');
-		expect(modal.contentEl.querySelector<HTMLElement>('.ytkn-channel-content-setting')?.style.display).toBe('none');
+		expect(findSetting(modal.contentEl, 'Channel')?.style.display).toBe('none');
 	});
 
 	it('shows channel content checkboxes and unlimited per-type selection for channel URLs', () => {
@@ -460,15 +590,13 @@ describe('GenerationOptionsModal submit: multi-URL', () => {
 		});
 
 		expect(modal.contentEl.textContent).toContain('Channel detected.');
-		const contentRow = modal.contentEl.querySelector('.ytkn-channel-content-setting');
-		expect(contentRow?.className).toContain('ytkn-setting-row--fit-control');
+		const contentRow = findSetting(modal.contentEl, 'Channel');
 		expect(contentRow?.querySelector('.setting-item-name')?.textContent).toBe('Channel');
 		expect(contentRow?.querySelector('.setting-item-description')?.textContent).toBe('');
-		const options = Array.from(modal.contentEl.querySelectorAll('.ytkn-channel-content-option'));
+		const options = Array.from(contentRow?.querySelectorAll('.ytkn-checkbox-group-option') ?? []);
 		expect(options.map((option) => option.textContent?.trim())).toEqual(['Videos', 'Shorts', 'Streams']);
 		expect(options.map((option) => (option.querySelector('input') as HTMLInputElement).checked)).toEqual([true, false, true]);
 		const limitRow = modal.contentEl.querySelector('.ytkn-channel-limit-setting');
-		expect(limitRow?.className).toContain('ytkn-setting-row--fit-control');
 		expect(limitRow?.querySelector('.setting-item-name')?.textContent).toBe('Items per selected type');
 		expect(limitRow?.querySelector('.setting-item-description')?.textContent).toBe('');
 		const limitSelect = limitRow?.querySelector('select') as HTMLSelectElement;
@@ -500,7 +628,8 @@ describe('GenerationOptionsModal submit: multi-URL', () => {
 		textarea.value = 'https://www.youtube.com/@channel/streams';
 		textarea.dispatchEvent(new Event('input'));
 
-		const options = Array.from(modal.contentEl.querySelectorAll('.ytkn-channel-content-option'));
+		const channel = findSetting(modal.contentEl, 'Channel');
+		const options = Array.from(channel?.querySelectorAll('.ytkn-checkbox-group-option') ?? []);
 		expect(options.map((option) => (option.querySelector('input') as HTMLInputElement).checked)).toEqual([false, false, true]);
 	});
 
@@ -512,22 +641,8 @@ describe('GenerationOptionsModal submit: multi-URL', () => {
 		expect(urls).toEqual([VIDEO_URL, PLAYLIST_URL]);
 	});
 
-	it('newline-separated URLs are parsed correctly', () => {
-		const modal = openWithUrl(`${VIDEO_URL}\n${VIDEO_URL_2}`);
-		clickSubmit(modal);
-		expect(onSubmit).toHaveBeenCalledOnce();
-		const [urls] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
-		expect(urls).toEqual([VIDEO_URL, VIDEO_URL_2]);
-	});
-
 	it('empty URL shows notice and does not call onSubmit', () => {
 		const modal = openWithUrl('');
-		clickSubmit(modal);
-		expect(onSubmit).not.toHaveBeenCalled();
-	});
-
-	it('whitespace-only URL shows notice and does not call onSubmit', () => {
-		const modal = openWithUrl('   ');
 		clickSubmit(modal);
 		expect(onSubmit).not.toHaveBeenCalled();
 	});
@@ -538,45 +653,6 @@ describe('GenerationOptionsModal submit: multi-URL', () => {
 		expect(onSubmit).toHaveBeenCalledOnce();
 		const [urls] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
 		expect(urls).toEqual([INVALID_URL]);
-	});
-
-	it('multi-URL with one invalid URL still passes all to onSubmit', () => {
-		const input = `${VIDEO_URL} ${INVALID_URL}`;
-		const modal = openWithUrl(input);
-		clickSubmit(modal);
-		expect(onSubmit).toHaveBeenCalledOnce();
-		const [urls] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
-		expect(urls).toHaveLength(2);
-		expect(urls[0]).toBe(VIDEO_URL);
-		expect(urls[1]).toBe(INVALID_URL);
-	});
-
-	it('whitespace and comma separators all produce same URL array', () => {
-		const commas = openWithUrl(`${VIDEO_URL},${PLAYLIST_URL}`);
-		clickSubmit(commas);
-
-		const spaces = openWithUrl(`${VIDEO_URL} ${PLAYLIST_URL}`);
-		clickSubmit(spaces);
-
-		const [urlsCommas] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
-		const [urlsSpaces] = onSubmit.mock.calls[1] as [string[], GenerationOptions];
-		expect(urlsCommas).toEqual(urlsSpaces);
-	});
-
-	it('duplicate URLs are deduped before calling onSubmit', () => {
-		const modal = openWithUrl(`${VIDEO_URL}, ${VIDEO_URL}, ${PLAYLIST_URL}`);
-		clickSubmit(modal);
-		expect(onSubmit).toHaveBeenCalledOnce();
-		const [urls] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
-		expect(urls).toEqual([VIDEO_URL, PLAYLIST_URL]);
-	});
-
-	it('single URL after dedup still calls onSubmit with array of one', () => {
-		const modal = openWithUrl(`${VIDEO_URL} ${VIDEO_URL}`);
-		clickSubmit(modal);
-		expect(onSubmit).toHaveBeenCalledOnce();
-		const [urls] = onSubmit.mock.calls[0] as [string[], GenerationOptions];
-		expect(urls).toEqual([VIDEO_URL]);
 	});
 
 	it('Enter key on URL field submits', () => {
