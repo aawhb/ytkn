@@ -103,6 +103,25 @@ describe('sacred-key allowlist', () => {
 		expect(content).not.toContain('notakey:');
 	});
 
+	it('emits built-in properties in allowlist order and keeps tags after identity fields', () => {
+		const { content } = renderVideoNote(
+			transcript as any,
+			'',
+			transcript.url,
+			null,
+			{
+				...baseOptions,
+				frontmatterPropertyAllowlist: 'videoId channel title aliases source',
+				frontmatterTags: 'youtube',
+			},
+		);
+
+		const keys = ['videoId:', 'channel:', 'title:', 'aliases:', 'tags:', 'source:'];
+		expect(keys.map((key) => content.indexOf(key))).toEqual(
+			[...keys].map((key) => content.indexOf(key)).sort((a, b) => a - b),
+		);
+	});
+
 	it('thumbnailUrl is emitted when explicitly allowlisted', () => {
 		const { content } = renderVideoNote(
 			transcript as any,

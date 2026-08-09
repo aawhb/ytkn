@@ -15,7 +15,6 @@ import type {
 import {
 	DEFAULT_CHANNEL_CONTENT_TYPES,
 	DEFAULT_CHANNEL_VIDEO_LIMIT,
-	DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST,
 	DEFAULT_FRONTMATTER_TAGS,
 	DEFAULT_GENERATE_AI_SUMMARY,
 	DEFAULT_INCLUDE_FRONTMATTER,
@@ -44,11 +43,14 @@ import {
 } from '../defaults';
 import { normalizeVaultFolderPath } from '../utils';
 import { isInstructionTemplate } from '../ai/templates/registry';
+import { normalizeFrontmatterPropertyPreferences } from '../frontmatterProperties';
 
-export type RawOutputDefaults = Partial<Omit<OutputDefaults, 'mediaEmbedMode' | 'channelContentTypes' | 'channelVideoLimit'>> & {
+export type RawOutputDefaults = Partial<Omit<OutputDefaults, 'mediaEmbedMode' | 'channelContentTypes' | 'channelVideoLimit' | 'frontmatterProperties'>> & {
 	mediaEmbedMode?: unknown;
 	channelContentTypes?: unknown;
 	channelVideoLimit?: unknown;
+	frontmatterProperties?: unknown;
+	frontmatterPropertyAllowlist?: string;
 	includeRunReport?: boolean;
 	runReportLocation?: ReportLocation;
 };
@@ -114,27 +116,6 @@ function normalizeIncludeMindmap(includeMindmap?: boolean): boolean {
 
 function normalizeIncludeMemorableQuotes(value?: boolean): boolean {
 	return value ?? DEFAULT_INCLUDE_MEMORABLE_QUOTES;
-}
-
-function normalizeAllowlistText(value: string): string {
-	return value
-		.split(/[\s,]+/)
-		.map((s) => s.trim())
-		.filter((s) => s.length > 0)
-		.join(' ');
-}
-
-function normalizeFrontmatterPropertyAllowlist(value?: string): string {
-	if (value === undefined) {
-		return DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST;
-	}
-
-	const normalized = normalizeAllowlistText(value);
-	if (!normalized) {
-		return '';
-	}
-
-	return normalized;
 }
 
 export function normalizeInstructionConfig(instructionConfig?: Partial<InstructionConfig>): InstructionConfig {
@@ -254,7 +235,10 @@ export function normalizeOutputDefaults(outputDefaults?: RawOutputDefaults): Out
 		openCreatedNote: outputDefaults?.openCreatedNote ?? DEFAULT_OPEN_CREATED_NOTE,
 		includeFrontmatter: outputDefaults?.includeFrontmatter ?? DEFAULT_INCLUDE_FRONTMATTER,
 		frontmatterTags: normalizeFrontmatterTags(outputDefaults?.frontmatterTags),
-		frontmatterPropertyAllowlist: normalizeFrontmatterPropertyAllowlist(outputDefaults?.frontmatterPropertyAllowlist),
+		frontmatterProperties: normalizeFrontmatterPropertyPreferences(
+			outputDefaults?.frontmatterProperties,
+			outputDefaults?.frontmatterPropertyAllowlist,
+		),
 		sourceSectionPosition: normalizeSourceSectionPosition(outputDefaults?.sourceSectionPosition),
 		linkTimestamps: outputDefaults?.linkTimestamps ?? DEFAULT_LINK_TIMESTAMPS,
 		tldrCalloutAtTop: outputDefaults?.tldrCalloutAtTop ?? DEFAULT_TLDR_CALLOUT_AT_TOP,

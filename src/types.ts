@@ -53,6 +53,11 @@ export interface InstructionConfig {
 	controlValues?: Record<string, string>;
 }
 
+export interface FrontmatterPropertyPreference {
+	key: string;
+	enabled: boolean;
+}
+
 export interface OutputDefaults {
 	useAi: boolean;
 	generateAiSummary: boolean;
@@ -72,7 +77,7 @@ export interface OutputDefaults {
 	openCreatedNote: boolean;
 	includeFrontmatter: boolean;
 	frontmatterTags: string;
-	frontmatterPropertyAllowlist: string;
+	frontmatterProperties: FrontmatterPropertyPreference[];
 	sourceSectionPosition: SourceSectionPosition;
 	linkTimestamps: boolean;
 	tldrCalloutAtTop: boolean;

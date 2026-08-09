@@ -16,6 +16,7 @@ vi.mock('../../src/ai/providers/factory', () => ({
 }));
 
 import { GenerationService } from '../../src/generation/generationService';
+import { createDefaultFrontmatterPropertyPreferences } from '../../src/frontmatterProperties';
 import type { BatchReport, ChannelResponse, GenerationOptions, ModelConfig, PlaylistResponse, PluginSettings, TranscriptResponse } from '../../src/types';
 import type { QueuedRun, RunBatch } from '../../src/queue/runQueueService';
 
@@ -76,7 +77,11 @@ function makeSettings(): PluginSettings {
 	return {
 		getModels: vi.fn(() => []),
 		getModelIds: vi.fn(() => []),
-		getOutputDefaults: vi.fn(() => ({ useAi: false, generateAiSummary: false })),
+		getOutputDefaults: vi.fn(() => ({
+			useAi: false,
+			generateAiSummary: false,
+			frontmatterProperties: createDefaultFrontmatterPropertyPreferences(),
+		})),
 		getInstructionConfig: vi.fn(() => ({
 			mode: 'template',
 			template: 'general',
@@ -93,7 +98,12 @@ function makeAiSettings(): PluginSettings {
 	return {
 		getModels: vi.fn(() => [sampleModel]),
 		getModelIds: vi.fn(() => ['Ollama:local-model']),
-		getOutputDefaults: vi.fn(() => ({ useAi: true, generateAiSummary: false, tldrCalloutAtTop: true })),
+		getOutputDefaults: vi.fn(() => ({
+			useAi: true,
+			generateAiSummary: false,
+			tldrCalloutAtTop: true,
+			frontmatterProperties: createDefaultFrontmatterPropertyPreferences(),
+		})),
 		getInstructionConfig: vi.fn(() => ({
 			mode: 'template',
 			template: 'general',

@@ -1,27 +1,8 @@
 import type { FrontmatterDeclaration, FrontmatterFieldType, GenerationOptions, TranscriptResponse, VideoCollectionTranscriptResponse } from '../types';
 import type { Template } from '../types';
-import { DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST } from '../defaults';
+import { BUILT_IN_FRONTMATTER_PROPERTIES, parseFrontmatterPropertyKeys } from '../frontmatterProperties';
 
-const SACRED_FRONTMATTER_KEYS = [
-	'title',
-	'aliases',
-	'source',
-	'channel',
-	'channelUrl',
-	'channelId',
-	'videoUrl',
-	'playlistUrl',
-	'videoId',
-	'playlistId',
-	'thumbnailUrl',
-	'videoDescription',
-	'uploadDate',
-	'videoCategory',
-	'durationSeconds',
-	'keywords',
-	'generated',
-	'videoCount',
-];
+const SACRED_FRONTMATTER_KEYS = BUILT_IN_FRONTMATTER_PROPERTIES.map((property) => property.key);
 
 interface MergeFrontmatterInput {
 	globalTags: string[];
@@ -40,8 +21,7 @@ export interface RenderedFrontmatter {
 	warnings: string[];
 }
 
-const KNOWN_ALLOWLIST_KEYS: ReadonlySet<string> = new Set(SACRED_FRONTMATTER_KEYS);
-const DEFAULT_ALLOWLIST_KEYS: ReadonlySet<string> = new Set(DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST.split(/\s+/));
+type FrontmatterEntries = Map<string, string[]>;
 
 function mergeFrontmatter(input: MergeFrontmatterInput): MergeFrontmatterResult {
 	const merged: Record<string, unknown> = {};
@@ -98,100 +78,52 @@ export function buildVideoFrontmatter(
 	template: Template | null,
 	extractedFrontmatter: Record<string, unknown>,
 ): RenderedFrontmatter {
-	return buildFrontmatter(transcript.title, options, template, extractedFrontmatter, (lines, allowlist) => {
-		if (allowlist.has('source')) {
-			lines.push('source: youtube');
+	return buildFrontmatter(transcript.title, options, template, extractedFrontmatter, () => {
+		const entries: FrontmatterEntries = new Map([
+			['source', ['source: youtube']],
+			['videoUrl', [`videoUrl: ${quoteYamlValue(url)}`]],
+			['videoId', [`videoId: ${quoteYamlValue(transcript.videoId)}`]],
+		]);
+		if (transcript.author) entries.set('channel', [`channel: ${quoteYamlValue(transcript.author)}`]);
+		if (transcript.channelUrl) entries.set('channelUrl', [`channelUrl: ${quoteYamlValue(transcript.channelUrl)}`]);
+		if (transcript.channelId) entries.set('channelId', [`channelId: ${quoteYamlValue(transcript.channelId)}`]);
+		if (transcript.thumbnailUrl) entries.set('thumbnailUrl', [`thumbnailUrl: ${quoteYamlValue(transcript.thumbnailUrl)}`]);
+		if (transcript.description) entries.set('videoDescription', [`videoDescription: ${quoteYamlValue(transcript.description)}`]);
+		if (transcript.uploadDate) entries.set('uploadDate', [`uploadDate: ${transcript.uploadDate}`]);
+		if (transcript.videoCategory) entries.set('videoCategory', [`videoCategory: ${quoteYamlValue(transcript.videoCategory)}`]);
+		if (typeof transcript.durationSeconds === 'number' && Number.isFinite(transcript.durationSeconds)) {
+			entries.set('durationSeconds', [`durationSeconds: ${transcript.durationSeconds}`]);
 		}
-
-		if (transcript.author && allowlist.has('channel')) {
-			lines.push(`channel: ${quoteYamlValue(transcript.author)}`);
+		if (Array.isArray(transcript.keywords) && transcript.keywords.length > 0) {
+			entries.set('keywords', [formatYamlEntry('keywords', transcript.keywords)]);
 		}
-
-		if (transcript.channelUrl && allowlist.has('channelUrl')) {
-			lines.push(`channelUrl: ${quoteYamlValue(transcript.channelUrl)}`);
-		}
-
-		if (transcript.channelId && allowlist.has('channelId')) {
-			lines.push(`channelId: ${quoteYamlValue(transcript.channelId)}`);
-		}
-
-		if (allowlist.has('videoUrl')) {
-			lines.push(`videoUrl: ${quoteYamlValue(url)}`);
-		}
-
-		if (allowlist.has('videoId')) {
-			lines.push(`videoId: ${quoteYamlValue(transcript.videoId)}`);
-		}
-
-		if (transcript.thumbnailUrl && allowlist.has('thumbnailUrl')) {
-			lines.push(`thumbnailUrl: ${quoteYamlValue(transcript.thumbnailUrl)}`);
-		}
-
-		if (transcript.description && allowlist.has('videoDescription')) {
-			lines.push(`videoDescription: ${quoteYamlValue(transcript.description)}`);
-		}
-
-		if (transcript.uploadDate && allowlist.has('uploadDate')) {
-			lines.push(`uploadDate: ${transcript.uploadDate}`);
-		}
-
-		if (transcript.videoCategory && allowlist.has('videoCategory')) {
-			lines.push(`videoCategory: ${quoteYamlValue(transcript.videoCategory)}`);
-		}
-
-		if (typeof transcript.durationSeconds === 'number' && Number.isFinite(transcript.durationSeconds) && allowlist.has('durationSeconds')) {
-			lines.push(`durationSeconds: ${transcript.durationSeconds}`);
-		}
-
-		if (Array.isArray(transcript.keywords) && transcript.keywords.length > 0 && allowlist.has('keywords')) {
-			lines.push(formatYamlEntry('keywords', transcript.keywords));
-		}
+		return entries;
 	});
 }
 
 export function buildCollectionFrontmatter(
-	playlist: VideoCollectionTranscriptResponse,
+	collection: VideoCollectionTranscriptResponse,
 	options: GenerationOptions | undefined,
 	template: Template | null,
 	extractedFrontmatter: Record<string, unknown>,
 ): RenderedFrontmatter {
-	return buildFrontmatter(playlist.title, options, template, extractedFrontmatter, (lines, allowlist) => {
-		if ('channelId' in playlist) {
-			if (allowlist.has('source')) {
-				lines.push('source: youtube-channel');
-			}
-			if (allowlist.has('channel')) {
-				lines.push(`channel: ${quoteYamlValue(playlist.title)}`);
-			}
-			if (allowlist.has('channelUrl')) {
-				lines.push(`channelUrl: ${quoteYamlValue(playlist.url)}`);
-			}
-			if (allowlist.has('channelId')) {
-				lines.push(`channelId: ${quoteYamlValue(playlist.channelId)}`);
-			}
-			if (allowlist.has('videoCount')) {
-				const videoCount = playlist.transcripts.length > 0 ? playlist.transcripts.length : playlist.entries.length;
-				lines.push(`videoCount: ${videoCount}`);
-			}
-			return;
+	return buildFrontmatter(collection.title, options, template, extractedFrontmatter, () => {
+		const videoCount = collection.transcripts.length > 0 ? collection.transcripts.length : collection.entries.length;
+		if ('channelId' in collection) {
+			return new Map([
+				['source', ['source: youtube-channel']],
+				['channel', [`channel: ${quoteYamlValue(collection.title)}`]],
+				['channelUrl', [`channelUrl: ${quoteYamlValue(collection.url)}`]],
+				['channelId', [`channelId: ${quoteYamlValue(collection.channelId)}`]],
+				['videoCount', [`videoCount: ${videoCount}`]],
+			]);
 		}
-
-		if (allowlist.has('source')) {
-			lines.push('source: youtube-playlist');
-		}
-
-		if (allowlist.has('videoCount')) {
-			const videoCount = playlist.transcripts.length > 0 ? playlist.transcripts.length : playlist.entries.length;
-			lines.push(`videoCount: ${videoCount}`);
-		}
-
-		if (allowlist.has('playlistUrl')) {
-			lines.push(`playlistUrl: ${quoteYamlValue(playlist.url)}`);
-		}
-
-		if (allowlist.has('playlistId')) {
-			lines.push(`playlistId: ${quoteYamlValue(playlist.playlistId)}`);
-		}
+		return new Map([
+			['source', ['source: youtube-playlist']],
+			['videoCount', [`videoCount: ${videoCount}`]],
+			['playlistUrl', [`playlistUrl: ${quoteYamlValue(collection.url)}`]],
+			['playlistId', [`playlistId: ${quoteYamlValue(collection.playlistId)}`]],
+		]);
 	});
 }
 
@@ -200,23 +132,14 @@ function buildFrontmatter(
 	options: GenerationOptions | undefined,
 	template: Template | null,
 	extractedFrontmatter: Record<string, unknown>,
-	appendMetadata: (lines: string[], allowlist: ReadonlySet<string>) => void,
+	buildMetadata: () => FrontmatterEntries,
 ): RenderedFrontmatter {
 	if (!(options?.includeFrontmatter ?? true)) {
 		return { content: null, warnings: [] };
 	}
 
-	const allowlist = parseAllowlist(options?.frontmatterPropertyAllowlist);
+	const propertyKeys = parseFrontmatterPropertyKeys(options?.frontmatterPropertyAllowlist);
 	const lines: string[] = ['---'];
-
-	if (allowlist.has('title')) {
-		lines.push(`title: ${quoteYamlValue(title)}`);
-	}
-
-	if (allowlist.has('aliases')) {
-		lines.push('aliases:');
-		lines.push(`  - ${quoteYamlValue(title)}`);
-	}
 
 	const globalTags = parseTagList(options?.frontmatterTags);
 	const mergeResult = mergeFrontmatter({
@@ -228,18 +151,18 @@ function buildFrontmatter(
 
 	const merged = mergeResult.merged;
 
-	if (Array.isArray(merged.tags) && merged.tags.length > 0) {
-		lines.push('tags:');
-		for (const tag of merged.tags as string[]) {
-			lines.push(`  - ${tag}`);
-		}
-	}
+	const entries = buildMetadata();
+	entries.set('title', [`title: ${quoteYamlValue(title)}`]);
+	entries.set('aliases', ['aliases:', `  - ${quoteYamlValue(title)}`]);
+	entries.set('generated', [`generated: ${new Date().toISOString()}`]);
+	const tagLines = formatTagLines(merged.tags);
+	const tagAnchor = Math.max(propertyKeys.indexOf('title'), propertyKeys.indexOf('aliases'));
+	if (tagAnchor < 0) lines.push(...tagLines);
 
-	appendMetadata(lines, allowlist);
-
-	if (allowlist.has('generated')) {
-		lines.push(`generated: ${new Date().toISOString()}`);
-	}
+	propertyKeys.forEach((key, index) => {
+		lines.push(...(entries.get(key) ?? []));
+		if (index === tagAnchor) lines.push(...tagLines);
+	});
 
 	for (const [key, value] of Object.entries(merged)) {
 		if (key === 'tags') {
@@ -250,6 +173,11 @@ function buildFrontmatter(
 
 	lines.push('---');
 	return { content: lines.join('\n'), warnings: mergeResult.warnings };
+}
+
+function formatTagLines(tags: unknown): string[] {
+	if (!Array.isArray(tags) || tags.length === 0) return [];
+	return ['tags:', ...tags.map((tag) => `  - ${tag}`)];
 }
 
 function escapeYamlString(value: string): string {
@@ -269,17 +197,6 @@ function parseTagList(input: string | undefined): string[] {
 		.split(/[\s,]+/)
 		.map((tag) => tag.trim().replace(/^#+/, ''))
 		.filter((tag) => tag.length > 0);
-}
-
-function parseAllowlist(input: string | undefined): Set<string> {
-	if (input === undefined) {
-		return new Set(DEFAULT_ALLOWLIST_KEYS);
-	}
-	const parts = input.split(/[\s,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
-	if (!parts.length) {
-		return new Set<string>();
-	}
-	return new Set(parts.filter((s) => KNOWN_ALLOWLIST_KEYS.has(s)));
 }
 
 function formatYamlEntry(key: string, value: unknown): string {

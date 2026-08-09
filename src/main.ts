@@ -17,6 +17,7 @@ import { GenerationOptionsModal } from './ui/generation/generationOptionsModal';
 import { QueueModal } from './ui/queue/queueModal';
 import { WhatsNewModal } from './ui/releaseNotes/whatsNewModal';
 import { resolveReleaseNotesStartupAction } from './releaseNotes';
+import { serializeEnabledFrontmatterProperties } from './frontmatterProperties';
 import { createJobId } from './utils';
 import type {
 	BatchTargetPolicy,
@@ -175,7 +176,7 @@ export class YTKN extends Plugin {
 			noteDestinationFolder: outputDefaults.noteDestinationFolder,
 			includeFrontmatter: outputDefaults.includeFrontmatter,
 			frontmatterTags: outputDefaults.frontmatterTags,
-			frontmatterPropertyAllowlist: outputDefaults.frontmatterPropertyAllowlist,
+			frontmatterPropertyAllowlist: serializeEnabledFrontmatterProperties(outputDefaults.frontmatterProperties),
 			sourceSectionPosition: outputDefaults.sourceSectionPosition,
 			linkTimestamps: outputDefaults.linkTimestamps,
 			tldrCalloutAtTop: outputDefaults.tldrCalloutAtTop,

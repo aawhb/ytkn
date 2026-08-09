@@ -1,6 +1,10 @@
-import type { App, SettingDefinition, SettingDefinitionItem } from 'obsidian';
+import type { App, SettingDefinition, SettingDefinitionItem, SettingDefinitionPage } from 'obsidian';
+import { Notice } from 'obsidian';
 import type { OutputDefaults, PluginSettings } from '../../types';
 import { DEFAULT_CHANNEL_VIDEO_LIMIT } from '../../defaults';
+import {
+	BUILT_IN_FRONTMATTER_PROPERTIES,
+} from '../../frontmatterProperties';
 import {
 	GENERATION_OPTIONS_SCHEMA as OPTIONS,
 	optionIsVisible,
@@ -10,6 +14,15 @@ import { renderChannelContentControl } from '../shared/checkboxGroupControl';
 import { sectionInfoButton } from './sectionInfo';
 
 const outputKey = <K extends keyof OutputDefaults>(key: K): `output.${K}` => `output.${key}`;
+const FRONTMATTER_PROPERTY_PREFIX = 'frontmatter-property.';
+
+const frontmatterPropertyKey = (key: string): `frontmatter-property.${string}` =>
+	`${FRONTMATTER_PROPERTY_PREFIX}${encodeURIComponent(key)}`;
+
+export const parseFrontmatterPropertyKey = (key: string): string | null =>
+	key.startsWith(FRONTMATTER_PROPERTY_PREFIX)
+		? decodeURIComponent(key.slice(FRONTMATTER_PROPERTY_PREFIX.length))
+		: null;
 
 interface GeneralPageContext {
 	app: App;
@@ -121,16 +134,7 @@ export function getGeneralDefinitions(context: GeneralPageContext): SettingDefin
 					},
 					visible: optionVisible(context, 'frontmatterTags'),
 				},
-				{
-					name: OPTIONS.frontmatterProperties.name,
-					desc: 'Space-separated property names to include in generated notes.',
-					control: {
-						type: 'text',
-						key: outputKey('frontmatterPropertyAllowlist'),
-						placeholder: OPTIONS.frontmatterProperties.placeholder,
-					},
-					visible: optionVisible(context, 'frontmatterProperties'),
-				},
+				getFrontmatterPropertiesPage(context),
 				{
 					name: OPTIONS.sourceMetadataPosition.name,
 					desc: OPTIONS.sourceMetadataPosition.desc,
@@ -303,4 +307,68 @@ function getCollectionDefinitions(context: GeneralPageContext): Definition[] {
 			},
 		},
 	];
+}
+
+function getFrontmatterPropertiesPage(context: GeneralPageContext): SettingDefinitionPage<string> {
+	const definitions = new Map(BUILT_IN_FRONTMATTER_PROPERTIES.map((property) => [property.key, property]));
+	const getPreferences = () => context.settings.getOutputDefaults().frontmatterProperties;
+	return {
+		type: 'page',
+		name: OPTIONS.frontmatterProperties.name,
+		desc: 'Choose which properties appear in generated notes and arrange their order.',
+		displayValue: () => {
+			const preferences = getPreferences();
+			return `${preferences.filter((preference) => preference.enabled).length} enabled`;
+		},
+		visible: optionVisible(context, 'frontmatterProperties'),
+		items: [{
+			type: 'list',
+			heading: 'Properties',
+			cls: 'ytkn-settings__section-card ytkn-settings__native-list',
+			search: {
+				placeholder: 'Search properties',
+				match: (definition, query) => {
+					const description = typeof definition.desc === 'string'
+						? definition.desc
+						: definition.desc?.textContent ?? '';
+					const text = `${definition.name} ${description} ${(definition.aliases ?? []).join(' ')}`;
+					return text.toLowerCase().includes(query.trim().toLowerCase());
+				},
+			},
+			items: getPreferences().flatMap((preference) => {
+				const property = definitions.get(preference.key);
+				return property ? [{
+					name: property.key,
+					desc: property.description,
+					aliases: property.aliases,
+					control: {
+						type: 'toggle' as const,
+						key: frontmatterPropertyKey(property.key),
+					},
+				}] : [];
+			}),
+			onReorder: (oldIndex, newIndex) => {
+				const next = [...getPreferences()];
+				const [moved] = next.splice(oldIndex, 1);
+				if (moved === undefined) return;
+				next.splice(newIndex, 0, moved);
+				void saveFrontmatterProperties(context, next).catch(showPropertySaveError);
+			},
+		}],
+	};
+}
+
+async function saveFrontmatterProperties(
+	context: GeneralPageContext,
+	frontmatterProperties: OutputDefaults['frontmatterProperties'],
+): Promise<void> {
+	await context.settings.updateOutputDefaults({
+		...context.settings.getOutputDefaults(),
+		frontmatterProperties,
+	});
+	context.onStructureChanged();
+}
+
+function showPropertySaveError(): void {
+	new Notice("Couldn't save frontmatter properties.");
 }

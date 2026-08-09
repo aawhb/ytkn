@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from 'obsidian';
 import { SettingsService } from '../../src/settings/settingsService';
 import {
-	DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST,
 	DEFAULT_GENERATE_AI_SUMMARY,
 	DEFAULT_INCLUDE_MEMORABLE_QUOTES,
 	DEFAULT_INCLUDE_MINDMAP,
@@ -17,6 +16,7 @@ import {
 	DEFAULT_TLDR_CALLOUT_AT_TOP,
 	DEFAULT_USE_AI,
 } from '../../src/defaults';
+import { createDefaultFrontmatterPropertyPreferences } from '../../src/frontmatterProperties';
 
 vi.mock('obsidian', async () => {
 	const mod = await import('../mocks/obsidian');
@@ -69,7 +69,7 @@ describe('SettingsService current contracts', () => {
 			mediaEmbedMode: DEFAULT_MEDIA_EMBED_MODE,
 			noteDestinationMode: DEFAULT_NOTE_DESTINATION_MODE,
 			noteDestinationFolder: DEFAULT_NOTE_DESTINATION_FOLDER,
-			frontmatterPropertyAllowlist: DEFAULT_FRONTMATTER_PROPERTY_ALLOWLIST,
+			frontmatterProperties: createDefaultFrontmatterPropertyPreferences(),
 			tldrCalloutAtTop: DEFAULT_TLDR_CALLOUT_AT_TOP,
 		});
 		expect(manager.getInstructionConfig()).toEqual({
@@ -223,7 +223,11 @@ describe('SettingsService current contracts', () => {
 			noteDestinationFolder: 'Videos',
 			includeFrontmatter: false,
 			frontmatterTags: '#youtube',
-			frontmatterPropertyAllowlist: 'title channel videoUrl',
+			frontmatterProperties: expect.arrayContaining([
+				{ key: 'title', enabled: true },
+				{ key: 'channel', enabled: true },
+				{ key: 'videoUrl', enabled: true },
+			]),
 			sourceSectionPosition: 'top',
 			linkTimestamps: false,
 			tldrCalloutAtTop: false,
@@ -256,7 +260,10 @@ describe('SettingsService current contracts', () => {
 			includeReport: false,
 			reportLocation: 'separate-note',
 			openCreatedNote: true,
-			frontmatterPropertyAllowlist: 'title channel topic',
+			frontmatterProperties: expect.arrayContaining([
+				{ key: 'title', enabled: true },
+				{ key: 'channel', enabled: true },
+			]),
 		});
 		expect(from181.manager.getProviders()).toHaveLength(1);
 		expect(from181.manager.getModelIds()).toEqual(['Gemini:gemini-1.5-flash']);
@@ -266,6 +273,7 @@ describe('SettingsService current contracts', () => {
 		});
 		expect(from181.plugin.data?.settings?.outputDefaults?.includeRunReport).toBeUndefined();
 		expect(from181.plugin.data?.settings?.outputDefaults?.runReportLocation).toBeUndefined();
+		expect(from181.plugin.data?.settings?.outputDefaults?.frontmatterPropertyAllowlist).toBeUndefined();
 
 		const mixed = makeManager({
 			settings: {
@@ -393,7 +401,7 @@ describe('SettingsService current contracts', () => {
 			openCreatedNote: true,
 			includeFrontmatter: false,
 			frontmatterTags: 'video',
-			frontmatterPropertyAllowlist: '',
+			frontmatterProperties: [],
 			sourceSectionPosition: 'top',
 			linkTimestamps: false,
 		});

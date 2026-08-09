@@ -13,7 +13,7 @@ import { SUPPORT_LINKS, getRecentReleaseNotes } from '../../releaseNotes';
 import { WhatsNewModal } from '../releaseNotes/whatsNewModal';
 import { getErrorMessage } from '../../utils';
 import { optionFromStoredValue, optionToStoredValue } from '../shared/generationOptionsSchema';
-import { getGeneralDefinitions } from './general';
+import { getGeneralDefinitions, parseFrontmatterPropertyKey } from './general';
 import { AiSettingsPage } from './ai/page';
 import { ProviderManager } from './ai/providerManager';
 
@@ -112,6 +112,12 @@ export class SettingsScreen extends PluginSettingTab {
 	}
 
 	getControlValue(key: string): unknown {
+		const frontmatterProperty = parseFrontmatterPropertyKey(key);
+		if (frontmatterProperty !== null) {
+			return this.settings.getOutputDefaults().frontmatterProperties
+				.find((preference) => preference.key === frontmatterProperty)?.enabled ?? false;
+		}
+
 		if (key.startsWith(TEMPLATE_CONTROL_PREFIX)) {
 			const controlId = key.slice(TEMPLATE_CONTROL_PREFIX.length);
 			const config = this.settings.getInstructionConfig();
@@ -144,6 +150,17 @@ export class SettingsScreen extends PluginSettingTab {
 	}
 
 	async setControlValue(key: string, value: unknown): Promise<void> {
+		const frontmatterProperty = parseFrontmatterPropertyKey(key);
+		if (frontmatterProperty !== null) {
+			const preferences = this.settings.getOutputDefaults().frontmatterProperties
+				.map((preference) => preference.key === frontmatterProperty
+					? { ...preference, enabled: value === true }
+					: preference);
+			await this.updateOutputDefaults({ frontmatterProperties: preferences });
+			this.update();
+			return;
+		}
+
 		if (key.startsWith(TEMPLATE_CONTROL_PREFIX)) {
 			const controlId = key.slice(TEMPLATE_CONTROL_PREFIX.length);
 			const config = this.settings.getInstructionConfig();

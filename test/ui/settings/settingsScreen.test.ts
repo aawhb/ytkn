@@ -48,7 +48,11 @@ const baseOutputDefaults: OutputDefaults = {
 	openCreatedNote: false,
 	includeFrontmatter: true,
 	frontmatterTags: '',
-	frontmatterPropertyAllowlist: 'title channel videoUrl',
+	frontmatterProperties: [
+		{ key: 'title', enabled: true },
+		{ key: 'channel', enabled: true },
+		{ key: 'videoUrl', enabled: true },
+	],
 	sourceSectionPosition: 'top',
 	linkTimestamps: true,
 	tldrCalloutAtTop: true,
@@ -189,6 +193,7 @@ describe('SettingsScreen declarative settings', () => {
 		const pages = flattened.filter((item) => 'type' in item && item.type === 'page');
 		expect(pages.map((item) => 'name' in item ? item.name : undefined)).toEqual([
 			'General',
+			'Frontmatter properties',
 			'AI',
 		]);
 		expect(pages.filter((item) => 'name' in item && item.name !== 'Frontmatter properties')
@@ -280,6 +285,32 @@ describe('SettingsScreen declarative settings', () => {
 		expect(preferredLanguage.visible()).toBe(false);
 		await tab.setControlValue('output.transcriptLanguageMode', 'preferred');
 		expect(preferredLanguage.visible()).toBe(true);
+	});
+
+	it('manages built-in frontmatter properties on a searchable ordered page', async () => {
+		const settings = makeFakeSettings();
+		const tab = createSettingsScreen(makeFakePlugin(settings));
+		const page = findDefinition(tab, OPTIONS.frontmatterProperties.name);
+		const list = page.items[0];
+
+		expect(page.displayValue()).toBe('3 enabled');
+		expect(list.search.match(list.items.find((item: any) => item.name === 'channel'), 'name'))
+			.toBe(true);
+		expect(list.items.map((item: any) => item.name)).toEqual(['title', 'channel', 'videoUrl']);
+
+		await tab.setControlValue('frontmatter-property.channel', false);
+		expect(settings.getOutputDefaults().frontmatterProperties).toEqual([
+			{ key: 'title', enabled: true },
+			{ key: 'channel', enabled: false },
+			{ key: 'videoUrl', enabled: true },
+		]);
+
+		list.onReorder(2, 0);
+		await vi.waitFor(() => expect(settings.getOutputDefaults().frontmatterProperties).toEqual([
+			{ key: 'videoUrl', enabled: true },
+			{ key: 'title', enabled: true },
+			{ key: 'channel', enabled: false },
+		]));
 	});
 
 	it('renders channel content as one control and prevents removing the final type', async () => {

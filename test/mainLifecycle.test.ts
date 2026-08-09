@@ -120,7 +120,7 @@ vi.mock('../src/settings/settingsService', () => ({
 			noteDestinationFolder: '',
 			includeFrontmatter: true,
 			frontmatterTags: '',
-			frontmatterPropertyAllowlist: '',
+			frontmatterProperties: [],
 			sourceSectionPosition: 'top',
 			linkTimestamps: true,
 			tldrCalloutAtTop: true,

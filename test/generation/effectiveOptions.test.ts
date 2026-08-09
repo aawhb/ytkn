@@ -35,7 +35,11 @@ function createSettings(overrides: Partial<PluginSettings> = {}): PluginSettings
 			openCreatedNote: false,
 			includeFrontmatter: true,
 			frontmatterTags: 'ytkn video',
-			frontmatterPropertyAllowlist: 'title source generated',
+			frontmatterProperties: [
+				{ key: 'title', enabled: true },
+				{ key: 'source', enabled: true },
+				{ key: 'generated', enabled: true },
+			],
 			sourceSectionPosition: 'bottom',
 			linkTimestamps: true,
 			tldrCalloutAtTop: true,

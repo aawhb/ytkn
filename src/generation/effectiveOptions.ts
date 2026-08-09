@@ -13,6 +13,8 @@ import type {
 	TranscriptLanguageMode,
 	TranscriptMode,
 } from '../types';
+import { serializeEnabledFrontmatterProperties } from '../frontmatterProperties';
+
 export interface EffectiveGenerationOptions extends GenerationOptions {
 	useAi: boolean;
 	generateAiSummary: boolean;
@@ -85,7 +87,8 @@ export function resolveEffectiveGenerationOptions(
 		requestTimeoutMs: options.requestTimeoutMs ?? settings.getRequestTimeoutMs(),
 		includeFrontmatter: options.includeFrontmatter ?? outputDefaults.includeFrontmatter,
 		frontmatterTags: options.frontmatterTags ?? outputDefaults.frontmatterTags,
-		frontmatterPropertyAllowlist: options.frontmatterPropertyAllowlist ?? outputDefaults.frontmatterPropertyAllowlist,
+		frontmatterPropertyAllowlist: options.frontmatterPropertyAllowlist
+			?? serializeEnabledFrontmatterProperties(outputDefaults.frontmatterProperties),
 		sourceSectionPosition: options.sourceSectionPosition ?? outputDefaults.sourceSectionPosition,
 		linkTimestamps: options.linkTimestamps ?? outputDefaults.linkTimestamps,
 		tldrCalloutAtTop: options.tldrCalloutAtTop ?? outputDefaults.tldrCalloutAtTop,
