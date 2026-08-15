@@ -109,6 +109,8 @@ vi.mock('../src/settings/settingsService', () => ({
 			generateAiSummary: true,
 			transcriptMode: 'none',
 			playlistMode: 'per-video',
+			channelContentTypes: ['videos', 'shorts', 'streams'],
+			channelVideoLimit: 10,
 			transcriptLanguageMode: 'auto',
 			preferredTranscriptLanguage: '',
 			transcriptFailureMode: 'skip',
@@ -118,6 +120,7 @@ vi.mock('../src/settings/settingsService', () => ({
 			useVideoTitleAsNoteName: true,
 			noteDestinationMode: 'current-note',
 			noteDestinationFolder: '',
+			openCreatedNote: true,
 			includeFrontmatter: true,
 			frontmatterTags: '',
 			frontmatterProperties: [],
@@ -267,6 +270,12 @@ describe('YTKN plugin lifecycle', () => {
 		]);
 		expect(mocks.noticeMessages).toContain('Nothing to cancel.');
 		expect(mocks.runQueueInstances[0].cancelAll).not.toHaveBeenCalled();
+		const generationCreated = mocks.modalOpenEvents.find((event) => event.kind === 'generation-created');
+		expect(generationCreated?.args[3]).toEqual(expect.objectContaining({
+			channelContentTypes: ['videos', 'shorts', 'streams'],
+			channelVideoLimit: 10,
+			openCreatedNote: true,
+		}));
 	});
 
 	it('explains unsupported channel tabs before queueing', async () => {

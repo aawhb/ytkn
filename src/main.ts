@@ -154,32 +154,13 @@ export class YTKN extends Plugin {
 	}
 
 	private getInitialGenerationOptions(): GenerationOptions {
-		const outputDefaults = this.settings.getOutputDefaults();
+		const { frontmatterProperties, ...outputDefaults } = this.settings.getOutputDefaults();
 		const instructionConfig = this.settings.getInstructionConfig();
 		const modelIds = this.settings.getModelIds();
 
 		return {
-			useAi: outputDefaults.useAi,
-			generateAiSummary: outputDefaults.generateAiSummary,
-			transcriptMode: outputDefaults.transcriptMode,
-			playlistMode: outputDefaults.playlistMode,
-			channelContentTypes: outputDefaults.channelContentTypes,
-			channelVideoLimit: outputDefaults.channelVideoLimit,
-			transcriptLanguageMode: outputDefaults.transcriptLanguageMode,
-			preferredTranscriptLanguage: outputDefaults.preferredTranscriptLanguage,
-			transcriptFailureMode: outputDefaults.transcriptFailureMode,
-			mediaEmbedMode: outputDefaults.mediaEmbedMode,
-			includeReport: outputDefaults.includeReport,
-			reportLocation: outputDefaults.reportLocation,
-			useVideoTitleAsNoteName: outputDefaults.useVideoTitleAsNoteName,
-			noteDestinationMode: outputDefaults.noteDestinationMode,
-			noteDestinationFolder: outputDefaults.noteDestinationFolder,
-			includeFrontmatter: outputDefaults.includeFrontmatter,
-			frontmatterTags: outputDefaults.frontmatterTags,
-			frontmatterPropertyAllowlist: serializeEnabledFrontmatterProperties(outputDefaults.frontmatterProperties),
-			sourceSectionPosition: outputDefaults.sourceSectionPosition,
-			linkTimestamps: outputDefaults.linkTimestamps,
-			tldrCalloutAtTop: outputDefaults.tldrCalloutAtTop,
+			...outputDefaults,
+			frontmatterPropertyAllowlist: serializeEnabledFrontmatterProperties(frontmatterProperties),
 			modelIds,
 			instructionMode: instructionConfig.mode,
 			instructionTemplate: instructionConfig.template,
@@ -247,7 +228,6 @@ export class YTKN extends Plugin {
 			new Notice(INSERT_AT_CARET_REQUIRES_NOTE);
 			return null;
 		}
-		// Editor-target batches cannot safely expand playlists or channels into many per-video writes.
 		if (urlCount > 1 && options.playlistMode === 'per-video' && classifications.some((kind) => kind === 'playlist' || kind === 'channel')) {
 			new Notice('A multi-URL run cannot create one note per video from a playlist or channel when using the current note. Choose One combined note, choose Folder, or remove the playlist or channel URL.');
 			return null;
