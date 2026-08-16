@@ -6,6 +6,7 @@ import { App } from 'obsidian';
 import { ModelFormModal } from '../../../src/ui/settings/ai/modals/modelForm';
 import { ProviderFormModal } from '../../../src/ui/settings/ai/modals/providerForm';
 import { ModelPickerModal } from '../../../src/ui/shared/modelPickerModal';
+import { FrontmatterPropertyModal } from '../../../src/ui/settings/frontmatterPropertyModal';
 import type { ModelConfig, ProviderConfig } from '../../../src/types';
 
 const provider: ProviderConfig = {
@@ -103,6 +104,42 @@ describe('settings modals', () => {
 
 		button(modal, 'Add').click();
 		await vi.waitFor(() => expect(onSelect).toHaveBeenCalledWith('Local:llama3'));
+	});
+
+	it('validates and adds a custom frontmatter property', async () => {
+		const onSubmit = vi.fn(async () => undefined);
+		const modal = new FrontmatterPropertyModal(new App(), {
+			existing: ['topic'],
+			onSubmit,
+		});
+		modal.open();
+		const input = inputByLabel(modal, 'Property name');
+		const add = button(modal, 'Add');
+
+		changeInput(input, 'title');
+		expect(add.disabled).toBe(true);
+		expect(modal.contentEl.textContent).toContain('built-in property');
+
+		changeInput(input, 'review_status');
+		expect(add.disabled).toBe(false);
+		add.click();
+		await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledWith('review_status'));
+	});
+
+	it('renames a custom frontmatter property', async () => {
+		const onSubmit = vi.fn(async () => undefined);
+		const modal = new FrontmatterPropertyModal(new App(), {
+			existing: ['topic'],
+			originalName: 'topic',
+			onSubmit,
+		});
+		modal.open();
+		const input = inputByLabel(modal, 'Property name');
+
+		expect(input.value).toBe('topic');
+		changeInput(input, 'subject');
+		button(modal, 'Rename').click();
+		await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledWith('subject'));
 	});
 
 });

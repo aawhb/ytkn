@@ -89,7 +89,7 @@ describe('sacred-key allowlist', () => {
 		expect(content).not.toContain('aliases:');
 	});
 
-	it('unknown key in allowlist input silently ignored (valid keys still emitted)', () => {
+	it('emits valid custom properties as blank YAML entries', () => {
 		const { content } = renderVideoNote(
 			transcript as any,
 			'',
@@ -100,7 +100,21 @@ describe('sacred-key allowlist', () => {
 
 		expect(content).toContain('videoId:');
 		expect(content).toContain('channel:');
-		expect(content).not.toContain('notakey:');
+		expect(content).toContain('\nnotakey:\n');
+	});
+
+	it('ignores invalid and reserved custom properties', () => {
+		const { content } = renderVideoNote(
+			transcript as any,
+			'',
+			transcript.url,
+			null,
+			{ ...baseOptions, frontmatterPropertyAllowlist: 'videoId bad:key tags' },
+		);
+
+		expect(content).toContain('videoId:');
+		expect(content).not.toContain('bad:key:');
+		expect(content).not.toContain('\ntags:\n');
 	});
 
 	it('emits built-in properties in allowlist order and keeps tags after identity fields', () => {

@@ -263,6 +263,7 @@ describe('SettingsService current contracts', () => {
 			frontmatterProperties: expect.arrayContaining([
 				{ key: 'title', enabled: true },
 				{ key: 'channel', enabled: true },
+				{ key: 'topic', enabled: true },
 			]),
 		});
 		expect(from181.manager.getProviders()).toHaveLength(1);

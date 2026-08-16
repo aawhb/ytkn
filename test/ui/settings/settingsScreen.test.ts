@@ -287,30 +287,59 @@ describe('SettingsScreen declarative settings', () => {
 		expect(preferredLanguage.visible()).toBe(true);
 	});
 
-	it('manages built-in frontmatter properties on a searchable ordered page', async () => {
-		const settings = makeFakeSettings();
+	it('manages built-in and custom frontmatter properties in one searchable ordered list', async () => {
+		const settings = makeFakeSettings({
+			outputDefaults: {
+				frontmatterProperties: [
+					{ key: 'title', enabled: true },
+					{ key: 'topic', enabled: false },
+					{ key: 'channel', enabled: true },
+				],
+			},
+		});
 		const tab = createSettingsScreen(makeFakePlugin(settings));
 		const page = findDefinition(tab, OPTIONS.frontmatterProperties.name);
 		const list = page.items[0];
 
-		expect(page.displayValue()).toBe('3 enabled');
+		expect(page.displayValue()).toBe('2 enabled');
 		expect(list.search.match(list.items.find((item: any) => item.name === 'channel'), 'name'))
 			.toBe(true);
-		expect(list.items.map((item: any) => item.name)).toEqual(['title', 'channel', 'videoUrl']);
+		expect(list.items.map((item: any) => item.name)).toEqual(['title', 'topic', 'channel']);
+		expect(list.addItem.name).toBe('Add custom property');
 
-		await tab.setControlValue('frontmatter-property.channel', false);
-		expect(settings.getOutputDefaults().frontmatterProperties).toEqual([
+		const customHost = document.createElement('div');
+		list.items[1].render(new Setting(customHost), {} as never);
+		const toggle = customHost.querySelector<HTMLInputElement>('input[type="checkbox"]');
+		expect(toggle?.checked).toBe(false);
+		toggle!.checked = true;
+		toggle!.dispatchEvent(new Event('change'));
+		await vi.waitFor(() => expect(settings.getOutputDefaults().frontmatterProperties).toEqual([
 			{ key: 'title', enabled: true },
-			{ key: 'channel', enabled: false },
-			{ key: 'videoUrl', enabled: true },
-		]);
+			{ key: 'topic', enabled: true },
+			{ key: 'channel', enabled: true },
+		]));
+		expect(customHost.querySelector('[data-icon="pencil"]')).toBeTruthy();
+		const deleteButton = customHost.querySelector<HTMLButtonElement>('[data-icon="trash-2"]');
+		expect(deleteButton).toBeTruthy();
+
+		const builtInHost = document.createElement('div');
+		list.items[0].render(new Setting(builtInHost), {} as never);
+		expect(builtInHost.querySelector('[data-icon="pencil"]')).toBeNull();
+		expect(builtInHost.querySelector('[data-icon="trash-2"]')).toBeNull();
 
 		list.onReorder(2, 0);
 		await vi.waitFor(() => expect(settings.getOutputDefaults().frontmatterProperties).toEqual([
-			{ key: 'videoUrl', enabled: true },
+			{ key: 'channel', enabled: true },
 			{ key: 'title', enabled: true },
-			{ key: 'channel', enabled: false },
+			{ key: 'topic', enabled: true },
 		]));
+
+		deleteButton!.click();
+		await vi.waitFor(() => expect(settings.getOutputDefaults().frontmatterProperties).toEqual([
+			{ key: 'channel', enabled: true },
+			{ key: 'title', enabled: true },
+		]));
+		expect((tab as any).update).toHaveBeenCalled();
 	});
 
 	it('renders channel content as one control and prevents removing the final type', async () => {

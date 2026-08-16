@@ -4,6 +4,7 @@ import type { OutputDefaults, PluginSettings } from '../../types';
 import { DEFAULT_CHANNEL_VIDEO_LIMIT } from '../../defaults';
 import {
 	BUILT_IN_FRONTMATTER_PROPERTIES,
+	isBuiltInFrontmatterProperty,
 } from '../../frontmatterProperties';
 import {
 	GENERATION_OPTIONS_SCHEMA as OPTIONS,
@@ -12,17 +13,9 @@ import {
 } from '../shared/generationOptionsSchema';
 import { renderChannelContentControl } from '../shared/checkboxGroupControl';
 import { sectionInfoButton } from './sectionInfo';
+import { FrontmatterPropertyModal } from './frontmatterPropertyModal';
 
 const outputKey = <K extends keyof OutputDefaults>(key: K): `output.${K}` => `output.${key}`;
-const FRONTMATTER_PROPERTY_PREFIX = 'frontmatter-property.';
-
-const frontmatterPropertyKey = (key: string): `frontmatter-property.${string}` =>
-	`${FRONTMATTER_PROPERTY_PREFIX}${encodeURIComponent(key)}`;
-
-export const parseFrontmatterPropertyKey = (key: string): string | null =>
-	key.startsWith(FRONTMATTER_PROPERTY_PREFIX)
-		? decodeURIComponent(key.slice(FRONTMATTER_PROPERTY_PREFIX.length))
-		: null;
 
 interface GeneralPageContext {
 	app: App;
@@ -325,6 +318,10 @@ function getFrontmatterPropertiesPage(context: GeneralPageContext): SettingDefin
 			type: 'list',
 			heading: 'Properties',
 			cls: 'ytkn-settings__section-card ytkn-settings__native-list',
+			addItem: {
+				name: 'Add custom property',
+				action: () => openCustomPropertyModal(context),
+			},
 			search: {
 				placeholder: 'Search properties',
 				match: (definition, query) => {
@@ -335,17 +332,38 @@ function getFrontmatterPropertiesPage(context: GeneralPageContext): SettingDefin
 					return text.toLowerCase().includes(query.trim().toLowerCase());
 				},
 			},
-			items: getPreferences().flatMap((preference) => {
+			items: getPreferences().map((preference) => {
 				const property = definitions.get(preference.key);
-				return property ? [{
-					name: property.key,
-					desc: property.description,
-					aliases: property.aliases,
-					control: {
-						type: 'toggle' as const,
-						key: frontmatterPropertyKey(property.key),
+				return {
+					name: preference.key,
+					desc: property?.description ?? 'Added blank to generated notes.',
+					aliases: property?.aliases,
+					render: (setting) => {
+						setting
+							.setName(preference.key)
+							.setDesc(property?.description ?? 'Added blank to generated notes.')
+							.addToggle((toggle) => toggle
+								.setValue(preference.enabled)
+								.onChange((enabled) => {
+									void updateFrontmatterProperty(
+										context,
+										preference.key,
+										{ enabled },
+									).catch(showPropertySaveError);
+								}));
+						if (!property) {
+							setting
+								.addExtraButton((button) => button
+									.setIcon('pencil')
+									.setTooltip('Rename custom property')
+									.onClick(() => openCustomPropertyModal(context, preference.key)))
+								.addExtraButton((button) => button
+									.setIcon('trash-2')
+									.setTooltip('Delete custom property')
+									.onClick(() => deleteCustomProperty(context, preference.key)));
+						}
 					},
-				}] : [];
+				};
 			}),
 			onReorder: (oldIndex, newIndex) => {
 				const next = [...getPreferences()];
@@ -356,6 +374,46 @@ function getFrontmatterPropertiesPage(context: GeneralPageContext): SettingDefin
 			},
 		}],
 	};
+}
+
+function openCustomPropertyModal(context: GeneralPageContext, originalName?: string): void {
+	const customKeys = context.settings.getOutputDefaults().frontmatterProperties
+		.filter((preference) => !isBuiltInFrontmatterProperty(preference.key))
+		.map((preference) => preference.key);
+	new FrontmatterPropertyModal(context.app, {
+		existing: customKeys,
+		originalName,
+		onSubmit: async (key) => {
+			if (originalName) {
+				await updateFrontmatterProperty(context, originalName, { key });
+			} else {
+				await saveFrontmatterProperties(context, [
+					...context.settings.getOutputDefaults().frontmatterProperties,
+					{ key, enabled: true },
+				]);
+			}
+		},
+	}).open();
+}
+
+async function updateFrontmatterProperty(
+	context: GeneralPageContext,
+	key: string,
+	patch: Partial<OutputDefaults['frontmatterProperties'][number]>,
+): Promise<void> {
+	await saveFrontmatterProperties(
+		context,
+		context.settings.getOutputDefaults().frontmatterProperties.map((preference) =>
+			preference.key === key ? { ...preference, ...patch } : preference),
+	);
+}
+
+function deleteCustomProperty(context: GeneralPageContext, key: string): void {
+	void saveFrontmatterProperties(
+		context,
+		context.settings.getOutputDefaults().frontmatterProperties
+			.filter((preference) => preference.key !== key),
+	).catch(showPropertySaveError);
 }
 
 async function saveFrontmatterProperties(

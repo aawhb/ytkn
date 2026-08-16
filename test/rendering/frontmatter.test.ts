@@ -41,4 +41,56 @@ describe('playlist frontmatter', () => {
 			warnings: [],
 		});
 	});
+
+	it('adds blank custom properties to playlist and channel notes', () => {
+		const playlist: VideoCollectionTranscriptResponse = {
+			url: 'https://youtube.com/playlist?list=PL123',
+			playlistId: 'PL123',
+			title: 'Playlist',
+			entries: [],
+			transcripts: [],
+		};
+		const channel = {
+			url: 'https://youtube.com/channel/UC123',
+			channelId: 'UC123',
+			title: 'Channel',
+			contentTypes: ['videos' as const],
+			entries: [],
+			transcripts: [],
+		};
+
+		const options = { frontmatterPropertyAllowlist: 'title topic' };
+		expect(buildCollectionFrontmatter(playlist, options, null, {}).content).toContain('\ntopic:\n');
+		expect(buildCollectionFrontmatter(channel, options, null, {}).content).toContain('\ntopic:\n');
+	});
+
+	it('renders a generated value at the custom property position without duplication', () => {
+		const playlist: VideoCollectionTranscriptResponse = {
+			url: 'https://youtube.com/playlist?list=PL123',
+			playlistId: 'PL123',
+			title: 'Playlist',
+			entries: [],
+			transcripts: [],
+		};
+		const template = {
+			...getTemplate('general'),
+			frontmatter: [{
+				key: 'topic',
+				type: 'string' as const,
+				description: 'Topic',
+			}],
+		};
+
+		const content = buildCollectionFrontmatter(
+			playlist,
+			{ frontmatterPropertyAllowlist: 'videoCount topic title' },
+			template,
+			{ topic: 'Knowledge management' },
+		).content ?? '';
+
+		expect(content).toContain('topic: "Knowledge management"');
+		expect(content.match(/^topic:/gm)).toHaveLength(1);
+		expect(content.indexOf('videoCount:')).toBeLessThan(content.indexOf('topic:'));
+		expect(content.indexOf('topic:')).toBeLessThan(content.indexOf('title:'));
+	});
 });

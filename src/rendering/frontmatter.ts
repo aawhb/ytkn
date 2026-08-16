@@ -1,6 +1,10 @@
 import type { FrontmatterDeclaration, FrontmatterFieldType, GenerationOptions, TranscriptResponse, VideoCollectionTranscriptResponse } from '../types';
 import type { Template } from '../types';
-import { BUILT_IN_FRONTMATTER_PROPERTIES, parseFrontmatterPropertyKeys } from '../frontmatterProperties';
+import {
+	BUILT_IN_FRONTMATTER_PROPERTIES,
+	isBuiltInFrontmatterProperty,
+	parseFrontmatterPropertyKeys,
+} from '../frontmatterProperties';
 
 const SACRED_FRONTMATTER_KEYS = BUILT_IN_FRONTMATTER_PROPERTIES.map((property) => property.key);
 
@@ -157,15 +161,24 @@ function buildFrontmatter(
 	entries.set('generated', [`generated: ${new Date().toISOString()}`]);
 	const tagLines = formatTagLines(merged.tags);
 	const tagAnchor = Math.max(propertyKeys.indexOf('title'), propertyKeys.indexOf('aliases'));
+	const emittedTemplateProperties = new Set<string>();
 	if (tagAnchor < 0) lines.push(...tagLines);
 
 	propertyKeys.forEach((key, index) => {
-		lines.push(...(entries.get(key) ?? []));
+		const builtInEntry = entries.get(key);
+		if (builtInEntry) {
+			lines.push(...builtInEntry);
+		} else if (Object.prototype.hasOwnProperty.call(merged, key)) {
+			lines.push(formatYamlEntry(key, merged[key]));
+			emittedTemplateProperties.add(key);
+		} else if (!isBuiltInFrontmatterProperty(key)) {
+			lines.push(`${key}:`);
+		}
 		if (index === tagAnchor) lines.push(...tagLines);
 	});
 
 	for (const [key, value] of Object.entries(merged)) {
-		if (key === 'tags') {
+		if (key === 'tags' || emittedTemplateProperties.has(key)) {
 			continue;
 		}
 		lines.push(formatYamlEntry(key, value));

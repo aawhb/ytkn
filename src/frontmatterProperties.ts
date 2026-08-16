@@ -28,6 +28,8 @@ export const BUILT_IN_FRONTMATTER_PROPERTIES: readonly FrontmatterPropertyDefini
 ];
 
 const BUILT_IN_KEYS = new Set(BUILT_IN_FRONTMATTER_PROPERTIES.map((property) => property.key));
+const RESERVED_CUSTOM_KEYS = new Set(['tags']);
+const FRONTMATTER_PROPERTY_NAME_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_-]*$/;
 
 export function createDefaultFrontmatterPropertyPreferences(): FrontmatterPropertyPreference[] {
 	return BUILT_IN_FRONTMATTER_PROPERTIES.map(({ key }) => ({ key, enabled: true }));
@@ -38,10 +40,16 @@ export function normalizeFrontmatterPropertyPreferences(
 	legacyAllowlist?: string,
 ): FrontmatterPropertyPreference[] {
 	if (!Array.isArray(value)) {
-		const enabled = legacyAllowlist === undefined
-			? BUILT_IN_KEYS
-			: new Set(parseFrontmatterPropertyKeys(legacyAllowlist));
-		return BUILT_IN_FRONTMATTER_PROPERTIES.map(({ key }) => ({ key, enabled: enabled.has(key) }));
+		const selected = legacyAllowlist === undefined
+			? BUILT_IN_FRONTMATTER_PROPERTIES.map(({ key }) => key)
+			: parseFrontmatterPropertyKeys(legacyAllowlist);
+		const enabled = new Set(selected);
+		return [
+			...BUILT_IN_FRONTMATTER_PROPERTIES.map(({ key }) => ({ key, enabled: enabled.has(key) })),
+			...selected
+				.filter((key) => !BUILT_IN_KEYS.has(key))
+				.map((key) => ({ key, enabled: true })),
+		];
 	}
 
 	const preferences: FrontmatterPropertyPreference[] = [];
@@ -50,7 +58,7 @@ export function normalizeFrontmatterPropertyPreferences(
 		if (!entry || typeof entry !== 'object') continue;
 		const candidate = entry as Record<string, unknown>;
 		const key = typeof candidate.key === 'string' ? candidate.key : '';
-		if (!BUILT_IN_KEYS.has(key) || seen.has(key)) continue;
+		if (!isValidFrontmatterPropertyKey(key) || seen.has(key)) continue;
 		seen.add(key);
 		preferences.push({ key, enabled: candidate.enabled === true });
 	}
@@ -76,9 +84,34 @@ export function parseFrontmatterPropertyKeys(value: string | undefined): string[
 	const keys: string[] = [];
 	for (const token of input.split(/[\s,]+/)) {
 		const key = token.trim();
-		if (!BUILT_IN_KEYS.has(key) || seen.has(key)) continue;
+		if (!isValidFrontmatterPropertyKey(key) || seen.has(key)) continue;
 		seen.add(key);
 		keys.push(key);
 	}
 	return keys;
+}
+
+export function isBuiltInFrontmatterProperty(key: string): boolean {
+	return BUILT_IN_KEYS.has(key);
+}
+
+export function validateCustomFrontmatterProperty(
+	name: string,
+	existing: readonly string[],
+	originalName?: string,
+): string | undefined {
+	const trimmed = name.trim();
+	if (!trimmed) return 'Enter a property name.';
+	if (!FRONTMATTER_PROPERTY_NAME_PATTERN.test(trimmed)) {
+		return 'Use letters, numbers, underscores, or hyphens, and start with a letter or underscore.';
+	}
+	if (BUILT_IN_KEYS.has(trimmed)) return `${trimmed} is already a built-in property.`;
+	if (RESERVED_CUSTOM_KEYS.has(trimmed)) return `${trimmed} is managed by the frontmatter tags setting.`;
+	if (trimmed !== originalName && existing.includes(trimmed)) return `${trimmed} already exists.`;
+	return undefined;
+}
+
+function isValidFrontmatterPropertyKey(key: string): boolean {
+	return BUILT_IN_KEYS.has(key)
+		|| (FRONTMATTER_PROPERTY_NAME_PATTERN.test(key) && !RESERVED_CUSTOM_KEYS.has(key));
 }

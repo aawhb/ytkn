@@ -78,9 +78,10 @@ You can:
 
 - add your own tags
 - choose which source properties are included
+- add blank custom properties that you fill in after generation
 - keep a small property block that matches your vault conventions
 
-The **Frontmatter properties** setting lists the supported property names. Video title, channel, URLs, IDs, and other source details come from the plugin rather than the AI response.
+Open **Frontmatter properties** to search, toggle, and reorder built-in and custom properties. You can add custom names such as `topic`; YTKN adds each one as a blank YAML entry for you to fill in after generation. Video title, channel, URLs, IDs, and other built-in source details come from the plugin rather than the AI response.
 
 ### Source information
 

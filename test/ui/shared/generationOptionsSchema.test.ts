@@ -94,7 +94,11 @@ function makeFakeSettings() {
 			openCreatedNote: false,
 			includeFrontmatter: true,
 			frontmatterTags: '',
-			frontmatterPropertyAllowlist: 'title channel videoUrl',
+			frontmatterProperties: [
+				{ key: 'title', enabled: true },
+				{ key: 'channel', enabled: true },
+				{ key: 'videoUrl', enabled: true },
+			],
 			sourceSectionPosition: 'top',
 			linkTimestamps: true,
 			tldrCalloutAtTop: true,
