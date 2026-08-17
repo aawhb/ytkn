@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.8.2 - 2026-08-17
+
+### New
+
+- Custom frontmatter properties can now be included in generated notes alongside built-in metadata.
+- Frontmatter properties now have a dedicated searchable page for enabling, disabling, and reordering properties, with additional controls for adding, renaming, and deleting custom properties.
+
+### Improved
+
+- Settings now use Obsidian's native pages with clearer navigation, focused descriptions, responsive layouts, and separate reset actions for each page or all settings.
+- The generation modal now uses compact checkboxes and clearer grouped controls for model order and generation parameters.
+- Report labels are shorter, and separate report notes now use the first item title with a dated YTKN fallback.
+- Generation status messages now use the YTKN name consistently.
+
+### Fixed
+
+- The generation modal now honors the saved **Open created note** default.
+
+### Maintenance
+
+- Obsidian `1.13.1` or newer is now required for the native settings API.
+
 ## 1.8.1 - 2026-07-20
 
 ### Improved

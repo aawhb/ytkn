@@ -32,6 +32,28 @@ const RECENT_RELEASE_LINE_COUNT = 2;
 
 const RELEASE_NOTES: ReleaseNote[] = [
 	{
+		version: '1.8.2',
+		date: '2026-08-17',
+		showOnUpdate: true,
+		summary: 'Native Obsidian settings, configurable frontmatter properties, streamlined generation controls, and targeted fixes.',
+		new: [
+			'Custom frontmatter properties can now be included in generated notes alongside built-in metadata.',
+			'Frontmatter properties now have a dedicated searchable page for enabling, disabling, and reordering properties, with additional controls for adding, renaming, and deleting custom properties.',
+		],
+		improved: [
+			'Settings now use native pages with clearer navigation, focused descriptions, responsive layouts, and separate reset actions for each page or all settings.',
+			'The generation modal now uses compact checkboxes and clearer grouped controls for model order and generation parameters.',
+			'Report labels are shorter, and separate report notes now use the first item title with a dated YTKN fallback.',
+			'Generation status messages now use the YTKN name consistently.',
+		],
+		fixed: [
+			'The generation modal now honors the saved Open created note default.',
+		],
+		changed: [
+			'Obsidian 1.13.1 or newer is now required.',
+		],
+	},
+	{
 		version: '1.8.1',
 		date: '2026-07-20',
 		showOnUpdate: true,
