@@ -1,7 +1,7 @@
 import type { App } from 'obsidian';
 import { Modal, Setting, setIcon } from 'obsidian';
 import type { ReleaseNote } from '../../releaseNotes';
-import { DOCUMENTATION_LINK, SUPPORT_LINKS } from '../../releaseNotes';
+import { DOCUMENTATION_LINK, SUPPORT_LINKS, getRecentReleaseNotes } from '../../releaseNotes';
 
 const SECTION_LABELS: Array<{ key: keyof Pick<ReleaseNote, 'new' | 'improved' | 'fixed' | 'changed'>; label: string }> = [
 	{ key: 'new', label: 'New' },
@@ -13,8 +13,7 @@ const SECTION_LABELS: Array<{ key: keyof Pick<ReleaseNote, 'new' | 'improved' | 
 export class WhatsNewModal extends Modal {
 	constructor(
 		app: App,
-		private currentVersion: string,
-		private notes: ReleaseNote[],
+		private notes: ReleaseNote[] = getRecentReleaseNotes(),
 	) {
 		super(app);
 	}
@@ -27,7 +26,7 @@ export class WhatsNewModal extends Modal {
 		const header = contentEl.createDiv({ cls: 'ytkn-whats-new-modal__header' });
 		header.createEl('h2', {
 			cls: 'ytkn-whats-new-modal__title',
-			text: `What's new in YT Knowledge Notes ${this.currentVersion}`,
+			text: "What's new in YT Knowledge Notes",
 		});
 		header.createEl('p', {
 			cls: 'ytkn-whats-new-modal__subtitle',
@@ -38,7 +37,7 @@ export class WhatsNewModal extends Modal {
 		if (this.notes.length === 0) {
 			body.createEl('p', {
 				cls: 'ytkn-whats-new-modal__empty',
-				text: 'No release notes are available for this version yet.',
+				text: 'No release notes are available yet.',
 			});
 		} else {
 			for (const note of this.notes) {

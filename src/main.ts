@@ -146,7 +146,7 @@ export class YTKN extends Plugin {
 			await this.settings.setLastSeenReleaseNotesVersion(currentVersion);
 
 			if (action.kind === 'show') {
-				new WhatsNewModal(this.app, currentVersion, action.notes).open();
+				new WhatsNewModal(this.app).open();
 			}
 		} catch (error) {
 			console.warn('Could not show release notes:', error);
@@ -210,7 +210,6 @@ export class YTKN extends Plugin {
 				});
 			},
 			hasActiveNote,
-			this.manifest.version,
 			() => this.openQueueModal(),
 		).open();
 	}

@@ -9,7 +9,7 @@ import { DEFAULT_CHANNEL_VIDEO_LIMIT } from '../../defaults';
 import { getTemplate } from '../../ai/templates/registry';
 import { controlDefaultToString } from '../shared/templateControls';
 import { renderBrandActions } from '../shared/brandActions';
-import { SUPPORT_LINKS, getRecentReleaseNotes } from '../../releaseNotes';
+import { SUPPORT_LINKS } from '../../releaseNotes';
 import { WhatsNewModal } from '../releaseNotes/whatsNewModal';
 import { getErrorMessage } from '../../utils';
 import { optionFromStoredValue, optionToStoredValue } from '../shared/generationOptionsSchema';
@@ -214,11 +214,7 @@ export class SettingsScreen extends PluginSettingTab {
 				id: 'about',
 				label: 'About YT Knowledge Notes',
 				icon: 'info',
-				onClick: () => new WhatsNewModal(
-					this.app,
-					this.plugin.manifest.version,
-					getRecentReleaseNotes(),
-				).open(),
+				onClick: () => new WhatsNewModal(this.app).open(),
 			},
 			{ id: 'sponsor', label: 'Sponsor', icon: 'heart-handshake', href: SUPPORT_LINKS.githubSponsors },
 			{ id: 'buy-me-a-coffee', label: 'Buy Me a Coffee', icon: 'coffee', href: SUPPORT_LINKS.buyMeACoffee },

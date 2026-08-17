@@ -7,11 +7,23 @@ vi.mock('obsidian', async () => {
 
 import { App } from 'obsidian';
 import { WhatsNewModal } from '../../../src/ui/releaseNotes/whatsNewModal';
-import { DOCUMENTATION_LINK, SUPPORT_LINKS } from '../../../src/releaseNotes';
+import { DOCUMENTATION_LINK, SUPPORT_LINKS, getRecentReleaseNotes } from '../../../src/releaseNotes';
 
 describe('WhatsNewModal', () => {
+	it('shows the shared recent release lines by default', () => {
+		const modal = new WhatsNewModal(new App());
+		const recentNotes = getRecentReleaseNotes();
+
+		modal.open();
+
+		expect(modal.contentEl.querySelectorAll('.ytkn-whats-new-modal__release')).toHaveLength(recentNotes.length);
+		for (const note of recentNotes) {
+			expect(modal.contentEl.textContent).toContain(note.version);
+		}
+	});
+
 	it('renders release notes and support links', () => {
-		const modal = new WhatsNewModal(new App(), '2.0.0', [{
+		const modal = new WhatsNewModal(new App(), [{
 			version: '2.0.0',
 			date: '2026-02-01',
 			summary: 'A focused release.',
@@ -22,7 +34,8 @@ describe('WhatsNewModal', () => {
 
 		modal.open();
 
-		expect(modal.contentEl.textContent).toContain("What's new in YT Knowledge Notes 2.0.0");
+		expect(modal.contentEl.textContent).toContain("What's new in YT Knowledge Notes");
+		expect(modal.contentEl.textContent).not.toContain("What's new in YT Knowledge Notes 2.0.0");
 		expect(modal.contentEl.textContent).toContain('Metadata-only notes');
 		expect(modal.contentEl.textContent).toContain('Better reports');
 		expect(modal.contentEl.textContent).toContain('Playlist pagination');
@@ -42,10 +55,10 @@ describe('WhatsNewModal', () => {
 	});
 
 	it('renders an empty state when no release notes are available', () => {
-		const modal = new WhatsNewModal(new App(), '3.0.0', []);
+		const modal = new WhatsNewModal(new App(), []);
 
 		modal.open();
 
-		expect(modal.contentEl.textContent).toContain('No release notes are available for this version yet.');
+		expect(modal.contentEl.textContent).toContain('No release notes are available yet.');
 	});
 });

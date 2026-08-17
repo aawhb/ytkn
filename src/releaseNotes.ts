@@ -19,7 +19,7 @@ interface ReleaseNotesStartupInput {
 type ReleaseNotesStartupAction =
 	| { kind: 'none' }
 	| { kind: 'mark-seen' }
-	| { kind: 'show'; notes: ReleaseNote[] };
+	| { kind: 'show' };
 
 export const SUPPORT_LINKS = {
 	githubSponsors: 'https://github.com/sponsors/aawhb',
@@ -27,6 +27,8 @@ export const SUPPORT_LINKS = {
 } as const;
 
 export const DOCUMENTATION_LINK = 'https://github.com/aawhb/ytkn/blob/main/docs/getting-started.md';
+
+const RECENT_RELEASE_LINE_COUNT = 2;
 
 const RELEASE_NOTES: ReleaseNote[] = [
 	{
@@ -125,8 +127,26 @@ function getReleaseNote(version: string, notes: readonly ReleaseNote[] = RELEASE
 	return notes.find((note) => note.version === version) ?? null;
 }
 
-export function getRecentReleaseNotes(limit = 3, notes: readonly ReleaseNote[] = RELEASE_NOTES): ReleaseNote[] {
-	return notes.slice(0, Math.max(0, limit));
+export function getRecentReleaseNotes(notes: readonly ReleaseNote[] = RELEASE_NOTES): ReleaseNote[] {
+	const releaseLines = new Set<string>();
+
+	return notes.filter((note) => {
+		const match = /^(\d+)\.(\d+)\.\d+(?:[-+].*)?$/.exec(note.version);
+		if (!match) {
+			return false;
+		}
+
+		const releaseLine = `${match[1]}.${match[2]}`;
+		if (releaseLines.has(releaseLine)) {
+			return true;
+		}
+		if (releaseLines.size >= RECENT_RELEASE_LINE_COUNT) {
+			return false;
+		}
+
+		releaseLines.add(releaseLine);
+		return true;
+	});
 }
 
 export function resolveReleaseNotesStartupAction(input: ReleaseNotesStartupInput): ReleaseNotesStartupAction {
@@ -144,5 +164,5 @@ export function resolveReleaseNotesStartupAction(input: ReleaseNotesStartupInput
 		return { kind: 'mark-seen' };
 	}
 
-	return { kind: 'show', notes: [currentNote] };
+	return { kind: 'show' };
 }

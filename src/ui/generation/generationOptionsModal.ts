@@ -34,10 +34,7 @@ import {
 	getTemplate,
 	populateTemplateDropdown,
 } from '../../ai/templates/registry';
-import {
-	SUPPORT_LINKS,
-	getRecentReleaseNotes,
-} from '../../releaseNotes';
+import { SUPPORT_LINKS } from '../../releaseNotes';
 import { WhatsNewModal } from '../releaseNotes/whatsNewModal';
 import {
 	ADDITIONAL_SECTION_IDS,
@@ -86,7 +83,6 @@ export class GenerationOptionsModal extends Modal {
 		private initialOptions: GenerationOptions,
 		private onSubmit: (urls: string[], options: GenerationOptions) => void,
 		private hasActiveNote: boolean = true,
-		private currentVersion: string = 'current version',
 		private onOpenQueue?: () => void,
 	) {
 		super(app);
@@ -961,11 +957,7 @@ export class GenerationOptionsModal extends Modal {
 				label: 'About YT Knowledge Notes',
 				icon: 'info',
 				onClick: () => {
-					new WhatsNewModal(
-						this.app,
-						this.currentVersion,
-						getRecentReleaseNotes(),
-					).open();
+					new WhatsNewModal(this.app).open();
 				},
 			},
 		];

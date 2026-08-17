@@ -106,7 +106,7 @@ describe('GenerationOptionsModal', () => {
 
 	it('renders icon-only brand actions in the modal header', () => {
 		const openQueue = vi.fn();
-		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit, true, '1.7.0', openQueue);
+		const modal = new GenerationOptionsModal(app, '', [sampleModel], defaultOptions, onSubmit, true, openQueue);
 		const openSpy = vi.spyOn(WhatsNewModal.prototype, 'open').mockImplementation(() => undefined);
 		modal.open();
 

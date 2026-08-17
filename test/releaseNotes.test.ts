@@ -12,9 +12,21 @@ const notes: ReleaseNote[] = [
 ];
 
 describe('release notes helpers', () => {
-	it('returns the most recent notes up to the requested limit', () => {
-		expect(getRecentReleaseNotes(2, notes).map((note) => note.version)).toEqual(['2.0.0', '1.9.0']);
-		expect(getRecentReleaseNotes(0, notes)).toEqual([]);
+	it('returns every release from the two most recent release lines', () => {
+		const releaseHistory: ReleaseNote[] = [
+			{ version: '2.1.2', date: '2026-04-05' },
+			{ version: '2.1.1', date: '2026-04-04' },
+			{ version: '2.0.3', date: '2026-03-03' },
+			{ version: '2.0.0', date: '2026-03-01' },
+			{ version: '1.9.4', date: '2026-02-01' },
+		];
+
+		expect(getRecentReleaseNotes(releaseHistory).map((note) => note.version)).toEqual([
+			'2.1.2',
+			'2.1.1',
+			'2.0.3',
+			'2.0.0',
+		]);
 	});
 
 	it('marks fresh installs as seen without opening the update modal', () => {
@@ -35,20 +47,20 @@ describe('release notes helpers', () => {
 		})).toEqual({ kind: 'none' });
 	});
 
-	it('shows the current release note for existing installs with no seen version or an older seen version', () => {
+	it('opens the shared release-notes modal for existing installs with no seen version or an older seen version', () => {
 		expect(resolveReleaseNotesStartupAction({
 			currentVersion: '2.0.0',
 			hasSavedSettings: true,
 			lastSeenVersion: null,
 			notes,
-		})).toEqual({ kind: 'show', notes: [notes[0]] });
+		})).toEqual({ kind: 'show' });
 
 		expect(resolveReleaseNotesStartupAction({
 			currentVersion: '2.0.0',
 			hasSavedSettings: true,
 			lastSeenVersion: '1.0.0',
 			notes,
-		})).toEqual({ kind: 'show', notes: [notes[0]] });
+		})).toEqual({ kind: 'show' });
 	});
 
 	it('marks the version as seen without opening when notes are missing or opted out', () => {
