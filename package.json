@@ -50,7 +50,7 @@
 		"obsidian": "^1.13.1",
 		"typescript": "^6.0.3",
 		"typescript-eslint": "^8.67.0",
-		"vitest": "^4.1.10"
+		"vitest": "^4.1.11"
 	},
 	"dependencies": {
 		"html-entities": "^2.6.0"
